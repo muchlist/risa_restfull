@@ -14,7 +14,7 @@ func RunApp() {
 	defer cancel()
 
 	app := fiber.New()
-	//mapUrls(app)
+	mapUrls(app)
 	log.Fatal(app.Listen(":3500"))
 
 }
