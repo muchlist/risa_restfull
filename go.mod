@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/andybalholm/brotli v1.0.1 // indirect
-	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofiber/fiber/v2 v2.5.0
 	github.com/joho/godotenv v1.3.0
