@@ -7,19 +7,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const (
-	mockInsertUser                 = "InsertUser"
-	mockGetUserByID                = "GetUserByID"
-	mockGetUserByEmail             = "GetUserByEmail"
-	mockGetUserByEmailWithPassword = "GetUserByEmailWithPassword"
-	mockFindUser                   = "FindUser"
-	mockCheckEmailAvailable        = "CheckEmailAvailable"
-	mockEditUser                   = "EditUser"
-	mockDeleteUser                 = "DeleteUser"
-	mockPutAvatar                  = "PutAvatar"
-	mockChangePassword             = "ChangePassword"
-)
-
 type MockDao struct {
 	mock.Mock
 }
