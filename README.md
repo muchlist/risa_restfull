@@ -12,4 +12,4 @@ Restfull Backend for Risa Aplication Pelindo III using Golang (Fiber) and MongoD
 - [Go Fiber Framework](https://github.com/gofiber/fiber/v2) : Web framework golang yang memiliki kemiripan dengan express js dan menggunakan fast-http (tidak berbeda jauh dengan gin dan echo).
 - [Mongo go driver](https://go.mongodb.org/mongo-driver) : Saat ini service ini full menggunakan MongoDB.
 - [JWT go](https://github.com/dgrijalva/jwt-go)
-- [Ozzo validation](github.com/go-ozzo/ozzo-validation/v4) : Library yang digunakan untuk validasi request body dari user. (Karena Go Fiber tidak memiliki input validasi seperti Binding di Gin)
+- [Ozzo validation](github.com/go-ozzo/ozzo-validation/**v4) : Library yang digunakan untuk validasi request body dari user. (Karena Go Fiber tidak memiliki input validasi seperti Binding di Gin)
