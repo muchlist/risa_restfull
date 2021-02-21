@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"github.com/muchlist/risa_restfull/utils"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"strings"
 )
@@ -16,53 +18,32 @@ const (
 	bearerKey = "Bearer"
 )
 
-type role int
-
-const (
-	normalAuth role = iota
-	freshAuth
-	adminAuth
-)
-
-//AuthMiddleware memvalidasi token JWT, mengembalikan claims berupa pointer mjwt.CustomClaims
-func AuthMiddleware(c *fiber.Ctx) error {
-	authHeader := c.Get(headerKey)
-	claims, err := authValidator(authHeader, normalAuth)
-	if err != nil {
-		return c.Status(err.Status()).JSON(err)
+func NormalAuth(rolesReq ...string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		authHeader := c.Get(headerKey)
+		claims, err := authMustHaveRoleValidator(authHeader, false, rolesReq)
+		if err != nil {
+			return c.Status(err.Status()).JSON(err)
+		}
+		c.Locals(mjwt.CLAIMS, claims)
+		return c.Next()
 	}
-
-	c.Locals(mjwt.CLAIMS, claims)
-	return c.Next()
 }
 
-//AuthMustFreshMiddleware memvalidasi token JWT, mengembalikan claims berupa pointer mjwt.CustomClaims.
-//perbedaannya dengan AuthMidlleware adalah ini mengharuskan pengakses berstatus fresh true
-func AuthMustFreshMiddleware(c *fiber.Ctx) error {
-	authHeader := c.Get(headerKey)
-	claims, err := authValidator(authHeader, freshAuth)
-	if err != nil {
-		return c.Status(err.Status()).JSON(err)
-	}
+func FreshAuth(rolesReq ...string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		authHeader := c.Get(headerKey)
+		claims, err := authMustHaveRoleValidator(authHeader, true, rolesReq)
+		if err != nil {
+			return c.Status(err.Status()).JSON(err)
+		}
 
-	c.Locals(mjwt.CLAIMS, claims)
-	return c.Next()
+		c.Locals(mjwt.CLAIMS, claims)
+		return c.Next()
+	}
 }
 
-//AuthAdminMiddleware memvalidasi token JWT, mengembalikan claims berupa pointer mjwt.CustomClaims.
-//perbedaannya dengan AuthMidlleware adalah ini mengharuskan pengakses berstatus is_admin true
-func AuthAdminMiddleware(c *fiber.Ctx) error {
-	authHeader := c.Get(headerKey)
-	claims, err := authValidator(authHeader, adminAuth)
-	if err != nil {
-		return c.Status(err.Status()).JSON(err)
-	}
-
-	c.Locals(mjwt.CLAIMS, claims)
-	return c.Next()
-}
-
-func authValidator(authHeader string, role role) (*mjwt.CustomClaim, rest_err.APIError) {
+func authMustHaveRoleValidator(authHeader string, mustFresh bool, rolesRequired []string) (*mjwt.CustomClaim, rest_err.APIError) {
 	if !strings.Contains(authHeader, bearerKey) {
 		apiErr := rest_err.NewUnauthorizedError("Unauthorized")
 		return nil, apiErr
@@ -84,18 +65,20 @@ func authValidator(authHeader string, role role) (*mjwt.CustomClaim, rest_err.AP
 		return nil, apiErr
 	}
 
-	switch role {
-	case adminAuth:
-		if !claims.IsAdmin {
-			apiErr := rest_err.NewUnauthorizedError("Unauthorized, memerlukan hak akses admin")
-			return nil, apiErr
-		}
-	case freshAuth:
+	if mustFresh {
 		if !claims.Fresh {
 			apiErr := rest_err.NewUnauthorizedError("Memerlukan token yang baru untuk mengakses halaman ini")
 			return nil, apiErr
 		}
 	}
 
+	if len(rolesRequired) != 0 {
+		for _, roleReq := range rolesRequired {
+			if !utils.InSlice(roleReq, claims.Roles) {
+				apiErr := rest_err.NewUnauthorizedError(fmt.Sprintf("Unauthorized, memerlukan hak akses %s", roleReq))
+				return nil, apiErr
+			}
+		}
+	}
 	return claims, nil
 }

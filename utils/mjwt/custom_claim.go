@@ -17,5 +17,5 @@ type CustomClaim struct {
 	ExtraMinute time.Duration
 	Type        int
 	Fresh       bool
-	IsAdmin     bool
+	Roles       []string
 }

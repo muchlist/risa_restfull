@@ -42,7 +42,7 @@ const (
 
 	identityKey  = "identity"
 	nameKey      = "name"
-	isAdminKey   = "is_admin"
+	rolesKey     = "roles"
 	tokenTypeKey = "type"
 	expKey       = "exp"
 	freshKey     = "fresh"
@@ -57,7 +57,7 @@ func (j *jwtUtils) GenerateToken(claims CustomClaim) (string, rest_err.APIError)
 	jwtClaim := jwt.MapClaims{}
 	jwtClaim[identityKey] = claims.Identity
 	jwtClaim[nameKey] = claims.Name
-	jwtClaim[isAdminKey] = claims.IsAdmin
+	jwtClaim[rolesKey] = claims.Roles
 	jwtClaim[expKey] = expired
 	jwtClaim[tokenTypeKey] = claims.Type
 	jwtClaim[freshKey] = claims.Fresh
@@ -85,7 +85,7 @@ func (j *jwtUtils) ReadToken(token *jwt.Token) (*CustomClaim, rest_err.APIError)
 		Identity: claims[identityKey].(string),
 		Name:     claims[nameKey].(string),
 		Exp:      int64(claims[expKey].(float64)),
-		IsAdmin:  claims[isAdminKey].(bool),
+		Roles:    claims[rolesKey].([]string),
 		Type:     int(claims[tokenTypeKey].(float64)),
 		Fresh:    claims[freshKey].(bool),
 	}

@@ -71,7 +71,6 @@ func (u *userService) FindUsers() (dto.UserResponseList, rest_err.APIError) {
 func (u *userService) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) {
 
 	user.Email = strings.ToLower(user.Email)
-	user.IsAdmin = false
 
 	// cek ketersediaan email
 	_, err := u.dao.CheckEmailAvailable(user.Email)
@@ -128,14 +127,14 @@ func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse,
 		return nil, rest_err.NewUnauthorizedError("Username atau password tidak valid")
 	}
 
-	if login.Limit == 0 || login.Limit > 10080 { // 10080 minute = 7 day
-		login.Limit = 10080
+	if login.Limit == 0 || login.Limit > 60*24*30 { // 30 days
+		login.Limit = 60 * 24 * 30
 	}
 
 	AccessClaims := mjwt.CustomClaim{
 		Identity:    user.Email,
 		Name:        user.Name,
-		IsAdmin:     user.IsAdmin,
+		Roles:       user.Roles,
 		ExtraMinute: time.Duration(login.Limit),
 		Type:        mjwt.Access,
 		Fresh:       true,
@@ -144,8 +143,8 @@ func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse,
 	RefreshClaims := mjwt.CustomClaim{
 		Identity:    user.Email,
 		Name:        user.Name,
-		IsAdmin:     user.IsAdmin,
-		ExtraMinute: 10080, // 7 days
+		Roles:       user.Roles,
+		ExtraMinute: 60 * 24 * 90, // 90 days
 		Type:        mjwt.Refresh,
 	}
 
@@ -158,7 +157,7 @@ func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse,
 	userResponse := dto.UserLoginResponse{
 		Name:         user.Name,
 		Email:        user.Email,
-		IsAdmin:      user.IsAdmin,
+		Roles:        user.Roles,
 		Avatar:       user.Avatar,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -192,14 +191,14 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 		return nil, apiErr
 	}
 
-	if payload.Limit == 0 || payload.Limit > 10080 { // 10080 minute = 7 day
-		payload.Limit = 10080
+	if payload.Limit == 0 || payload.Limit > 60*24*30 { //30 day
+		payload.Limit = 60 * 24 * 30
 	}
 
 	AccessClaims := mjwt.CustomClaim{
 		Identity:    user.Email,
 		Name:        user.Name,
-		IsAdmin:     user.IsAdmin,
+		Roles:       user.Roles,
 		ExtraMinute: time.Duration(payload.Limit),
 		Type:        mjwt.Access,
 		Fresh:       false,

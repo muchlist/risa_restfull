@@ -24,13 +24,13 @@ const (
 
 	keyUserColl = "user"
 
-	keyID        = "_id"
-	keyEmail     = "email"
-	keyHashPw    = "hash_pw"
-	keyName      = "name"
-	keyIsAdmin   = "is_admin"
-	keyAvatar    = "avatar"
-	keyTimeStamp = "timestamp"
+	keyUserID        = "_id"
+	keyUserEmail     = "email"
+	keyUserHashPw    = "hash_pw"
+	keyUserName      = "name"
+	keyUserRoles     = "roles"
+	keyUserAvatar    = "avatar"
+	keyUserTimeStamp = "timestamp"
 )
 
 func NewUserDao() UserDaoAssumer {
@@ -61,12 +61,12 @@ func (u *userDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 	defer cancel()
 
 	insertDoc := bson.D{
-		{keyName, user.Name},
-		{keyEmail, strings.ToLower(user.Email)},
-		{keyIsAdmin, user.IsAdmin},
-		{keyAvatar, user.Avatar},
-		{keyHashPw, user.Password},
-		{keyTimeStamp, user.Timestamp},
+		{keyUserName, user.Name},
+		{keyUserEmail, strings.ToLower(user.Email)},
+		{keyUserRoles, user.Roles},
+		{keyUserAvatar, user.Avatar},
+		{keyUserHashPw, user.Password},
+		{keyUserTimeStamp, user.Timestamp},
 	}
 
 	result, err := coll.InsertOne(ctx, insertDoc)
@@ -91,9 +91,9 @@ func (u *userDao) GetUserByID(userID primitive.ObjectID) (*dto.UserResponse, res
 
 	var user dto.UserResponse
 	opts := options.FindOne()
-	opts.SetProjection(bson.M{keyHashPw: 0})
+	opts.SetProjection(bson.M{keyUserHashPw: 0})
 
-	if err := coll.FindOne(ctx, bson.M{keyID: userID}, opts).Decode(&user); err != nil {
+	if err := coll.FindOne(ctx, bson.M{keyUserID: userID}, opts).Decode(&user); err != nil {
 
 		if err == mongo.ErrNoDocuments {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %v tidak ditemukan", userID.Hex()))
@@ -117,9 +117,9 @@ func (u *userDao) GetUserByEmail(email string) (*dto.UserResponse, rest_err.APIE
 
 	var user dto.UserResponse
 	opts := options.FindOne()
-	opts.SetProjection(bson.M{keyHashPw: 0})
+	opts.SetProjection(bson.M{keyUserHashPw: 0})
 
-	if err := coll.FindOne(ctx, bson.M{keyEmail: strings.ToLower(email)}, opts).Decode(&user); err != nil {
+	if err := coll.FindOne(ctx, bson.M{keyUserEmail: strings.ToLower(email)}, opts).Decode(&user); err != nil {
 
 		if err == mongo.ErrNoDocuments {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan Email %s tidak ditemukan", email))
@@ -144,7 +144,7 @@ func (u *userDao) GetUserByEmailWithPassword(email string) (*dto.User, rest_err.
 
 	var user dto.User
 
-	if err := coll.FindOne(ctx, bson.M{keyEmail: strings.ToLower(email)}).Decode(&user); err != nil {
+	if err := coll.FindOne(ctx, bson.M{keyUserEmail: strings.ToLower(email)}).Decode(&user); err != nil {
 
 		if err == mongo.ErrNoDocuments {
 			// karena sudah pasti untuk keperluan login maka error yang dikembalikan unauthorized
@@ -169,7 +169,7 @@ func (u *userDao) FindUser() (dto.UserResponseList, rest_err.APIError) {
 
 	users := dto.UserResponseList{}
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyID, -1}})
+	opts.SetSort(bson.D{{keyUserID, -1}})
 	sortCursor, err := coll.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan user dari database", err)
@@ -195,11 +195,11 @@ func (u *userDao) CheckEmailAvailable(email string) (bool, rest_err.APIError) {
 	defer cancel()
 
 	opts := options.FindOne()
-	opts.SetProjection(bson.M{keyID: 1})
+	opts.SetProjection(bson.M{keyUserID: 1})
 
 	var user dto.UserResponse
 
-	if err := coll.FindOne(ctx, bson.M{keyEmail: strings.ToLower(email)}, opts).Decode(&user); err != nil {
+	if err := coll.FindOne(ctx, bson.M{keyUserEmail: strings.ToLower(email)}, opts).Decode(&user); err != nil {
 
 		if err == mongo.ErrNoDocuments {
 			return true, nil
@@ -224,14 +224,14 @@ func (u *userDao) EditUser(userEmail string, userRequest dto.UserEditRequest) (*
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyEmail:     userEmail,
-		keyTimeStamp: userRequest.TimestampFilter,
+		keyUserEmail:     userEmail,
+		keyUserTimeStamp: userRequest.TimestampFilter,
 	}
 	update := bson.M{
 		"$set": bson.M{
-			keyName:      userRequest.Name,
-			keyIsAdmin:   userRequest.IsAdmin,
-			keyTimeStamp: time.Now().Unix(),
+			keyUserName:      userRequest.Name,
+			keyUserRoles:     userRequest.Roles,
+			keyUserTimeStamp: time.Now().Unix(),
 		},
 	}
 
@@ -256,7 +256,7 @@ func (u *userDao) DeleteUser(userEmail string) rest_err.APIError {
 	defer cancel()
 
 	filter := bson.M{
-		keyEmail: userEmail,
+		keyUserEmail: userEmail,
 	}
 
 	result, err := coll.DeleteOne(ctx, filter)
@@ -287,12 +287,12 @@ func (u *userDao) PutAvatar(email string, avatar string) (*dto.UserResponse, res
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyEmail: email,
+		keyUserEmail: email,
 	}
 	update := bson.M{
 		"$set": bson.M{
-			keyAvatar:    avatar,
-			keyTimeStamp: time.Now().Unix(),
+			keyUserAvatar:    avatar,
+			keyUserTimeStamp: time.Now().Unix(),
 		},
 	}
 
@@ -317,13 +317,13 @@ func (u *userDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.AP
 	defer cancel()
 
 	filter := bson.M{
-		keyEmail: data.Email,
+		keyUserEmail: data.Email,
 	}
 
 	update := bson.M{
 		"$set": bson.M{
-			keyHashPw:    data.NewPassword,
-			keyTimeStamp: time.Now().Unix(),
+			keyUserHashPw:    data.NewPassword,
+			keyUserTimeStamp: time.Now().Unix(),
 		},
 	}
 

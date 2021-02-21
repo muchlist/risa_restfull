@@ -26,7 +26,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 		ID:        objectID,
 		Email:     "whois.muchlis@gmail.com",
 		Name:      "muchlis",
-		IsAdmin:   true,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		Timestamp: 1610350965,
 	}, nil)
@@ -38,7 +38,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "muchlis", user.Name)
 	assert.Equal(t, "whois.muchlis@gmail.com", user.Email)
-	assert.Equal(t, true, user.IsAdmin)
+	assert.Equal(t, []string{"ADMIN"}, user.Roles)
 }
 
 func TestUserService_GetUser_NoUserFound(t *testing.T) {
@@ -65,7 +65,7 @@ func TestUserService_GetUserByEmail_Found(t *testing.T) {
 		ID:        primitive.NewObjectID(),
 		Email:     email,
 		Name:      "Muchlis",
-		IsAdmin:   true,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		Timestamp: time.Now().Unix(),
 	}, nil)
@@ -77,7 +77,7 @@ func TestUserService_GetUserByEmail_Found(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "Muchlis", user.Name)
 	assert.Equal(t, "whois.muchlis@gmail.com", user.Email)
-	assert.Equal(t, true, user.IsAdmin)
+	assert.Equal(t, []string{"ADMIN"}, user.Roles)
 }
 
 func TestUserService_GetUserByEmail_NotFound(t *testing.T) {
@@ -105,7 +105,7 @@ func TestUserService_FindUsers(t *testing.T) {
 			ID:        primitive.NewObjectID(),
 			Email:     "whois.muchlis@gmail.com",
 			Name:      "Muchlis",
-			IsAdmin:   true,
+			Roles:     []string{"ADMIN"},
 			Avatar:    "",
 			Timestamp: time.Now().Unix(),
 		},
@@ -138,7 +138,7 @@ func TestUserService_InsertUser_Success(t *testing.T) {
 	userInput := dto.UserRequest{
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   true,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		Password:  "password",
 		Timestamp: time.Now().Unix(),
@@ -163,7 +163,7 @@ func TestUserService_InsertUser_GenerateHashFailed(t *testing.T) {
 	userInput := dto.UserRequest{
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   true,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		Password:  "password",
 		Timestamp: time.Now().Unix(),
@@ -191,7 +191,7 @@ func TestUserService_InsertUser_EmailNotAvailable(t *testing.T) {
 	userInput := dto.UserRequest{
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   true,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		Password:  "password",
 		Timestamp: time.Now().Unix(),
@@ -218,7 +218,7 @@ func TestUserService_InsertUser_DBError(t *testing.T) {
 	userInput := dto.UserRequest{
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   true,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		Password:  "password",
 		Timestamp: time.Now().Unix(),
@@ -244,7 +244,7 @@ func TestUserService_EditUser(t *testing.T) {
 	email := "whowho@gmail.com"
 	userInput := dto.UserEditRequest{
 		Name:            "Muchlis",
-		IsAdmin:         false,
+		Roles:           []string{"ADMIN"},
 		TimestampFilter: 0,
 	}
 
@@ -253,7 +253,7 @@ func TestUserService_EditUser(t *testing.T) {
 		ID:        primitive.ObjectID{},
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   false,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		Timestamp: 0,
 	}, nil)
@@ -271,7 +271,7 @@ func TestUserService_EditUser_TimeStampNotmatch(t *testing.T) {
 	email := "whowho@gmail.com"
 	userInput := dto.UserEditRequest{
 		Name:            "Muchlis",
-		IsAdmin:         false,
+		Roles:           []string{"ADMIN"},
 		TimestampFilter: 0,
 	}
 
@@ -325,7 +325,7 @@ func TestUserService_Login(t *testing.T) {
 		ID:        primitive.ObjectID{},
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   false,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		HashPw:    "$2a$04$N.8j0ys/1t8YBZuM051PQOq3B6p5hFNv2hzYr.1vooL65z9Bmb7fO",
 		Timestamp: 0,
@@ -352,7 +352,7 @@ func TestUserService_Login_WrongPassword(t *testing.T) {
 		ID:        primitive.ObjectID{},
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   false,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		HashPw:    "$2a$04$N.8j0ys/1t8YBZuM051PQOq3B6p5hFNv2hzYr.1vooL65z9Bmb7fO",
 		Timestamp: 0,
@@ -396,7 +396,7 @@ func TestUserService_Login_GenerateTokenError(t *testing.T) {
 		ID:        primitive.ObjectID{},
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   false,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		HashPw:    "$2a$04$N.8j0ys/1t8YBZuM051PQOq3B6p5hFNv2hzYr.1vooL65z9Bmb7fO",
 		Timestamp: 0,
@@ -422,7 +422,7 @@ func TestUserService_PutAvatar(t *testing.T) {
 		ID:        primitive.ObjectID{},
 		Email:     "whowhos@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   false,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "images/whowhos@gmail.com.jpg",
 		Timestamp: 0,
 	}, nil)
@@ -462,7 +462,7 @@ func TestUserService_ChangePassword_Success(t *testing.T) {
 		ID:        primitive.ObjectID{},
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   false,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		HashPw:    "$2a$04$N.8j0ys/1t8YBZuM051PQOq3B6p5hFNv2hzYr.1vooL65z9Bmb7fO",
 		Timestamp: 0,
@@ -487,7 +487,7 @@ func TestUserService_ChangePassword_HashNewPasswordErr(t *testing.T) {
 		ID:        primitive.ObjectID{},
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   false,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		HashPw:    "$2a$04$N.8j0ys/1t8YBZuM051PQOq3B6p5hFNv2hzYr.1vooL65z9Bmb7fO",
 		Timestamp: 0,
@@ -534,7 +534,7 @@ func TestUserService_ChangePassword_OldPasswordWrong(t *testing.T) {
 		ID:        primitive.ObjectID{},
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   false,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		HashPw:    "$2a$04$N.8j0ys/1t8YBZuM051PQOq3B6p5hFNv2hzYr.1vooL65z9Bmb7fO",
 		Timestamp: 0,
@@ -626,7 +626,7 @@ func TestUserService_Refresh_Success(t *testing.T) {
 		ID:        primitive.NewObjectID(),
 		Email:     "whoswho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   true,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		Timestamp: time.Now().Unix(),
 	}, nil)
@@ -737,7 +737,7 @@ func TestUserService_Refresh_Token_Generate_Token_Error(t *testing.T) {
 		ID:        primitive.NewObjectID(),
 		Email:     "whoswho@gmail.com",
 		Name:      "Muchlis",
-		IsAdmin:   true,
+		Roles:     []string{"ADMIN"},
 		Avatar:    "",
 		Timestamp: time.Now().Unix(),
 	}, nil)
