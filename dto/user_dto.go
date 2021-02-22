@@ -5,6 +5,7 @@ type User struct {
 	ID        string   `json:"id,omitempty" bson:"_id,omitempty"`
 	Email     string   `json:"email" bson:"email"`
 	Name      string   `json:"name" bson:"name"`
+	Branch    string   `json:"branch" bson:"branch"`
 	Roles     []string `json:"roles" bson:"roles"`
 	Avatar    string   `json:"avatar" bson:"avatar"`
 	HashPw    string   `json:"hash_pw,omitempty" bson:"hash_pw,omitempty"`
@@ -19,6 +20,7 @@ type UserResponse struct {
 	ID        string   `json:"id" bson:"_id"`
 	Email     string   `json:"email" bson:"email"`
 	Name      string   `json:"name" bson:"name"`
+	Branch    string   `json:"branch" bson:"branch"`
 	Roles     []string `json:"roles" bson:"roles"`
 	Avatar    string   `json:"avatar" bson:"avatar"`
 	Timestamp int64    `json:"timestamp" bson:"timestamp"`

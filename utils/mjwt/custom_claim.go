@@ -18,4 +18,5 @@ type CustomClaim struct {
 	Type        int
 	Fresh       bool
 	Roles       []string
+	Branch      string
 }

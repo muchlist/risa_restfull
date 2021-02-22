@@ -6,9 +6,7 @@ import (
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/crypt"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -27,21 +25,21 @@ type userService struct {
 }
 
 type UserServiceAssumer interface {
-	GetUser(primitive.ObjectID) (*dto.UserResponse, rest_err.APIError)
-	GetUserByEmail(email string) (*dto.UserResponse, rest_err.APIError)
+	GetUser(userID string) (*dto.UserResponse, rest_err.APIError)
+	GetUserByID(email string) (*dto.UserResponse, rest_err.APIError)
 	InsertUser(dto.UserRequest) (*string, rest_err.APIError)
 	FindUsers() (dto.UserResponseList, rest_err.APIError)
-	EditUser(email string, userEdit dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError)
+	EditUser(userID string, userEdit dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError)
 	DeleteUser(email string) rest_err.APIError
 	Login(dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError)
 	Refresh(login dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError)
-	PutAvatar(email string, fileLocation string) (*dto.UserResponse, rest_err.APIError)
+	PutAvatar(userID string, fileLocation string) (*dto.UserResponse, rest_err.APIError)
 	ChangePassword(data dto.UserChangePasswordRequest) rest_err.APIError
 	ResetPassword(data dto.UserChangePasswordRequest) rest_err.APIError
 }
 
 //GetUser mendapatkan user dari database
-func (u *userService) GetUser(userID primitive.ObjectID) (*dto.UserResponse, rest_err.APIError) {
+func (u *userService) GetUser(userID string) (*dto.UserResponse, rest_err.APIError) {
 	user, err := u.dao.GetUserByID(userID)
 	if err != nil {
 		return nil, err
@@ -50,8 +48,8 @@ func (u *userService) GetUser(userID primitive.ObjectID) (*dto.UserResponse, res
 }
 
 //GetUserByEmail mendapatkan user berdasarkan email
-func (u *userService) GetUserByEmail(email string) (*dto.UserResponse, rest_err.APIError) {
-	user, err := u.dao.GetUserByEmail(strings.ToLower(email))
+func (u *userService) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIError) {
+	user, err := u.dao.GetUserByID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -67,17 +65,15 @@ func (u *userService) FindUsers() (dto.UserResponseList, rest_err.APIError) {
 	return userList, nil
 }
 
-//InsertUser melakukan register user semua email yang di registrasikan diubah menjadi lowercase di tahap ini
+//InsertUser melakukan register user
 func (u *userService) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) {
 
-	user.Email = strings.ToLower(user.Email)
-
 	// cek ketersediaan email
-	_, err := u.dao.CheckEmailAvailable(user.Email)
+	_, err := u.dao.CheckIDAvailable(user.ID)
 	if err != nil {
 		return nil, err
 	}
-	// END cek ketersediaan email
+	// END cek ketersediaan id
 
 	hashPassword, err := u.crypto.GenerateHash(user.Password)
 	if err != nil {
@@ -95,8 +91,8 @@ func (u *userService) InsertUser(user dto.UserRequest) (*string, rest_err.APIErr
 }
 
 //EditUser
-func (u *userService) EditUser(email string, request dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
-	result, err := u.dao.EditUser(strings.ToLower(email), request)
+func (u *userService) EditUser(userID string, request dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
+	result, err := u.dao.EditUser(userID, request)
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +100,8 @@ func (u *userService) EditUser(email string, request dto.UserEditRequest) (*dto.
 }
 
 //DeleteUser
-func (u *userService) DeleteUser(email string) rest_err.APIError {
-	err := u.dao.DeleteUser(email)
+func (u *userService) DeleteUser(userID string) rest_err.APIError {
+	err := u.dao.DeleteUser(userID)
 	if err != nil {
 		return err
 	}
@@ -116,9 +112,7 @@ func (u *userService) DeleteUser(email string) rest_err.APIError {
 //Login
 func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError) {
 
-	login.Email = strings.ToLower(login.Email)
-
-	user, err := u.dao.GetUserByEmailWithPassword(login.Email)
+	user, err := u.dao.GetUserByIDWithPassword(login.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -132,18 +126,20 @@ func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse,
 	}
 
 	AccessClaims := mjwt.CustomClaim{
-		Identity:    user.Email,
+		Identity:    user.ID,
 		Name:        user.Name,
 		Roles:       user.Roles,
+		Branch:      user.Branch,
 		ExtraMinute: time.Duration(login.Limit),
 		Type:        mjwt.Access,
 		Fresh:       true,
 	}
 
 	RefreshClaims := mjwt.CustomClaim{
-		Identity:    user.Email,
+		Identity:    user.ID,
 		Name:        user.Name,
 		Roles:       user.Roles,
+		Branch:      user.Branch,
 		ExtraMinute: 60 * 24 * 90, // 90 days
 		Type:        mjwt.Refresh,
 	}
@@ -155,7 +151,9 @@ func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse,
 	}
 
 	userResponse := dto.UserLoginResponse{
+		ID:           user.ID,
 		Name:         user.Name,
+		Branch:       user.Branch,
 		Email:        user.Email,
 		Roles:        user.Roles,
 		Avatar:       user.Avatar,
@@ -186,7 +184,7 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 	}
 
 	// mendapatkan data terbaru dari user
-	user, apiErr := u.dao.GetUserByEmail(strings.ToLower(claims.Identity))
+	user, apiErr := u.dao.GetUserByID(claims.Identity)
 	if apiErr != nil {
 		return nil, apiErr
 	}
@@ -199,6 +197,7 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 		Identity:    user.Email,
 		Name:        user.Name,
 		Roles:       user.Roles,
+		Branch:      user.Branch,
 		ExtraMinute: time.Duration(payload.Limit),
 		Type:        mjwt.Access,
 		Fresh:       false,
@@ -218,11 +217,9 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 }
 
 //PutAvatar memasukkan lokasi file (path) ke dalam database user
-func (u *userService) PutAvatar(email string, fileLocation string) (*dto.UserResponse, rest_err.APIError) {
+func (u *userService) PutAvatar(userID string, fileLocation string) (*dto.UserResponse, rest_err.APIError) {
 
-	email = strings.ToLower(email)
-
-	user, err := u.dao.PutAvatar(email, fileLocation)
+	user, err := u.dao.PutAvatar(userID, fileLocation)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +234,7 @@ func (u *userService) ChangePassword(data dto.UserChangePasswordRequest) rest_er
 		return rest_err.NewBadRequestError("Gagal mengganti password, password tidak boleh sama dengan sebelumnya!")
 	}
 
-	userResult, err := u.dao.GetUserByEmailWithPassword(data.Email)
+	userResult, err := u.dao.GetUserByIDWithPassword(data.ID)
 	if err != nil {
 		return err
 	}
@@ -260,8 +257,6 @@ func (u *userService) ChangePassword(data dto.UserChangePasswordRequest) rest_er
 //ResetPassword . inputan password berada di level handler
 //hanya memproses field newPassword, mengabaikan field password
 func (u *userService) ResetPassword(data dto.UserChangePasswordRequest) rest_err.APIError {
-
-	data.Email = strings.ToLower(data.Email)
 
 	newPasswordHash, err := u.crypto.GenerateHash(data.NewPassword)
 	if err != nil {
