@@ -1,8 +1,6 @@
 package dto
 
 import (
-	"github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -40,27 +38,11 @@ type UserRequest struct {
 	Timestamp int64    `json:"timestamp" bson:"timestamp"`
 }
 
-//Validate input
-func (u UserRequest) Validate() error {
-	return validation.ValidateStruct(&u,
-		validation.Field(&u.Email, validation.Required, is.Email),
-		validation.Field(&u.Name, validation.Required),
-		validation.Field(&u.Password, validation.Required, validation.Length(3, 20)),
-	)
-}
-
 //UserEditRequest input JSON oleh admin untuk mengedit user
 type UserEditRequest struct {
 	Name            string   `json:"name" bson:"name"`
 	Roles           []string `json:"roles" bson:"roles"`
 	TimestampFilter int64    `json:"timestamp_filter" bson:"timestamp"`
-}
-
-func (u UserEditRequest) Validate() error {
-	return validation.ValidateStruct(&u,
-		validation.Field(&u.Name, validation.Required),
-		validation.Field(&u.TimestampFilter, validation.Required),
-	)
 }
 
 //UserLoginRequest input JSON oleh client untuk keperluan login
@@ -70,28 +52,12 @@ type UserLoginRequest struct {
 	Limit    int    `json:"limit"`
 }
 
-//Validate input
-func (u UserLoginRequest) Validate() error {
-	return validation.ValidateStruct(&u,
-		validation.Field(&u.Email, validation.Required, is.Email),
-		validation.Field(&u.Password, validation.Required, validation.Length(3, 20)),
-	)
-}
-
 //UserChangePasswordRequest struck untuk keperluan change password dan reset password
 //pada reset password hanya menggunakan NewPassword dan mengabaikan Password
 type UserChangePasswordRequest struct {
 	Email       string `json:"email"`
 	Password    string `json:"password"`
 	NewPassword string `json:"new_password"`
-}
-
-//Validate input
-func (u UserChangePasswordRequest) Validate() error {
-	return validation.ValidateStruct(&u,
-		validation.Field(&u.Password, validation.Required, validation.Length(3, 20)),
-		validation.Field(&u.NewPassword, validation.Required, validation.Length(3, 20)),
-	)
 }
 
 //UserLoginResponse balikan user ketika sukses login dengan tambahan AccessToken
@@ -108,13 +74,6 @@ type UserLoginResponse struct {
 type UserRefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token"`
 	Limit        int    `json:"limit"`
-}
-
-//Validate input
-func (u UserRefreshTokenRequest) Validate() error {
-	return validation.ValidateStruct(&u,
-		validation.Field(&u.RefreshToken, validation.Required),
-	)
 }
 
 //UserRefreshTokenResponse mengembalikan token dengan claims yang
