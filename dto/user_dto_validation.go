@@ -57,11 +57,15 @@ func (u UserEditRequest) Validate() error {
 	if err := validation.ValidateStruct(&u,
 		validation.Field(&u.Name, validation.Required),
 		validation.Field(&u.TimestampFilter, validation.Required),
+		validation.Field(&u.Branch, validation.Required),
+		validation.Field(&u.Roles, validation.Required),
 	); err != nil {
 		return err
 	}
-
 	if err := roleValidation(u.Roles); err != nil {
+		return err
+	}
+	if err := branchValidation(u.Branch); err != nil {
 		return err
 	}
 

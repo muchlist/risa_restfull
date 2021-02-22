@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"github.com/muchlist/risa_restfull/constants/branches"
 	"github.com/muchlist/risa_restfull/dao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/crypt"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 	"testing"
 	"time"
@@ -19,11 +19,11 @@ import (
 
 func TestUserService_GetUserByID(t *testing.T) {
 
-	objectID := primitive.NewObjectID()
+	userID := "12345"
 
 	m := new(dao.MockDao)
-	m.On("GetUserByID", objectID).Return(&dto.UserResponse{
-		ID:        objectID,
+	m.On("GetUserByID", userID).Return(&dto.UserResponse{
+		ID:        userID,
 		Email:     "whois.muchlis@gmail.com",
 		Name:      "muchlis",
 		Roles:     []string{"ADMIN"},
@@ -33,7 +33,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	user, err := service.GetUser(objectID)
+	user, err := service.GetUser(userID)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "muchlis", user.Name)
@@ -42,28 +42,28 @@ func TestUserService_GetUserByID(t *testing.T) {
 }
 
 func TestUserService_GetUser_NoUserFound(t *testing.T) {
-	objectID := primitive.NewObjectID()
+	objectID := "12345"
 
 	m := new(dao.MockDao)
-	m.On("GetUserByID", objectID).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %v tidak ditemukan", objectID.Hex())))
+	m.On("GetUserByID", objectID).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %s tidak ditemukan", objectID)))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 	user, err := service.GetUser(objectID)
 
 	assert.Nil(t, user)
 	assert.NotNil(t, err)
-	assert.Equal(t, fmt.Sprintf("User dengan ID %v tidak ditemukan", objectID.Hex()), err.Message())
+	assert.Equal(t, fmt.Sprintf("User dengan ID %v tidak ditemukan", objectID), err.Message())
 	assert.Equal(t, http.StatusNotFound, err.Status())
 }
 
-func TestUserService_GetUserByEmail_Found(t *testing.T) {
+func TestUserService_GetUserByID_Found(t *testing.T) {
 
-	email := "whois.muchlis@gmail.com"
+	userID := "12345"
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmail", email).Return(&dto.UserResponse{
-		ID:        primitive.NewObjectID(),
-		Email:     email,
+	m.On("GetUserByID", userID).Return(&dto.UserResponse{
+		ID:        "12345",
+		Email:     "whois.muchlis@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
 		Avatar:    "",
@@ -72,7 +72,7 @@ func TestUserService_GetUserByEmail_Found(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	user, err := service.GetUserByEmail(email)
+	user, err := service.GetUserByID(userID)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Muchlis", user.Name)
@@ -80,20 +80,20 @@ func TestUserService_GetUserByEmail_Found(t *testing.T) {
 	assert.Equal(t, []string{"ADMIN"}, user.Roles)
 }
 
-func TestUserService_GetUserByEmail_NotFound(t *testing.T) {
+func TestUserService_GetUserByID_NotFound(t *testing.T) {
 
-	email := "whois.muchlis@gmail.com"
+	userID := "12345"
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmail", email).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan Email %s tidak ditemukan", email)))
+	m.On("GetUserByID", userID).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %s tidak ditemukan", userID)))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	user, err := service.GetUserByEmail(email)
+	user, err := service.GetUserByID(userID)
 
 	assert.Nil(t, user)
 	assert.NotNil(t, err)
-	assert.Equal(t, "User dengan Email whois.muchlis@gmail.com tidak ditemukan", err.Message())
+	assert.Equal(t, "User dengan ID 12345 tidak ditemukan", err.Message())
 	assert.Equal(t, http.StatusNotFound, err.Status())
 }
 
@@ -102,7 +102,7 @@ func TestUserService_FindUsers(t *testing.T) {
 	m := new(dao.MockDao)
 	m.On("FindUser").Return(dto.UserResponseList{
 		dto.UserResponse{
-			ID:        primitive.NewObjectID(),
+			ID:        "12345",
 			Email:     "whois.muchlis@gmail.com",
 			Name:      "Muchlis",
 			Roles:     []string{"ADMIN"},
@@ -117,7 +117,7 @@ func TestUserService_FindUsers(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Muchlis", usersResult[0].Name)
-	assert.Equal(t, "whois.muchlis@gmail.com", usersResult[0].Email)
+	assert.Equal(t, "12345", usersResult[0].ID)
 }
 
 func TestUserService_FindUsers_errorDatabase(t *testing.T) {
@@ -136,6 +136,7 @@ func TestUserService_FindUsers_errorDatabase(t *testing.T) {
 
 func TestUserService_InsertUser_Success(t *testing.T) {
 	userInput := dto.UserRequest{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -144,23 +145,23 @@ func TestUserService_InsertUser_Success(t *testing.T) {
 		Timestamp: time.Now().Unix(),
 	}
 
-	email := "whowho@gmail.com"
-	idResp := "5f969f62259eae481fb0e856"
+	idResp := "12345"
 
 	m := new(dao.MockDao)
 	m.On("InsertUser", mock.Anything).Return(&idResp, nil)
-	m.On("CheckEmailAvailable", email).Return(true, nil)
+	m.On("CheckIDAvailable", "12345").Return(true, nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
 	insertedId, err := service.InsertUser(userInput)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "5f969f62259eae481fb0e856", *insertedId)
+	assert.Equal(t, "12345", *insertedId)
 }
 
 func TestUserService_InsertUser_GenerateHashFailed(t *testing.T) {
 	userInput := dto.UserRequest{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -169,12 +170,11 @@ func TestUserService_InsertUser_GenerateHashFailed(t *testing.T) {
 		Timestamp: time.Now().Unix(),
 	}
 
-	email := "whowho@gmail.com"
-	idResp := "5f969f62259eae481fb0e856"
+	idResp := "12345"
 
 	m := new(dao.MockDao)
 	m.On("InsertUser", mock.Anything).Return(&idResp, nil)
-	m.On("CheckEmailAvailable", email).Return(true, nil)
+	m.On("CheckIDAvailable", idResp).Return(true, nil)
 	c := new(crypt.MockBcrypt)
 	c.On("GenerateHash", mock.Anything).Return("", rest_err.NewInternalServerError("Crypto error", nil))
 
@@ -187,8 +187,9 @@ func TestUserService_InsertUser_GenerateHashFailed(t *testing.T) {
 	assert.Equal(t, 500, err.Status())
 }
 
-func TestUserService_InsertUser_EmailNotAvailable(t *testing.T) {
+func TestUserService_InsertUser_IDNotAvailable(t *testing.T) {
 	userInput := dto.UserRequest{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -197,12 +198,12 @@ func TestUserService_InsertUser_EmailNotAvailable(t *testing.T) {
 		Timestamp: time.Now().Unix(),
 	}
 
-	email := "whowho@gmail.com"
-	idResp := "5f969f62259eae481fb0e856"
+	id := "12345"
+	idResp := "12345"
 
 	m := new(dao.MockDao)
 	m.On("InsertUser", mock.Anything).Return(&idResp, nil)
-	m.On("CheckEmailAvailable", email).Return(false, rest_err.NewBadRequestError("Email tidak tersedia"))
+	m.On("CheckIDAvailable", id).Return(false, rest_err.NewBadRequestError("ID tidak tersedia"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
@@ -210,12 +211,13 @@ func TestUserService_InsertUser_EmailNotAvailable(t *testing.T) {
 
 	assert.Nil(t, insertedId)
 	assert.NotNil(t, err)
-	assert.Equal(t, "Email tidak tersedia", err.Message())
+	assert.Equal(t, "ID tidak tersedia", err.Message())
 	assert.Equal(t, 400, err.Status())
 }
 
 func TestUserService_InsertUser_DBError(t *testing.T) {
 	userInput := dto.UserRequest{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -224,11 +226,11 @@ func TestUserService_InsertUser_DBError(t *testing.T) {
 		Timestamp: time.Now().Unix(),
 	}
 
-	email := "whowho@gmail.com"
+	userID := "12345"
 
 	m := new(dao.MockDao)
 	m.On("InsertUser", mock.Anything).Return(nil, rest_err.NewInternalServerError("Gagal menyimpan user ke database", errors.New("db error")))
-	m.On("CheckEmailAvailable", email).Return(true, nil)
+	m.On("CheckIDAvailable", userID).Return(true, nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
@@ -241,7 +243,7 @@ func TestUserService_InsertUser_DBError(t *testing.T) {
 }
 
 func TestUserService_EditUser(t *testing.T) {
-	email := "whowho@gmail.com"
+	userID := "12345"
 	userInput := dto.UserEditRequest{
 		Name:            "Muchlis",
 		Roles:           []string{"ADMIN"},
@@ -249,8 +251,8 @@ func TestUserService_EditUser(t *testing.T) {
 	}
 
 	m := new(dao.MockDao)
-	m.On("EditUser", email, userInput).Return(&dto.UserResponse{
-		ID:        primitive.ObjectID{},
+	m.On("EditUser", userID, userInput).Return(&dto.UserResponse{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -260,7 +262,7 @@ func TestUserService_EditUser(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	userResponse, err := service.EditUser(email, userInput)
+	userResponse, err := service.EditUser(userID, userInput)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Muchlis", userResponse.Name)
@@ -268,19 +270,20 @@ func TestUserService_EditUser(t *testing.T) {
 
 func TestUserService_EditUser_TimeStampNotmatch(t *testing.T) {
 
-	email := "whowho@gmail.com"
+	userID := "12345"
 	userInput := dto.UserEditRequest{
 		Name:            "Muchlis",
+		Branch:          branches.Banjarmasin,
 		Roles:           []string{"ADMIN"},
 		TimestampFilter: 0,
 	}
 
 	m := new(dao.MockDao)
-	m.On("EditUser", email, userInput).Return(nil, rest_err.NewBadRequestError("User tidak diupdate karena ID atau timestamp tidak valid"))
+	m.On("EditUser", userID, userInput).Return(nil, rest_err.NewBadRequestError("User tidak diupdate karena ID atau timestamp tidak valid"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	userResponse, err := service.EditUser(email, userInput)
+	userResponse, err := service.EditUser(userID, userInput)
 
 	assert.Nil(t, userResponse)
 	assert.NotNil(t, err)
@@ -289,25 +292,25 @@ func TestUserService_EditUser_TimeStampNotmatch(t *testing.T) {
 }
 
 func TestUserService_DeleteUser(t *testing.T) {
-	email := "whowho@gmail.com"
+	userID := "12345"
 
 	m := new(dao.MockDao)
-	m.On("DeleteUser", email).Return(nil)
+	m.On("DeleteUser", userID).Return(nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	err := service.DeleteUser("whowho@gmail.com")
+	err := service.DeleteUser("12345")
 
 	assert.Nil(t, err)
 }
 
 func TestUserService_DeleteUser_Failed(t *testing.T) {
-	email := "whowho@gmail.com"
+	userID := "12345"
 
 	m := new(dao.MockDao)
-	m.On("DeleteUser", email).Return(rest_err.NewBadRequestError("User gagal dihapus, dokumen tidak ditemukan"))
+	m.On("DeleteUser", userID).Return(rest_err.NewBadRequestError("User gagal dihapus, dokumen tidak ditemukan"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	err := service.DeleteUser("whowho@gmail.com")
+	err := service.DeleteUser(userID)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "User gagal dihapus, dokumen tidak ditemukan", err.Message())
@@ -316,13 +319,13 @@ func TestUserService_DeleteUser_Failed(t *testing.T) {
 func TestUserService_Login(t *testing.T) {
 
 	userRequest := dto.UserLoginRequest{
-		Email:    "whowho@gmail.com",
+		ID:       "12345",
 		Password: "Password",
 	}
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmailWithPassword", userRequest.Email).Return(&dto.User{
-		ID:        primitive.ObjectID{},
+	m.On("GetUserByIDWithPassword", userRequest.ID).Return(&dto.User{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -343,13 +346,13 @@ func TestUserService_Login(t *testing.T) {
 
 func TestUserService_Login_WrongPassword(t *testing.T) {
 	userRequest := dto.UserLoginRequest{
-		Email:    "whowho@gmail.com",
+		ID:       "12345",
 		Password: "salahPassword",
 	}
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmailWithPassword", userRequest.Email).Return(&dto.User{
-		ID:        primitive.ObjectID{},
+	m.On("GetUserByIDWithPassword", userRequest.ID).Return(&dto.User{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -368,12 +371,12 @@ func TestUserService_Login_WrongPassword(t *testing.T) {
 
 func TestUserService_Login_UserNotFound(t *testing.T) {
 	userRequest := dto.UserLoginRequest{
-		Email:    "notexist@gmail.com",
+		ID:       "01230123013",
 		Password: "salahPassword",
 	}
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmailWithPassword", userRequest.Email).Return(nil, rest_err.NewUnauthorizedError("Username atau password tidak valid"))
+	m.On("GetUserByIDWithPassword", userRequest.ID).Return(nil, rest_err.NewUnauthorizedError("Username atau password tidak valid"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 	userResult, err := service.Login(userRequest)
@@ -387,13 +390,13 @@ func TestUserService_Login_UserNotFound(t *testing.T) {
 func TestUserService_Login_GenerateTokenError(t *testing.T) {
 
 	userRequest := dto.UserLoginRequest{
-		Email:    "whowho@gmail.com",
+		ID:       "whowho@gmail.com",
 		Password: "Password",
 	}
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmailWithPassword", userRequest.Email).Return(&dto.User{
-		ID:        primitive.ObjectID{},
+	m.On("GetUserByIDWithPassword", userRequest.ID).Return(&dto.User{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -414,12 +417,12 @@ func TestUserService_Login_GenerateTokenError(t *testing.T) {
 
 func TestUserService_PutAvatar(t *testing.T) {
 
-	email := "whowhos@gmail.com"
+	userID := "12345"
 	filePath := "images/whowhos@gmail.com.jpg"
 
 	m := new(dao.MockDao)
-	m.On("PutAvatar", email, filePath).Return(&dto.UserResponse{
-		ID:        primitive.ObjectID{},
+	m.On("PutAvatar", userID, filePath).Return(&dto.UserResponse{
+		ID:        userID,
 		Email:     "whowhos@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -428,7 +431,7 @@ func TestUserService_PutAvatar(t *testing.T) {
 	}, nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	userResult, err := service.PutAvatar("whowhos@gmail.com", "images/whowhos@gmail.com.jpg")
+	userResult, err := service.PutAvatar("12345", "images/whowhos@gmail.com.jpg")
 
 	assert.Nil(t, err)
 	assert.Equal(t, "images/whowhos@gmail.com.jpg", userResult.Avatar)
@@ -436,30 +439,30 @@ func TestUserService_PutAvatar(t *testing.T) {
 
 func TestUserService_PutAvatar_UserNotFound(t *testing.T) {
 
-	email := "whowhos@gmail.com"
+	userID := "12345"
 	filePath := "images/whowhos@gmail.com.jpg"
 
 	m := new(dao.MockDao)
-	m.On("PutAvatar", email, filePath).Return(nil, rest_err.NewBadRequestError(fmt.Sprintf("User avatar gagal diupload, user dengan email %s tidak ditemukan", email)))
+	m.On("PutAvatar", userID, filePath).Return(nil, rest_err.NewBadRequestError(fmt.Sprintf("User avatar gagal diupload, user dengan id %s tidak ditemukan", userID)))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	userResult, err := service.PutAvatar("whowhos@gmail.com", "images/whowhos@gmail.com.jpg")
+	userResult, err := service.PutAvatar("12345", "images/whowhos@gmail.com.jpg")
 
 	assert.Nil(t, userResult)
 	assert.NotNil(t, err)
-	assert.Equal(t, "User avatar gagal diupload, user dengan email whowhos@gmail.com tidak ditemukan", err.Message())
+	assert.Equal(t, "User avatar gagal diupload, user dengan id 12345 tidak ditemukan", err.Message())
 }
 
 func TestUserService_ChangePassword_Success(t *testing.T) {
 	data := dto.UserChangePasswordRequest{
-		Email:       "whowho@gmail.com",
+		ID:          "12345",
 		Password:    "Password",
 		NewPassword: "NewPassword",
 	}
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmailWithPassword", mock.Anything).Return(&dto.User{
-		ID:        primitive.ObjectID{},
+	m.On("GetUserByIDWithPassword", mock.Anything).Return(&dto.User{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -477,14 +480,14 @@ func TestUserService_ChangePassword_Success(t *testing.T) {
 
 func TestUserService_ChangePassword_HashNewPasswordErr(t *testing.T) {
 	data := dto.UserChangePasswordRequest{
-		Email:       "whowho@gmail.com",
+		ID:          "123454",
 		Password:    "Password",
 		NewPassword: "NewPassword",
 	}
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmailWithPassword", mock.Anything).Return(&dto.User{
-		ID:        primitive.ObjectID{},
+	m.On("GetUserByIDWithPassword", mock.Anything).Return(&dto.User{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -509,7 +512,7 @@ func TestUserService_ChangePassword_HashNewPasswordErr(t *testing.T) {
 func TestUserService_ChangePassword_FailPasswordSame(t *testing.T) {
 
 	data := dto.UserChangePasswordRequest{
-		Email:       "whowho@gmail.com",
+		ID:          "12345",
 		Password:    "Password",
 		NewPassword: "Password",
 	}
@@ -524,14 +527,14 @@ func TestUserService_ChangePassword_FailPasswordSame(t *testing.T) {
 func TestUserService_ChangePassword_OldPasswordWrong(t *testing.T) {
 
 	data := dto.UserChangePasswordRequest{
-		Email:       "whowho@gmail.com",
+		ID:          "12345",
 		Password:    "salahPassword",
 		NewPassword: "NewPassword",
 	}
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmailWithPassword", mock.Anything).Return(&dto.User{
-		ID:        primitive.ObjectID{},
+	m.On("GetUserByIDWithPassword", mock.Anything).Return(&dto.User{
+		ID:        "12345",
 		Email:     "whowho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -550,12 +553,12 @@ func TestUserService_ChangePassword_OldPasswordWrong(t *testing.T) {
 
 func TestUserService_ChangePassword_EmailWrong(t *testing.T) {
 	data := dto.UserChangePasswordRequest{
-		Email:       "email.salah@gmail.com",
+		ID:          "1231241234",
 		Password:    "password",
 		NewPassword: "Password",
 	}
 	m := new(dao.MockDao)
-	m.On("GetUserByEmailWithPassword", mock.Anything).Return(nil, rest_err.NewUnauthorizedError("Username atau password tidak valid"))
+	m.On("GetUserByIDWithPassword", mock.Anything).Return(nil, rest_err.NewUnauthorizedError("Username atau password tidak valid"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 	err := service.ChangePassword(data)
@@ -566,7 +569,7 @@ func TestUserService_ChangePassword_EmailWrong(t *testing.T) {
 
 func TestUserService_ResetPassword(t *testing.T) {
 	data := dto.UserChangePasswordRequest{
-		Email:       "whowho@gmail.com",
+		ID:          "12345",
 		Password:    "",
 		NewPassword: "PasswordBaru",
 	}
@@ -582,7 +585,7 @@ func TestUserService_ResetPassword(t *testing.T) {
 
 func TestUserService_ResetPassword_EmailNotFound(t *testing.T) {
 	data := dto.UserChangePasswordRequest{
-		Email:       "emailsalah@gmail.com",
+		ID:          "12312412512",
 		Password:    "",
 		NewPassword: "PasswordBaru",
 	}
@@ -598,7 +601,7 @@ func TestUserService_ResetPassword_EmailNotFound(t *testing.T) {
 
 func TestUserService_ResetPassword_GenerateHashFailed(t *testing.T) {
 	data := dto.UserChangePasswordRequest{
-		Email:       "whowho@gmail.com",
+		ID:          "12345",
 		Password:    "",
 		NewPassword: "PasswordBaru",
 	}
@@ -622,8 +625,8 @@ func TestUserService_Refresh_Success(t *testing.T) {
 	}
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmail", mock.Anything).Return(&dto.UserResponse{
-		ID:        primitive.NewObjectID(),
+	m.On("GetUserByID", mock.Anything).Return(&dto.UserResponse{
+		ID:        "12345",
 		Email:     "whoswho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},
@@ -654,7 +657,7 @@ func TestUserService_Refresh_User_Not_Found(t *testing.T) {
 	}
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmail", mock.Anything).Return(nil, rest_err.NewNotFoundError(fmt.Sprint("User dengan Email whoswho@gmail.com tidak ditemukan")))
+	m.On("GetUserByID", mock.Anything).Return(nil, rest_err.NewNotFoundError(fmt.Sprint("User dengan Email whoswho@gmail.com tidak ditemukan")))
 	j := new(mjwt.MockJwt)
 	j.On("ValidateToken", mock.Anything).Return(&jwt.Token{}, nil)
 	j.On("ReadToken", mock.Anything).Return(&mjwt.CustomClaim{
@@ -733,8 +736,8 @@ func TestUserService_Refresh_Token_Generate_Token_Error(t *testing.T) {
 	}
 
 	m := new(dao.MockDao)
-	m.On("GetUserByEmail", mock.Anything).Return(&dto.UserResponse{
-		ID:        primitive.NewObjectID(),
+	m.On("GetUserByID", mock.Anything).Return(&dto.UserResponse{
+		ID:        "12345",
 		Email:     "whoswho@gmail.com",
 		Name:      "Muchlis",
 		Roles:     []string{"ADMIN"},

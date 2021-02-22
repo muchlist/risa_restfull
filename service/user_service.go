@@ -30,7 +30,7 @@ type UserServiceAssumer interface {
 	InsertUser(dto.UserRequest) (*string, rest_err.APIError)
 	FindUsers() (dto.UserResponseList, rest_err.APIError)
 	EditUser(userID string, userEdit dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError)
-	DeleteUser(email string) rest_err.APIError
+	DeleteUser(userID string) rest_err.APIError
 	Login(dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError)
 	Refresh(login dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError)
 	PutAvatar(userID string, fileLocation string) (*dto.UserResponse, rest_err.APIError)
@@ -194,7 +194,7 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 	}
 
 	AccessClaims := mjwt.CustomClaim{
-		Identity:    user.Email,
+		Identity:    user.ID,
 		Name:        user.Name,
 		Roles:       user.Roles,
 		Branch:      user.Branch,

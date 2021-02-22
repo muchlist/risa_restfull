@@ -81,16 +81,27 @@ func (j *jwtUtils) ReadToken(token *jwt.Token) (*CustomClaim, rest_err.APIError)
 		logger.Error("gagal mapping token atau token tidak valid", nil)
 		return nil, rest_err.NewInternalServerError("gagal mapping token", nil)
 	}
+
 	customClaim := CustomClaim{
 		Identity: claims[identityKey].(string),
 		Name:     claims[nameKey].(string),
 		Exp:      int64(claims[expKey].(float64)),
-		Roles:    claims[rolesKey].([]string),
+		Roles:    iToSliceString(claims[rolesKey]),
 		Type:     int(claims[tokenTypeKey].(float64)),
 		Fresh:    claims[freshKey].(bool),
 	}
 
 	return &customClaim, nil
+}
+
+func iToSliceString(assumedSliceInterface interface{}) []string {
+	sliceInterface := assumedSliceInterface.([]interface{})
+	sliceString := make([]string, len(sliceInterface))
+	for i, v := range sliceInterface {
+		sliceString[i] = v.(string)
+	}
+
+	return sliceString
 }
 
 //ValidateToken memvalidasi apakah token string masukan valid, termasuk memvalidasi apabila field exp nya kadaluarsa

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/muchlist/risa_restfull/constant/roles"
+	"github.com/muchlist/risa_restfull/constants/roles"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

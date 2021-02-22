@@ -64,7 +64,6 @@ func TestJwtUtils_ExpiredValidateToken(t *testing.T) {
 	assert.Equal(t, "Token tidak valid", err.Message())
 }
 
-// TODO fix this
 func TestJwtUtils_ReadToken(t *testing.T) {
 	c := CustomClaim{
 		Identity:    "muchlis@gmail.com",
