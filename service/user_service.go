@@ -68,7 +68,7 @@ func (u *userService) FindUsers() (dto.UserResponseList, rest_err.APIError) {
 //InsertUser melakukan register user
 func (u *userService) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) {
 
-	// cek ketersediaan email
+	// cek ketersediaan id
 	_, err := u.dao.CheckIDAvailable(user.ID)
 	if err != nil {
 		return nil, err

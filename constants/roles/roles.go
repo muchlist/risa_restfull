@@ -1,4 +1,4 @@
-package roles_const
+package roles
 
 const (
 	RoleAdmin   = "ADMIN"

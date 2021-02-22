@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/muchlist/risa_restfull/roles_const"
+	"github.com/muchlist/risa_restfull/constant/roles"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -9,7 +9,7 @@ import (
 func TestInSlice_success(t *testing.T) {
 	target := "ADMIN"
 
-	valid := InSlice(target, roles_const.GetRolesAvailable())
+	valid := InSlice(target, roles.GetRolesAvailable())
 
 	assert.NotNil(t, valid)
 	assert.True(t, valid)
@@ -18,7 +18,7 @@ func TestInSlice_success(t *testing.T) {
 func TestInSlice_Failed(t *testing.T) {
 	target := "NONO"
 
-	valid := InSlice(target, roles_const.GetRolesAvailable())
+	valid := InSlice(target, roles.GetRolesAvailable())
 
 	assert.NotNil(t, valid)
 	assert.False(t, valid)

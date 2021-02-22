@@ -3,8 +3,8 @@ package app
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/muchlist/risa_restfull/constants/roles"
 	"github.com/muchlist/risa_restfull/middleware"
-	"github.com/muchlist/risa_restfull/roles_const"
 )
 
 func mapUrls(app *fiber.App) {
@@ -25,7 +25,7 @@ func mapUrls(app *fiber.App) {
 	api.Post("/change-password", middleware.FreshAuth(), userHandler.ChangePassword)
 
 	apiAuthAdmin := app.Group("/api/v1/admin")
-	apiAuthAdmin.Use(middleware.NormalAuth(roles_const.RoleAdmin))
+	apiAuthAdmin.Use(middleware.NormalAuth(roles.RoleAdmin))
 	apiAuthAdmin.Post("/users", userHandler.Register)
 	apiAuthAdmin.Put("/users/:user_id", userHandler.Edit)
 	apiAuthAdmin.Delete("/users/:user_id", userHandler.Delete)

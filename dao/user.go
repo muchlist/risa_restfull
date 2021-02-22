@@ -11,16 +11,14 @@ import (
 	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/muchlist/risa_restfull/db"
 )
 
 const (
-	connectTimeout = 2
+	connectTimeout = 10
 
 	keyUserColl = "user"
 
@@ -29,6 +27,7 @@ const (
 	keyUserHashPw    = "hash_pw"
 	keyUserName      = "name"
 	keyUserRoles     = "roles"
+	keyUserBranch    = "branch"
 	keyUserAvatar    = "avatar"
 	keyUserTimeStamp = "timestamp"
 )
@@ -64,6 +63,7 @@ func (u *userDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 		{keyUserName, user.Name},
 		{keyUserEmail, strings.ToLower(user.Email)},
 		{keyUserRoles, user.Roles},
+		{keyUserBranch, user.Branch},
 		{keyUserAvatar, user.Avatar},
 		{keyUserHashPw, user.Password},
 		{keyUserTimeStamp, user.Timestamp},
@@ -76,7 +76,8 @@ func (u *userDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 		return nil, apiErr
 	}
 
-	insertID := result.InsertedID.(primitive.ObjectID).Hex()
+	//insertID := result.InsertedID.(primitive.ObjectID).Hex()
+	insertID := result.InsertedID.(string)
 
 	return &insertID, nil
 }
@@ -180,7 +181,7 @@ func (u *userDao) CheckIDAvailable(userID string) (bool, rest_err.APIError) {
 			return true, nil
 		}
 
-		logger.Error("Gagal mendapatkan user dari database", err)
+		logger.Error("Gagal mendapatkan user dari database,CheckIDAvailable", err)
 		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan user dari database", err)
 		return false, apiErr
 	}
