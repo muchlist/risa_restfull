@@ -42,14 +42,13 @@ type userDao struct {
 
 type UserDaoAssumer interface {
 	InsertUser(user dto.UserRequest) (*string, rest_err.APIError)
-	GetUserByID(userID primitive.ObjectID) (*dto.UserResponse, rest_err.APIError)
-	GetUserByEmail(email string) (*dto.UserResponse, rest_err.APIError)
-	GetUserByEmailWithPassword(email string) (*dto.User, rest_err.APIError)
+	GetUserByID(userID string) (*dto.UserResponse, rest_err.APIError)
+	GetUserByIDWithPassword(userID string) (*dto.User, rest_err.APIError)
 	FindUser() (dto.UserResponseList, rest_err.APIError)
-	CheckEmailAvailable(email string) (bool, rest_err.APIError)
-	EditUser(userEmail string, userRequest dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError)
-	DeleteUser(userEmail string) rest_err.APIError
-	PutAvatar(email string, avatar string) (*dto.UserResponse, rest_err.APIError)
+	CheckIDAvailable(email string) (bool, rest_err.APIError)
+	EditUser(userID string, userRequest dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError)
+	DeleteUser(userID string) rest_err.APIError
+	PutAvatar(userID string, avatar string) (*dto.UserResponse, rest_err.APIError)
 	ChangePassword(data dto.UserChangePasswordRequest) rest_err.APIError
 }
 
@@ -61,6 +60,7 @@ func (u *userDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 	defer cancel()
 
 	insertDoc := bson.D{
+		{keyUserID, user.ID},
 		{keyUserName, user.Name},
 		{keyUserEmail, strings.ToLower(user.Email)},
 		{keyUserRoles, user.Roles},
@@ -83,7 +83,7 @@ func (u *userDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 
 //GetUser mendapatkan user dari database berdasarkan userID, jarang digunakan
 //pada case ini biasanya menggunakan email karena user yang digunakan adalah email
-func (u *userDao) GetUserByID(userID primitive.ObjectID) (*dto.UserResponse, rest_err.APIError) {
+func (u *userDao) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIError) {
 
 	coll := db.Db.Collection(keyUserColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
@@ -93,10 +93,11 @@ func (u *userDao) GetUserByID(userID primitive.ObjectID) (*dto.UserResponse, res
 	opts := options.FindOne()
 	opts.SetProjection(bson.M{keyUserHashPw: 0})
 
-	if err := coll.FindOne(ctx, bson.M{keyUserID: userID}, opts).Decode(&user); err != nil {
+	if err := coll.FindOne(ctx, bson.M{keyUserID: strings.ToUpper(userID)}, opts).Decode(&user); err != nil {
 
 		if err == mongo.ErrNoDocuments {
-			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %v tidak ditemukan", userID.Hex()))
+			//apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %v tidak ditemukan", userID.Hex()))
+			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %s tidak ditemukan", userID))
 			return nil, apiErr
 		}
 
@@ -108,35 +109,9 @@ func (u *userDao) GetUserByID(userID primitive.ObjectID) (*dto.UserResponse, res
 	return &user, nil
 }
 
-//GetUserByEmail mendapatkan user dari database berdasarkan email
-func (u *userDao) GetUserByEmail(email string) (*dto.UserResponse, rest_err.APIError) {
-
-	coll := db.Db.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
-	defer cancel()
-
-	var user dto.UserResponse
-	opts := options.FindOne()
-	opts.SetProjection(bson.M{keyUserHashPw: 0})
-
-	if err := coll.FindOne(ctx, bson.M{keyUserEmail: strings.ToLower(email)}, opts).Decode(&user); err != nil {
-
-		if err == mongo.ErrNoDocuments {
-			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan Email %s tidak ditemukan", email))
-			return nil, apiErr
-		}
-
-		logger.Error("gagal mendapatkan user (by email) dari database", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan user dari database", err)
-		return nil, apiErr
-	}
-
-	return &user, nil
-}
-
-//GetUserByEmail mendapatkan user dari database berdasarkan email dengan memunculkan passwordhash
+//GetUserByIDWithPassword mendapatkan user dari database berdasarkan id dengan memunculkan passwordhash
 //password hash digunakan pada endpoint login dan change password
-func (u *userDao) GetUserByEmailWithPassword(email string) (*dto.User, rest_err.APIError) {
+func (u *userDao) GetUserByIDWithPassword(userID string) (*dto.User, rest_err.APIError) {
 
 	coll := db.Db.Collection(keyUserColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
@@ -144,7 +119,7 @@ func (u *userDao) GetUserByEmailWithPassword(email string) (*dto.User, rest_err.
 
 	var user dto.User
 
-	if err := coll.FindOne(ctx, bson.M{keyUserEmail: strings.ToLower(email)}).Decode(&user); err != nil {
+	if err := coll.FindOne(ctx, bson.M{keyUserID: strings.ToUpper(userID)}).Decode(&user); err != nil {
 
 		if err == mongo.ErrNoDocuments {
 			// karena sudah pasti untuk keperluan login maka error yang dikembalikan unauthorized
@@ -152,7 +127,7 @@ func (u *userDao) GetUserByEmailWithPassword(email string) (*dto.User, rest_err.
 			return nil, apiErr
 		}
 
-		logger.Error("Gagal mendapatkan user dari database (GetUserByEmailWithPassword)", err)
+		logger.Error("Gagal mendapatkan user dari database (GetUserByIDWithPassword)", err)
 		apiErr := rest_err.NewInternalServerError("Error pada database", errors.New("database error"))
 		return nil, apiErr
 	}
@@ -188,7 +163,7 @@ func (u *userDao) FindUser() (dto.UserResponseList, rest_err.APIError) {
 
 //CheckEmailAvailable melakukan pengecekan apakah alamat email sdh terdaftar di database
 //jika ada akan return false ,yang artinya email tidak available
-func (u *userDao) CheckEmailAvailable(email string) (bool, rest_err.APIError) {
+func (u *userDao) CheckIDAvailable(userID string) (bool, rest_err.APIError) {
 
 	coll := db.Db.Collection(keyUserColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
@@ -199,7 +174,7 @@ func (u *userDao) CheckEmailAvailable(email string) (bool, rest_err.APIError) {
 
 	var user dto.UserResponse
 
-	if err := coll.FindOne(ctx, bson.M{keyUserEmail: strings.ToLower(email)}, opts).Decode(&user); err != nil {
+	if err := coll.FindOne(ctx, bson.M{keyUserID: strings.ToUpper(userID)}, opts).Decode(&user); err != nil {
 
 		if err == mongo.ErrNoDocuments {
 			return true, nil
@@ -210,12 +185,12 @@ func (u *userDao) CheckEmailAvailable(email string) (bool, rest_err.APIError) {
 		return false, apiErr
 	}
 
-	apiErr := rest_err.NewBadRequestError("Email tidak tersedia")
+	apiErr := rest_err.NewBadRequestError("ID tidak tersedia")
 	return false, apiErr
 }
 
 //EditUser mengubah user, memerlukan timestamp int64 agar lebih safety pada saat pengeditan oleh dua user
-func (u *userDao) EditUser(userEmail string, userRequest dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
+func (u *userDao) EditUser(userID string, userRequest dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
 	coll := db.Db.Collection(keyUserColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -224,7 +199,7 @@ func (u *userDao) EditUser(userEmail string, userRequest dto.UserEditRequest) (*
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyUserEmail:     userEmail,
+		keyUserID:        strings.ToUpper(userID),
 		keyUserTimeStamp: userRequest.TimestampFilter,
 	}
 	update := bson.M{
@@ -250,13 +225,13 @@ func (u *userDao) EditUser(userEmail string, userRequest dto.UserEditRequest) (*
 }
 
 //DeleteUser menghapus user
-func (u *userDao) DeleteUser(userEmail string) rest_err.APIError {
+func (u *userDao) DeleteUser(userID string) rest_err.APIError {
 	coll := db.Db.Collection(keyUserColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
-		keyUserEmail: userEmail,
+		keyUserID: strings.ToUpper(userID),
 	}
 
 	result, err := coll.DeleteOne(ctx, filter)
@@ -278,7 +253,7 @@ func (u *userDao) DeleteUser(userEmail string) rest_err.APIError {
 }
 
 //PutAvatar hanya mengubah avatar berdasarkan filter email
-func (u *userDao) PutAvatar(email string, avatar string) (*dto.UserResponse, rest_err.APIError) {
+func (u *userDao) PutAvatar(userID string, avatar string) (*dto.UserResponse, rest_err.APIError) {
 	coll := db.Db.Collection(keyUserColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -287,7 +262,7 @@ func (u *userDao) PutAvatar(email string, avatar string) (*dto.UserResponse, res
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyUserEmail: email,
+		keyUserID: strings.ToUpper(userID),
 	}
 	update := bson.M{
 		"$set": bson.M{
@@ -299,7 +274,7 @@ func (u *userDao) PutAvatar(email string, avatar string) (*dto.UserResponse, res
 	var user dto.UserResponse
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&user); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("User avatar gagal diupload, user dengan email %s tidak ditemukan", email))
+			return nil, rest_err.NewBadRequestError(fmt.Sprintf("User avatar gagal diupload, user dengan id %s tidak ditemukan", userID))
 		}
 
 		logger.Error("Gagal mendapatkan user dari database", err)
@@ -317,7 +292,7 @@ func (u *userDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.AP
 	defer cancel()
 
 	filter := bson.M{
-		keyUserEmail: data.Email,
+		keyUserID: strings.ToUpper(data.ID),
 	}
 
 	update := bson.M{
@@ -330,7 +305,7 @@ func (u *userDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.AP
 	result, err := coll.UpdateOne(ctx, filter, update)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return rest_err.NewBadRequestError("Penggantian password gagal, email salah")
+			return rest_err.NewBadRequestError("Penggantian password gagal, ID salah")
 		}
 
 		logger.Error("Gagal mendapatkan user dari database (ChangePassword)", err)
@@ -339,7 +314,7 @@ func (u *userDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.AP
 	}
 
 	if result.ModifiedCount == 0 {
-		return rest_err.NewBadRequestError("Penggantian password gagal, kemungkinan email salah")
+		return rest_err.NewBadRequestError("Penggantian password gagal, kemungkinan ID salah")
 	}
 
 	return nil
