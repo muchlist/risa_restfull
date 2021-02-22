@@ -2,15 +2,12 @@ package handler
 
 import (
 	"fmt"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/gofiber/fiber/v2"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 	"path/filepath"
 )
@@ -27,11 +24,12 @@ type userHandler struct {
 
 //Get menampilkan user berdasarkan ID (bukan email)
 func (u *userHandler) Get(c *fiber.Ctx) error {
-	userID, err := primitive.ObjectIDFromHex(c.Params("user_id"))
-	if err != nil {
-		apiErr := rest_err.NewBadRequestError("Format userID salah")
-		return c.Status(apiErr.Status()).JSON(apiErr)
-	}
+	userID := c.Params("user_id")
+	//userID, err := primitive.ObjectIDFromHex(c.Params("user_id"))
+	//if err != nil {
+	//	apiErr := rest_err.NewBadRequestError("Format userID salah")
+	//	return c.Status(apiErr.Status()).JSON(apiErr)
+	//}
 
 	user, apiErr := u.service.GetUser(userID)
 	if apiErr != nil {
@@ -45,7 +43,7 @@ func (u *userHandler) Get(c *fiber.Ctx) error {
 func (u *userHandler) GetProfile(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	user, apiErr := u.service.GetUserByEmail(claims.Identity)
+	user, apiErr := u.service.GetUserByID(claims.Identity)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
@@ -90,13 +88,13 @@ func (u *userHandler) Find(c *fiber.Ctx) error {
 //Edit mengedit user oleh admin
 func (u *userHandler) Edit(c *fiber.Ctx) error {
 
-	email := c.Params("user_email")
-	if err := validation.Validate(email,
-		is.Email,
-	); err != nil {
-		apiErr := rest_err.NewBadRequestError(err.Error())
-		return c.Status(apiErr.Status()).JSON(apiErr)
-	}
+	userID := c.Params("user_id")
+	//if err := validation.Validate(userID,
+	//	is.Email,
+	//); err != nil {
+	//	apiErr := rest_err.NewBadRequestError(err.Error())
+	//	return c.Status(apiErr.Status()).JSON(apiErr)
+	//}
 
 	var user dto.UserEditRequest
 	if err := c.BodyParser(&user); err != nil {
@@ -109,7 +107,7 @@ func (u *userHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	userEdited, apiErr := u.service.EditUser(email, user)
+	userEdited, apiErr := u.service.EditUser(userID, user)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
@@ -121,19 +119,19 @@ func (u *userHandler) Edit(c *fiber.Ctx) error {
 func (u *userHandler) Delete(c *fiber.Ctx) error {
 
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
-	emailParams := c.Params("user_email")
+	userIDParams := c.Params("user_id")
 
-	if claims.Identity == emailParams {
+	if claims.Identity == userIDParams {
 		apiErr := rest_err.NewBadRequestError("Tidak dapat menghapus akun terkait (diri sendiri)!")
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	apiErr := u.service.DeleteUser(emailParams)
+	apiErr := u.service.DeleteUser(userIDParams)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	return c.JSON(fiber.Map{"msg": fmt.Sprintf("user %s berhasil dihapus", emailParams)})
+	return c.JSON(fiber.Map{"msg": fmt.Sprintf("user %s berhasil dihapus", userIDParams)})
 }
 
 //ChangePassword mengganti password pada user sendiri
@@ -152,8 +150,8 @@ func (u *userHandler) ChangePassword(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	//mengganti user email dengan user aktif
-	user.Email = claims.Identity
+	//mengganti user id dengan user aktif
+	user.ID = claims.Identity
 
 	apiErr := u.service.ChangePassword(user)
 	if apiErr != nil {
@@ -166,16 +164,10 @@ func (u *userHandler) ChangePassword(c *fiber.Ctx) error {
 //ResetPassword mengganti password oleh admin pada user tertentu
 func (u *userHandler) ResetPassword(c *fiber.Ctx) error {
 
-	email := c.Params("user_email")
-	if err := validation.Validate(email,
-		is.Email,
-	); err != nil {
-		apiErr := rest_err.NewBadRequestError(err.Error())
-		return c.Status(apiErr.Status()).JSON(apiErr)
-	}
+	userID := c.Params("user_id")
 
 	data := dto.UserChangePasswordRequest{
-		Email:       email,
+		ID:          userID,
 		NewPassword: "Password",
 	}
 
@@ -184,7 +176,7 @@ func (u *userHandler) ResetPassword(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	return c.JSON(fiber.Map{"msg": fmt.Sprintf("Password user %s berhasil di reset!", c.Params("user_email"))})
+	return c.JSON(fiber.Map{"msg": fmt.Sprintf("Password user %s berhasil di reset!", c.Params("user_id"))})
 }
 
 //Login login

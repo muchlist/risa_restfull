@@ -52,7 +52,8 @@ func (u UserEditRequest) Validate() error {
 //Validate input
 func (u UserLoginRequest) Validate() error {
 	return validation.ValidateStruct(&u,
-		validation.Field(&u.Email, validation.Required, is.Email),
+		//validation.Field(&u.Email, validation.Required, is.Email),
+		validation.Field(&u.ID, validation.Required),
 		validation.Field(&u.Password, validation.Required, validation.Length(3, 20)),
 	)
 }
