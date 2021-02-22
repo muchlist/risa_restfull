@@ -27,8 +27,8 @@ func mapUrls(app *fiber.App) {
 	apiAuthAdmin := app.Group("/api/v1/admin")
 	apiAuthAdmin.Use(middleware.NormalAuth(roles_const.RoleAdmin))
 	apiAuthAdmin.Post("/users", userHandler.Register)
-	apiAuthAdmin.Put("/users/:user_email", userHandler.Edit)
-	apiAuthAdmin.Delete("/users/:user_email", userHandler.Delete)
-	apiAuthAdmin.Get("/users/:user_email/reset-password", userHandler.ResetPassword)
+	apiAuthAdmin.Put("/users/:user_id", userHandler.Edit)
+	apiAuthAdmin.Delete("/users/:user_id", userHandler.Delete)
+	apiAuthAdmin.Get("/users/:user_id/reset-password", userHandler.ResetPassword)
 
 }
