@@ -28,6 +28,13 @@ type AllUnitRequest struct {
 	Branch   string `json:"branch" bson:"branch"`
 }
 
+type AllUnitFilter struct {
+	Branch   string
+	Name     string
+	Category string
+	IP       string
+}
+
 type AllUnitEditRequest struct {
 	Category string `json:"category" bson:"category"`
 	Name     string `json:"name" bson:"name"`

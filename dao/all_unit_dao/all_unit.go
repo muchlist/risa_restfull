@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strings"
 	"time"
 )
 
@@ -41,8 +42,8 @@ type AllUnitDaoAssumer interface {
 	GetUnitByID(unitID string) (*dto.AllUnitResponse, rest_err.APIError)
 	EditUnit(unitID string, unitRequest dto.AllUnitEditRequest) (*dto.AllUnitResponse, rest_err.APIError)
 	DeleteUnit(unitID string) rest_err.APIError
+	FindUnit(filter dto.AllUnitFilter) (dto.AllUnitResponseList, rest_err.APIError)
 
-	//FindUser() (dto.UserResponseList, rest_err.APIError)
 	//insertCase
 	//deleteCase
 	//insertPing
@@ -52,6 +53,8 @@ func (u *allUnitDao) InsertUnit(unit dto.AllUnitRequest) (*string, rest_err.APIE
 	coll := db.Db.Collection(keyAllUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
+
+	unit.Name = strings.ToUpper(unit.Name)
 
 	insertDoc := bson.D{
 		{keyAllID, unit.ID},
@@ -104,6 +107,8 @@ func (u *allUnitDao) EditUnit(unitID string, unitRequest dto.AllUnitEditRequest)
 	coll := db.Db.Collection(keyAllUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
+
+	unitRequest.Name = strings.ToUpper(unitRequest.Name)
 
 	opts := options.FindOneAndUpdate()
 	opts.SetReturnDocument(1)
@@ -160,4 +165,44 @@ func (u *allUnitDao) DeleteUnit(unitID string) rest_err.APIError {
 	}
 
 	return nil
+}
+
+func (u *allUnitDao) FindUnit(filterInput dto.AllUnitFilter) (dto.AllUnitResponseList, rest_err.APIError) {
+	coll := db.Db.Collection(keyAllUnitColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	filterInput.Name = strings.ToUpper(filterInput.Name)
+
+	filter := bson.M{
+		keyAllBranch: filterInput.Branch,
+	}
+	if filterInput.Category != "" {
+		filter[keyAllCategory] = filterInput.Category
+	}
+	if filterInput.Name != "" {
+		filter[keyAllName] = filterInput.Name
+	}
+	if filterInput.IP != "" {
+		filter[keyAllIP] = filterInput.IP
+	}
+
+	opts := options.Find()
+	opts.SetSort(bson.D{{keyAllName, 1}})
+	sortCursor, err := coll.Find(ctx, filter, opts)
+
+	if err != nil {
+		logger.Error("Gagal mendapatkan unit dari database (FindUnit)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.AllUnitResponseList{}, apiErr
+	}
+
+	units := dto.AllUnitResponseList{}
+	if err = sortCursor.All(ctx, &units); err != nil {
+		logger.Error("Gagal decode unitsCursor ke objek slice (FindUnit)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.AllUnitResponseList{}, apiErr
+	}
+
+	return units, nil
 }
