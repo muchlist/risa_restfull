@@ -1,4 +1,4 @@
-package all_unit
+package gen_unit_dao
 
 import (
 	"context"
@@ -33,28 +33,26 @@ const (
 	keyCaseNote = "case_note"
 )
 
-func AllUnitDao() AllUnitDaoAssumer {
-	return &allUnitDao{}
+func GenUnitDao() GenUnitDaoAssumer {
+	return &genUnitDao{}
 }
 
-type allUnitDao struct {
+type genUnitDao struct {
 }
 
-type AllUnitDaoAssumer interface {
+type GenUnitDaoAssumer interface {
 	InsertUnit(unit dto.GenUnitRequest) (*string, rest_err.APIError)
-	GetUnitByID(unitID string) (*dto.GenUnitResponse, rest_err.APIError)
 	EditUnit(unitID string, unitRequest dto.GenUnitEditRequest) (*dto.GenUnitResponse, rest_err.APIError)
 	DeleteUnit(unitID string) rest_err.APIError
-	FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError)
-
 	InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError)
 	DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError)
-	//insertCase
-	//deleteCase
 	//insertPing
+
+	GetUnitByID(unitID string) (*dto.GenUnitResponse, rest_err.APIError)
+	FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError)
 }
 
-func (u *allUnitDao) InsertUnit(unit dto.GenUnitRequest) (*string, rest_err.APIError) {
+func (u *genUnitDao) InsertUnit(unit dto.GenUnitRequest) (*string, rest_err.APIError) {
 	coll := db.Db.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -85,30 +83,7 @@ func (u *allUnitDao) InsertUnit(unit dto.GenUnitRequest) (*string, rest_err.APIE
 	return &insertID, nil
 }
 
-func (u *allUnitDao) GetUnitByID(unitID string) (*dto.GenUnitResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
-	defer cancel()
-
-	var unit dto.GenUnitResponse
-	opts := options.FindOne()
-
-	if err := coll.FindOne(ctx, bson.M{keyGenID: unitID}, opts).Decode(&unit); err != nil {
-
-		if err == mongo.ErrNoDocuments {
-			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Unit dengan ID %s tidak ditemukan", unitID))
-			return nil, apiErr
-		}
-
-		logger.Error("gagal mendapatkan unit dari database (GetUnitByID)", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
-		return nil, apiErr
-	}
-
-	return &unit, nil
-}
-
-func (u *allUnitDao) EditUnit(unitID string, unitRequest dto.GenUnitEditRequest) (*dto.GenUnitResponse, rest_err.APIError) {
+func (u *genUnitDao) EditUnit(unitID string, unitRequest dto.GenUnitEditRequest) (*dto.GenUnitResponse, rest_err.APIError) {
 	coll := db.Db.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -145,7 +120,7 @@ func (u *allUnitDao) EditUnit(unitID string, unitRequest dto.GenUnitEditRequest)
 	return &unit, nil
 }
 
-func (u *allUnitDao) DeleteUnit(unitID string) rest_err.APIError {
+func (u *genUnitDao) DeleteUnit(unitID string) rest_err.APIError {
 	coll := db.Db.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -172,7 +147,106 @@ func (u *allUnitDao) DeleteUnit(unitID string) rest_err.APIError {
 	return nil
 }
 
-func (u *allUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError) {
+func (u *genUnitDao) InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError) {
+	coll := db.Db.Collection(keyGenUnitColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	payload.FilterBranch = strings.ToUpper(payload.FilterBranch)
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyGenID:     payload.ID,
+		keyGenBranch: payload.FilterBranch,
+	}
+
+	update := bson.M{
+		"$push": bson.M{
+			keyGenCases: bson.M{keyCaseID: payload.CaseID, keyCaseNote: payload.CaseNote},
+		},
+		"$inc": bson.M{
+			keyGenCasesSize: 1,
+		},
+	}
+
+	var unit dto.GenUnitResponse
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID atau timestamp tidak valid")
+		}
+
+		logger.Error("Gagal mendapatkan unit dari database (InsertCase)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
+		return nil, apiErr
+	}
+
+	return &unit, nil
+}
+
+func (u *genUnitDao) DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError) {
+	coll := db.Db.Collection(keyGenUnitColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	payload.FilterBranch = strings.ToUpper(payload.FilterBranch)
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyGenID:     payload.ID,
+		keyGenBranch: payload.FilterBranch,
+	}
+
+	update := bson.M{
+		"$pull": bson.M{
+			keyGenCases: bson.M{keyCaseID: payload.CaseID},
+		},
+		"$inc": bson.M{
+			keyGenCasesSize: -1,
+		},
+	}
+
+	var unit dto.GenUnitResponse
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID atau timestamp tidak valid")
+		}
+
+		logger.Error("Gagal mendapatkan unit dari database (InsertCase)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
+		return nil, apiErr
+	}
+
+	return &unit, nil
+}
+
+func (u *genUnitDao) GetUnitByID(unitID string) (*dto.GenUnitResponse, rest_err.APIError) {
+	coll := db.Db.Collection(keyGenUnitColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	var unit dto.GenUnitResponse
+	opts := options.FindOne()
+
+	if err := coll.FindOne(ctx, bson.M{keyGenID: unitID}, opts).Decode(&unit); err != nil {
+
+		if err == mongo.ErrNoDocuments {
+			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Unit dengan ID %s tidak ditemukan", unitID))
+			return nil, apiErr
+		}
+
+		logger.Error("gagal mendapatkan unit dari database (GetUnitByID)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
+		return nil, apiErr
+	}
+
+	return &unit, nil
+}
+
+func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError) {
 	coll := db.Db.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -211,80 +285,4 @@ func (u *allUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 	}
 
 	return units, nil
-}
-
-func (u *allUnitDao) InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
-	defer cancel()
-
-	payload.FilterBranch = strings.ToUpper(payload.FilterBranch)
-
-	opts := options.FindOneAndUpdate()
-	opts.SetReturnDocument(1)
-
-	filter := bson.M{
-		keyGenID:     payload.ID,
-		keyGenBranch: payload.FilterBranch,
-	}
-
-	update := bson.M{
-		"$push": bson.M{
-			keyGenCases: bson.M{keyCaseID: payload.CaseID, keyCaseNote: payload.CaseNote},
-		},
-		"$inc": bson.M{
-			keyGenCasesSize: 1,
-		},
-	}
-
-	var unit dto.GenUnitResponse
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID atau timestamp tidak valid")
-		}
-
-		logger.Error("Gagal mendapatkan unit dari database (InsertCase)", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
-		return nil, apiErr
-	}
-
-	return &unit, nil
-}
-
-func (u *allUnitDao) DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
-	defer cancel()
-
-	payload.FilterBranch = strings.ToUpper(payload.FilterBranch)
-
-	opts := options.FindOneAndUpdate()
-	opts.SetReturnDocument(1)
-
-	filter := bson.M{
-		keyGenID:     payload.ID,
-		keyGenBranch: payload.FilterBranch,
-	}
-
-	update := bson.M{
-		"$pull": bson.M{
-			keyGenCases: bson.M{keyCaseID: payload.CaseID},
-		},
-		"$inc": bson.M{
-			keyGenCasesSize: -1,
-		},
-	}
-
-	var unit dto.GenUnitResponse
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID atau timestamp tidak valid")
-		}
-
-		logger.Error("Gagal mendapatkan unit dari database (InsertCase)", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
-		return nil, apiErr
-	}
-
-	return &unit, nil
 }
