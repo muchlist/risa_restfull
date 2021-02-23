@@ -66,26 +66,25 @@ func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIErro
 	input.Branch = strings.ToUpper(input.Branch)
 	input.Category = strings.ToUpper(input.Category)
 
-	insertDoc := bson.D{
-		{keyHistID, input.ID},
-		{keyHistCreatedAt, input.CreatedAt},
-		{keyHistCreatedBy, input.CreatedBy},
-		{keyHistCreatedByID, input.CreatedByID},
-		{keyHistID, input.ID},
-		{keyHistUpdatedAt, input.UpdatedAt},
-		{keyHistUpdatedBy, input.UpdatedBy},
-		{keyHistUpdatedByID, input.UpdatedByID},
-		{keyHistBranch, input.Branch},
-		{keyHistCategory, input.Category},
-		{keyHistParentID, input.ParentID},
-		{keyHistParentName, input.ParentName},
-		{keyHistStatus, input.Status},
-		{keyHistProblem, input.Problem},
-		{keyHistProblemResolve, input.ProblemResolve},
-		{keyHistCompleteStatus, input.CompleteStatus},
-		{keyHistDateStart, input.DateStart},
-		{keyHistDateEnd, input.DateEnd},
-		{keyHistTag, input.Tag},
+	insertDoc := bson.M{
+		keyHistID:             input.ID,
+		keyHistCreatedAt:      input.CreatedAt,
+		keyHistCreatedBy:      input.CreatedBy,
+		keyHistCreatedByID:    input.CreatedByID,
+		keyHistUpdatedAt:      input.UpdatedAt,
+		keyHistUpdatedBy:      input.UpdatedBy,
+		keyHistUpdatedByID:    input.UpdatedByID,
+		keyHistBranch:         input.Branch,
+		keyHistCategory:       input.Category,
+		keyHistParentID:       input.ParentID,
+		keyHistParentName:     input.ParentName,
+		keyHistStatus:         input.Status,
+		keyHistProblem:        input.Problem,
+		keyHistProblemResolve: input.ProblemResolve,
+		keyHistCompleteStatus: input.CompleteStatus,
+		keyHistDateStart:      input.DateStart,
+		keyHistDateEnd:        input.DateEnd,
+		keyHistTag:            input.Tag,
 	}
 
 	result, err := coll.InsertOne(ctx, insertDoc)
