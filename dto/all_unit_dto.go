@@ -20,6 +20,14 @@ type AllUnit struct {
 	LastPing   string      `json:"last_ping,omitempty" bson:"last_ping,omitempty"`
 }
 
+type AllUnitRequest struct {
+	ID       string `json:"id,omitempty" bson:"_id,omitempty"`
+	Category string `json:"category" bson:"category"`
+	Name     string `json:"name" bson:"name"`
+	IP       string `json:"ip" bson:"ip"`
+	Branch   string `json:"branch" bson:"branch"`
+}
+
 //AllUnitResponseList tipe slice dari AllUnitResponse
 type AllUnitResponseList []AllUnitResponse
 
