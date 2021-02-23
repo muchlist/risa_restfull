@@ -5,11 +5,24 @@ Restfull Backend for Risa Aplication Pelindo III using Golang (Fiber) and MongoD
 ## Dependency lokal
 
 - [ErruUtils](https://github.com/muchlist/erru_utils_go/)  
-  Library ini digunakan untuk memformat response error dan logger sehingga response error memiliki format yang standart di setiap service (berguna jika akan mengimplementasikan microservice).
+  Library ini digunakan untuk memformat response error dan logger sehingga response error memiliki format yang standart
+  di setiap service (berguna jika akan mengimplementasikan microservice).
 
 ## Dependency pihak ketiga
 
-- [Go Fiber Framework](https://github.com/gofiber/fiber/) : Web framework golang yang memiliki kemiripan dengan express js dan menggunakan fast-http (tidak berbeda jauh dengan gin dan echo).
+- [Go Fiber Framework](https://github.com/gofiber/fiber/) : Web framework golang yang memiliki kemiripan dengan express
+  js dan menggunakan fast-http (tidak berbeda jauh dengan gin dan echo).
 - [Mongo go driver](https://go.mongodb.org/mongo-driver/) : Saat ini service ini full menggunakan MongoDB.
 - [JWT go](https://github.com/dgrijalva/jwt-go/)
-- [Ozzo validation](https://github.com/go-ozzo/ozzo-validation/) : Library yang digunakan untuk validasi request body dari user. (Karena Go Fiber tidak memiliki input validasi seperti Binding di Gin)
+- [Ozzo validation](https://github.com/go-ozzo/ozzo-validation/) : Library yang digunakan untuk validasi request body
+  dari user. (Karena Go Fiber tidak memiliki input validasi seperti Binding di Gin)
+
+## LOG
+
+- `all_unit` domain. `all_unit` digunakan untuk meng-collect semua perangkat dengan hanya menyimpan data umumnya saja
+  dan meninggalkan data detil.
+  `all_unit` dibuat karena ada permintaan dari client agar semua perangkat dapat dicari menggunakan satu buah kolom
+  pencarian tanpa harus memilih kategori. Semakin banyak data akan semakin lambat sehingga kedepan akan diganti
+  menggunakan database elasticsearch. domain ini tidak bersentuhan secara langsung dengan user dari segi inputan.
+  updatenya akan dilakukan dibelakang layar berasarkan : pembuatan perangkat pada kategori apapun, pengeditan jika nama,
+  ip , category, cabang berubah. dan penghapusan. serta ada update pada history/incident.

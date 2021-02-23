@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	connectTimeout = 10
+	connectTimeout = 3
 
 	keyUserColl = "user"
 
