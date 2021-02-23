@@ -13,7 +13,7 @@ import (
 func roleValidation(rolesIn []string) error {
 	if len(rolesIn) > 0 {
 		if !utils.ValueInSliceIsAvailable(rolesIn, roles.GetRolesAvailable()) {
-			return errors.New(fmt.Sprintf("the role entered is not available. use %s", roles.GetRolesAvailable()))
+			return errors.New(fmt.Sprintf("role yang dimasukkan tidak tersedia. gunakan %s", roles.GetRolesAvailable()))
 		}
 	}
 	return nil
@@ -22,7 +22,7 @@ func roleValidation(rolesIn []string) error {
 func branchValidation(branch string) error {
 
 	if !utils.InSlice(branch, branches.GetBranchesAvailable()) {
-		return errors.New(fmt.Sprintf("the branch entered is not available. use %s", branches.GetBranchesAvailable()))
+		return errors.New(fmt.Sprintf("branch yang dimasukkan tidak tersedia. gunakan %s", branches.GetBranchesAvailable()))
 	}
 
 	return nil
