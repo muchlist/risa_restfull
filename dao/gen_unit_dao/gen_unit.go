@@ -33,7 +33,7 @@ const (
 	keyCaseNote = "case_note"
 )
 
-func GenUnitDao() GenUnitDaoAssumer {
+func NewGenUnitDao() GenUnitDaoAssumer {
 	return &genUnitDao{}
 }
 

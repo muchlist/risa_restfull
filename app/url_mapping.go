@@ -31,4 +31,6 @@ func mapUrls(app *fiber.App) {
 	apiAuthAdmin.Delete("/users/:user_id", userHandler.Delete)
 	apiAuthAdmin.Get("/users/:user_id/reset-password", userHandler.ResetPassword)
 
+	api.Get("/general", middleware.NormalAuth(), genUnitHandler.Find)
+
 }
