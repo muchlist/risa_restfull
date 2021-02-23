@@ -17,7 +17,7 @@ type genUnitHandler struct {
 	service service.GenUnitServiceAssumer
 }
 
-//Find menampilkan list unit
+//Find menampilkan list unit. Query name, category, ip
 func (u *genUnitHandler) Find(c *fiber.Ctx) error {
 
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)

@@ -8,7 +8,6 @@ import (
 	"github.com/muchlist/risa_restfull/db"
 	"github.com/muchlist/risa_restfull/dto"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"strings"
@@ -17,7 +16,7 @@ import (
 
 const (
 	connectTimeout = 3
-	keyGenUnitColl = "allUnit"
+	keyGenUnitColl = "genUnit"
 
 	keyGenID        = "_id"
 	keyGenCategory  = "category"
@@ -78,7 +77,7 @@ func (u *genUnitDao) InsertUnit(unit dto.GenUnitRequest) (*string, rest_err.APIE
 		return nil, apiErr
 	}
 
-	insertID := result.InsertedID.(primitive.ObjectID).Hex()
+	insertID := result.InsertedID.(string)
 
 	return &insertID, nil
 }
