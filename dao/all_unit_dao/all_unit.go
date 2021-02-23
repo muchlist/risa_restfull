@@ -173,6 +173,7 @@ func (u *allUnitDao) FindUnit(filterInput dto.AllUnitFilter) (dto.AllUnitRespons
 	defer cancel()
 
 	filterInput.Name = strings.ToUpper(filterInput.Name)
+	filterInput.Category = strings.ToUpper(filterInput.Category)
 
 	filter := bson.M{
 		keyAllBranch: filterInput.Branch,
