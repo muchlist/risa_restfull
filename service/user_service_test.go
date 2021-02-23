@@ -6,7 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/branches"
-	"github.com/muchlist/risa_restfull/dao"
+	"github.com/muchlist/risa_restfull/dao/user_dao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/crypt"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
@@ -21,7 +21,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 
 	userID := "12345"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByID", userID).Return(&dto.UserResponse{
 		ID:        userID,
 		Email:     "whois.muchlis@gmail.com",
@@ -44,7 +44,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 func TestUserService_GetUser_NoUserFound(t *testing.T) {
 	objectID := "12345"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByID", objectID).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %s tidak ditemukan", objectID)))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
@@ -60,7 +60,7 @@ func TestUserService_GetUserByID_Found(t *testing.T) {
 
 	userID := "12345"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByID", userID).Return(&dto.UserResponse{
 		ID:        "12345",
 		Email:     "whois.muchlis@gmail.com",
@@ -84,7 +84,7 @@ func TestUserService_GetUserByID_NotFound(t *testing.T) {
 
 	userID := "12345"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByID", userID).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %s tidak ditemukan", userID)))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
@@ -99,7 +99,7 @@ func TestUserService_GetUserByID_NotFound(t *testing.T) {
 
 func TestUserService_FindUsers(t *testing.T) {
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("FindUser").Return(dto.UserResponseList{
 		dto.UserResponse{
 			ID:        "12345",
@@ -121,7 +121,7 @@ func TestUserService_FindUsers(t *testing.T) {
 }
 
 func TestUserService_FindUsers_errorDatabase(t *testing.T) {
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("FindUser").Return(dto.UserResponseList(nil), rest_err.NewInternalServerError("Database error", nil))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
@@ -147,7 +147,7 @@ func TestUserService_InsertUser_Success(t *testing.T) {
 
 	idResp := "12345"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("InsertUser", mock.Anything).Return(&idResp, nil)
 	m.On("CheckIDAvailable", "12345").Return(true, nil)
 
@@ -172,7 +172,7 @@ func TestUserService_InsertUser_GenerateHashFailed(t *testing.T) {
 
 	idResp := "12345"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("InsertUser", mock.Anything).Return(&idResp, nil)
 	m.On("CheckIDAvailable", idResp).Return(true, nil)
 	c := new(crypt.MockBcrypt)
@@ -201,7 +201,7 @@ func TestUserService_InsertUser_IDNotAvailable(t *testing.T) {
 	id := "12345"
 	idResp := "12345"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("InsertUser", mock.Anything).Return(&idResp, nil)
 	m.On("CheckIDAvailable", id).Return(false, rest_err.NewBadRequestError("ID tidak tersedia"))
 
@@ -228,7 +228,7 @@ func TestUserService_InsertUser_DBError(t *testing.T) {
 
 	userID := "12345"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("InsertUser", mock.Anything).Return(nil, rest_err.NewInternalServerError("Gagal menyimpan user ke database", errors.New("db error")))
 	m.On("CheckIDAvailable", userID).Return(true, nil)
 
@@ -250,7 +250,7 @@ func TestUserService_EditUser(t *testing.T) {
 		TimestampFilter: 0,
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("EditUser", userID, userInput).Return(&dto.UserResponse{
 		ID:        "12345",
 		Email:     "whowho@gmail.com",
@@ -278,7 +278,7 @@ func TestUserService_EditUser_TimeStampNotmatch(t *testing.T) {
 		TimestampFilter: 0,
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("EditUser", userID, userInput).Return(nil, rest_err.NewBadRequestError("User tidak diupdate karena ID atau timestamp tidak valid"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
@@ -294,7 +294,7 @@ func TestUserService_EditUser_TimeStampNotmatch(t *testing.T) {
 func TestUserService_DeleteUser(t *testing.T) {
 	userID := "12345"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("DeleteUser", userID).Return(nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
@@ -306,7 +306,7 @@ func TestUserService_DeleteUser(t *testing.T) {
 func TestUserService_DeleteUser_Failed(t *testing.T) {
 	userID := "12345"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("DeleteUser", userID).Return(rest_err.NewBadRequestError("User gagal dihapus, dokumen tidak ditemukan"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
@@ -323,7 +323,7 @@ func TestUserService_Login(t *testing.T) {
 		Password: "Password",
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByIDWithPassword", userRequest.ID).Return(&dto.User{
 		ID:        "12345",
 		Email:     "whowho@gmail.com",
@@ -350,7 +350,7 @@ func TestUserService_Login_WrongPassword(t *testing.T) {
 		Password: "salahPassword",
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByIDWithPassword", userRequest.ID).Return(&dto.User{
 		ID:        "12345",
 		Email:     "whowho@gmail.com",
@@ -375,7 +375,7 @@ func TestUserService_Login_UserNotFound(t *testing.T) {
 		Password: "salahPassword",
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByIDWithPassword", userRequest.ID).Return(nil, rest_err.NewUnauthorizedError("Username atau password tidak valid"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
@@ -394,7 +394,7 @@ func TestUserService_Login_GenerateTokenError(t *testing.T) {
 		Password: "Password",
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByIDWithPassword", userRequest.ID).Return(&dto.User{
 		ID:        "12345",
 		Email:     "whowho@gmail.com",
@@ -420,7 +420,7 @@ func TestUserService_PutAvatar(t *testing.T) {
 	userID := "12345"
 	filePath := "images/whowhos@gmail.com.jpg"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("PutAvatar", userID, filePath).Return(&dto.UserResponse{
 		ID:        userID,
 		Email:     "whowhos@gmail.com",
@@ -442,7 +442,7 @@ func TestUserService_PutAvatar_UserNotFound(t *testing.T) {
 	userID := "12345"
 	filePath := "images/whowhos@gmail.com.jpg"
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("PutAvatar", userID, filePath).Return(nil, rest_err.NewBadRequestError(fmt.Sprintf("User avatar gagal diupload, user dengan id %s tidak ditemukan", userID)))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
@@ -460,7 +460,7 @@ func TestUserService_ChangePassword_Success(t *testing.T) {
 		NewPassword: "NewPassword",
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByIDWithPassword", mock.Anything).Return(&dto.User{
 		ID:        "12345",
 		Email:     "whowho@gmail.com",
@@ -485,7 +485,7 @@ func TestUserService_ChangePassword_HashNewPasswordErr(t *testing.T) {
 		NewPassword: "NewPassword",
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByIDWithPassword", mock.Anything).Return(&dto.User{
 		ID:        "12345",
 		Email:     "whowho@gmail.com",
@@ -516,7 +516,7 @@ func TestUserService_ChangePassword_FailPasswordSame(t *testing.T) {
 		Password:    "Password",
 		NewPassword: "Password",
 	}
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 	err := service.ChangePassword(data)
 
@@ -532,7 +532,7 @@ func TestUserService_ChangePassword_OldPasswordWrong(t *testing.T) {
 		NewPassword: "NewPassword",
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByIDWithPassword", mock.Anything).Return(&dto.User{
 		ID:        "12345",
 		Email:     "whowho@gmail.com",
@@ -557,7 +557,7 @@ func TestUserService_ChangePassword_EmailWrong(t *testing.T) {
 		Password:    "password",
 		NewPassword: "Password",
 	}
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByIDWithPassword", mock.Anything).Return(nil, rest_err.NewUnauthorizedError("Username atau password tidak valid"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
@@ -574,7 +574,7 @@ func TestUserService_ResetPassword(t *testing.T) {
 		NewPassword: "PasswordBaru",
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("ChangePassword", mock.Anything).Return(nil)
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
@@ -589,7 +589,7 @@ func TestUserService_ResetPassword_EmailNotFound(t *testing.T) {
 		Password:    "",
 		NewPassword: "PasswordBaru",
 	}
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("ChangePassword", mock.Anything).Return(rest_err.NewBadRequestError("Penggantian password gagal, email salah"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
@@ -606,7 +606,7 @@ func TestUserService_ResetPassword_GenerateHashFailed(t *testing.T) {
 		NewPassword: "PasswordBaru",
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("ChangePassword", mock.Anything).Return(nil)
 	c := new(crypt.MockBcrypt)
 	c.On("GenerateHash", data.NewPassword).Return("", rest_err.NewInternalServerError("Crypto error", nil))
@@ -624,7 +624,7 @@ func TestUserService_Refresh_Success(t *testing.T) {
 		Limit: 5,
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByID", mock.Anything).Return(&dto.UserResponse{
 		ID:        "12345",
 		Email:     "whoswho@gmail.com",
@@ -656,7 +656,7 @@ func TestUserService_Refresh_User_Not_Found(t *testing.T) {
 		Limit: 5,
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByID", mock.Anything).Return(nil, rest_err.NewNotFoundError(fmt.Sprint("User dengan Email whoswho@gmail.com tidak ditemukan")))
 	j := new(mjwt.MockJwt)
 	j.On("ValidateToken", mock.Anything).Return(&jwt.Token{}, nil)
@@ -678,7 +678,7 @@ func TestUserService_Refresh_Token_Not_Valid(t *testing.T) {
 		Limit: 5,
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	j := new(mjwt.MockJwt)
 	j.On("ValidateToken", mock.Anything).Return(nil, rest_err.NewAPIError("Token signing method salah", http.StatusUnprocessableEntity, "jwt_error", nil))
 	service := NewUserService(m, crypt.NewCrypto(), j)
@@ -695,7 +695,7 @@ func TestUserService_Refresh_Token_Read_Error(t *testing.T) {
 		Limit: 5,
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	j := new(mjwt.MockJwt)
 	j.On("ValidateToken", mock.Anything).Return(&jwt.Token{}, nil)
 	j.On("ReadToken", mock.Anything).Return(nil, rest_err.NewInternalServerError("gagal mapping token", nil))
@@ -714,7 +714,7 @@ func TestUserService_Refresh_Token_Not_Refresh_Token(t *testing.T) {
 		Limit: 1000000,
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	j := new(mjwt.MockJwt)
 	j.On("ValidateToken", mock.Anything).Return(&jwt.Token{}, nil)
 	j.On("ReadToken", mock.Anything).Return(&mjwt.CustomClaim{
@@ -735,7 +735,7 @@ func TestUserService_Refresh_Token_Generate_Token_Error(t *testing.T) {
 		Limit: 1000000,
 	}
 
-	m := new(dao.MockDao)
+	m := new(user_dao.MockDao)
 	m.On("GetUserByID", mock.Anything).Return(&dto.UserResponse{
 		ID:        "12345",
 		Email:     "whoswho@gmail.com",

@@ -28,6 +28,13 @@ type AllUnitRequest struct {
 	Branch   string `json:"branch" bson:"branch"`
 }
 
+type AllUnitEditRequest struct {
+	Category string `json:"category" bson:"category"`
+	Name     string `json:"name" bson:"name"`
+	IP       string `json:"ip" bson:"ip"`
+	Branch   string `json:"branch" bson:"branch"`
+}
+
 //AllUnitResponseList tipe slice dari AllUnitResponse
 type AllUnitResponseList []AllUnitResponse
 

@@ -39,13 +39,13 @@ type allUnitDao struct {
 type AllUnitDaoAssumer interface {
 	InsertUnit(unit dto.AllUnitRequest) (*string, rest_err.APIError)
 	GetUnitByID(unitID string) (*dto.AllUnitResponse, rest_err.APIError)
-	//GetUserByIDWithPassword(userID string) (*dto.User, rest_err.APIError)
+	EditUnit(unitID string, unitRequest dto.AllUnitEditRequest) (*dto.AllUnitResponse, rest_err.APIError)
+	DeleteUnit(unitID string) rest_err.APIError
+
 	//FindUser() (dto.UserResponseList, rest_err.APIError)
-	//CheckIDAvailable(email string) (bool, rest_err.APIError)
-	//EditUser(userID string, userRequest dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError)
-	//DeleteUser(userID string) rest_err.APIError
-	//PutAvatar(userID string, avatar string) (*dto.UserResponse, rest_err.APIError)
-	//ChangePassword(data dto.UserChangePasswordRequest) rest_err.APIError
+	//insertCase
+	//deleteCase
+	//insertPing
 }
 
 func (u *allUnitDao) InsertUnit(unit dto.AllUnitRequest) (*string, rest_err.APIError) {
@@ -98,4 +98,66 @@ func (u *allUnitDao) GetUnitByID(unitID string) (*dto.AllUnitResponse, rest_err.
 	}
 
 	return &unit, nil
+}
+
+func (u *allUnitDao) EditUnit(unitID string, unitRequest dto.AllUnitEditRequest) (*dto.AllUnitResponse, rest_err.APIError) {
+	coll := db.Db.Collection(keyAllUnitColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyAllID: unitID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			keyAllName:     unitRequest.Name,
+			keyAllCategory: unitRequest.Category,
+			keyAllBranch:   unitRequest.Branch,
+			keyAllIP:       unitRequest.IP,
+		},
+	}
+
+	var unit dto.AllUnitResponse
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID atau timestamp tidak valid")
+		}
+
+		logger.Error("Gagal mendapatkan unit dari database (EditUnit)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
+		return nil, apiErr
+	}
+
+	return &unit, nil
+}
+
+func (u *allUnitDao) DeleteUnit(unitID string) rest_err.APIError {
+	coll := db.Db.Collection(keyAllUnitColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		keyAllID: unitID,
+	}
+
+	result, err := coll.DeleteOne(ctx, filter)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return rest_err.NewBadRequestError("Unit gagal dihapus, dokumen tidak ditemukan")
+		}
+
+		logger.Error("Gagal menghapus unit dari database (DeleteUnit)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
+		return apiErr
+	}
+
+	if result.DeletedCount == 0 {
+		return rest_err.NewBadRequestError("Unit gagal dihapus, dokumen tidak ditemukan")
+	}
+
+	return nil
 }

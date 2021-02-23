@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/muchlist/risa_restfull/dao"
+	"github.com/muchlist/risa_restfull/dao/user_dao"
 	"github.com/muchlist/risa_restfull/handler"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/crypt"
@@ -14,7 +14,7 @@ var (
 	jwt         = mjwt.NewJwt()
 
 	//Dao
-	userDao = dao.NewUserDao()
+	userDao = user_dao.NewUserDao()
 
 	//Service
 	userService = service.NewUserService(userDao, cryptoUtils, jwt)

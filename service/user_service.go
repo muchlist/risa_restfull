@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/muchlist/erru_utils_go/rest_err"
-	"github.com/muchlist/risa_restfull/dao"
+	"github.com/muchlist/risa_restfull/dao/user_dao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/crypt"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func NewUserService(dao dao.UserDaoAssumer, crypto crypt.BcryptAssumer, jwt mjwt.JWTAssumer) UserServiceAssumer {
+func NewUserService(dao user_dao.UserDaoAssumer, crypto crypt.BcryptAssumer, jwt mjwt.JWTAssumer) UserServiceAssumer {
 	return &userService{
 		dao:    dao,
 		crypto: crypto,
@@ -19,7 +19,7 @@ func NewUserService(dao dao.UserDaoAssumer, crypto crypt.BcryptAssumer, jwt mjwt
 }
 
 type userService struct {
-	dao    dao.UserDaoAssumer
+	dao    user_dao.UserDaoAssumer
 	crypto crypt.BcryptAssumer
 	jwt    mjwt.JWTAssumer
 }
