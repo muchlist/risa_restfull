@@ -26,6 +26,7 @@ type historyService struct {
 type HistoryServiceAssumer interface {
 	InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError)
 	EditHistory(user mjwt.CustomClaim, historyID primitive.ObjectID, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError)
+	DeleteHistory(user mjwt.CustomClaim, id primitive.ObjectID) rest_err.APIError
 
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -142,6 +143,23 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID primitive.
 	}
 
 	return historyEdited, nil
+}
+
+func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id primitive.ObjectID) rest_err.APIError {
+
+	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
+	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
+
+	err := h.daoH.DeleteHistory(dto.FilterIDBranchTime{
+		ID:     primitive.ObjectID{},
+		Branch: user.Branch,
+		Time:   timeMinusOneDay.Unix(),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (h *historyService) FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
