@@ -1,6 +1,9 @@
 package dto
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"github.com/mashingan/smapping"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // History struct penuh dari domain history, ID di isikan dari luar karena ada keperluan
 // penamaan foto. bukan generate dari database
@@ -25,6 +28,27 @@ type History struct {
 	DateEnd        int64              `json:"date_end" bson:"date_end"`
 	Tag            []string           `json:"tag" bson:"tag"`
 	Image          string             `json:"image" bson:"image"`
+}
+
+type HistoryRequest struct {
+	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	ParentID       string             `json:"parent_id" bson:"parent_id"`
+	Status         string             `json:"status" bson:"status"`
+	Problem        string             `json:"problem" bson:"problem"`
+	ProblemResolve string             `json:"problem_resolve" bson:"problem_resolve"`
+	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
+	DateStart      int64              `json:"date_start" bson:"date_start"`
+	DateEnd        int64              `json:"date_end" bson:"date_end"`
+	Tag            []string           `json:"tag" bson:"tag"`
+}
+
+func (h HistoryRequest) TranslateToHistory() (*History, error) {
+	history := History{}
+	err := smapping.FillStruct(&history, smapping.MapFields(&h))
+	if err != nil {
+		return nil, err
+	}
+	return &history, nil
 }
 
 type HistoryResponse struct {

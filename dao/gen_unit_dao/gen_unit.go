@@ -47,7 +47,7 @@ type GenUnitDaoAssumer interface {
 	DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError)
 	//insertPing
 
-	GetUnitByID(unitID string) (*dto.GenUnitResponse, rest_err.APIError)
+	GetUnitByID(unitID string, branchSpecific string) (*dto.GenUnitResponse, rest_err.APIError)
 	FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError)
 }
 
@@ -157,7 +157,7 @@ func (u *genUnitDao) InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitRes
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyGenID:     payload.ID,
+		keyGenID:     payload.UnitID,
 		keyGenBranch: payload.FilterBranch,
 	}
 
@@ -195,7 +195,7 @@ func (u *genUnitDao) DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitRes
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyGenID:     payload.ID,
+		keyGenID:     payload.UnitID,
 		keyGenBranch: payload.FilterBranch,
 	}
 
@@ -222,15 +222,23 @@ func (u *genUnitDao) DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitRes
 	return &unit, nil
 }
 
-func (u *genUnitDao) GetUnitByID(unitID string) (*dto.GenUnitResponse, rest_err.APIError) {
+func (u *genUnitDao) GetUnitByID(unitID string, branchIfSpecific string) (*dto.GenUnitResponse, rest_err.APIError) {
 	coll := db.Db.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
+	branchIfSpecific = strings.ToUpper(branchIfSpecific)
+
 	var unit dto.GenUnitResponse
 	opts := options.FindOne()
 
-	if err := coll.FindOne(ctx, bson.M{keyGenID: unitID}, opts).Decode(&unit); err != nil {
+	filter := bson.M{keyGenID: unitID}
+
+	if branchIfSpecific != "" {
+		filter[keyGenBranch] = branchIfSpecific
+	}
+
+	if err := coll.FindOne(ctx, filter, opts).Decode(&unit); err != nil {
 
 		if err == mongo.ErrNoDocuments {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Unit dengan ID %s tidak ditemukan", unitID))

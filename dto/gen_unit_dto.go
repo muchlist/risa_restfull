@@ -42,7 +42,7 @@ type GenUnitFilter struct {
 }
 
 type GenUnitCaseRequest struct {
-	ID           string
+	UnitID       string
 	FilterBranch string
 	CaseID       string
 	CaseNote     string

@@ -28,4 +28,14 @@ Restfull Backend for Risa Aplication Pelindo III using Golang (Fiber) and MongoD
   ip , category, cabang berubah. dan penghapusan. serta ada update pada history/incident.
 - `history` digunakan untuk mencatat semua riwayat perangkat, riwayat ini memiliki status progress (1), persetujuan
   pending (2), pending (3), complete (4). Setiap penambahan `history` yang belum komplit akan mengupdate field `cases`
-  pada domain `gen_unit` dan jika `history` diubah statusnya menjadi complete maka case di `gen_unit` akan dikurangi 
+  pada domain `gen_unit` dan jika `history` diubah statusnya menjadi complete maka case di `gen_unit` akan dikurangi
+
+## Kontrak Struktur
+### Handler > Middleware > Service > Dao
+
+- Handler digunakan untuk mengekstrak inputan dari user. params, query, json body, claims dari jwt serta validasi input
+  ,termasuk memastikan dan menimpa huruf besar atau kecil.
+- Service digunakan untuk bisnis logic, menggabungkan dua atau lebih dao atau utilitas pembantu lainnya, mengisi data
+  yang dibutuhkan dao misalnya saat perpindahan dari requestData (data sedikit) ke Data (data banyak).
+- Dao berkomunikasi langsung ke database. Sedikit juga memastikan inputan huruf besar dan kecil pada inputan database
+  yang caseSensitif untuk memaksimalkan indexing.

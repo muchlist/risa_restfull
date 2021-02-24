@@ -236,7 +236,7 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyHistID, -1}})
+	opts.SetSort(bson.D{{keyHistUpdatedAt, -1}})
 	opts.SetLimit(filterB.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
