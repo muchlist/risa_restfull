@@ -1,7 +1,7 @@
 package enum
 
 const (
-	HProgress = iota
+	HProgress = iota + 1
 	HRequestPending
 	HPending
 	HComplete

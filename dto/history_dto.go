@@ -24,6 +24,7 @@ type History struct {
 	DateStart      int64              `json:"date_start" bson:"date_start"`
 	DateEnd        int64              `json:"date_end" bson:"date_end"`
 	Tag            []string           `json:"tag" bson:"tag"`
+	Image          string             `json:"image" bson:"image"`
 }
 
 type HistoryResponse struct {
@@ -44,6 +45,30 @@ type HistoryResponse struct {
 	DateStart      int64              `json:"date_start" bson:"date_start"`
 	DateEnd        int64              `json:"date_end" bson:"date_end"`
 	Tag            []string           `json:"tag" bson:"tag"`
+	Image          string             `json:"image" bson:"image"`
+}
+
+type HistoryResponseMinList []HistoryResponseMin
+
+type HistoryResponseMin struct {
+	CreatedAt int64  `json:"created_at" bson:"created_at"`
+	CreatedBy string `json:"created_by" bson:"created_by"`
+	UpdatedAt int64  `json:"updated_at" bson:"updated_at"`
+	UpdatedBy string `json:"updated_by" bson:"updated_by"`
+	Category  string `json:"category" bson:"category"`
+	Branch    string `json:"branch" bson:"branch"`
+
+	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	ParentID       string             `json:"parent_id" bson:"parent_id"`
+	ParentName     string             `json:"parent_name" bson:"parent_name"`
+	Status         string             `json:"status" bson:"status"`
+	Problem        string             `json:"problem" bson:"problem"`
+	ProblemResolve string             `json:"problem_resolve" bson:"problem_resolve"`
+	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
+	DateStart      int64              `json:"date_start" bson:"date_start"`
+	DateEnd        int64              `json:"date_end" bson:"date_end"`
+	Tag            []string           `json:"tag" bson:"tag"`
+	Image          string             `json:"image" bson:"image"`
 }
 
 type HistoryEdit struct {
@@ -59,4 +84,22 @@ type HistoryEdit struct {
 	UpdatedAt      int64    `json:"updated_at" bson:"updated_at"`
 	UpdatedBy      string   `json:"updated_by" bson:"updated_by"`
 	UpdatedByID    string   `json:"updated_by_id" bson:"updated_by_id"`
+}
+
+type FilterBranchCatComplete struct {
+	Branch         string
+	Category       string
+	CompleteStatus int
+}
+
+type FilterIDBranchTime struct {
+	ID     primitive.ObjectID
+	Branch string
+	Time   int64
+}
+
+type FilterTimeRangeLimit struct {
+	Start int64
+	End   int64
+	Limit int64
 }
