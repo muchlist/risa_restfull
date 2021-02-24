@@ -150,9 +150,6 @@ func (h *historyDao) DeleteHistory(input dto.FilterIDBranchTime) rest_err.APIErr
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
-	opts := options.FindOneAndUpdate()
-	opts.SetReturnDocument(1)
-
 	filter := bson.M{
 		keyHistID:        input.ID,
 		keyHistBranch:    input.Branch,

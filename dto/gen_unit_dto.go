@@ -41,6 +41,10 @@ type GenUnitFilter struct {
 	IP       string
 }
 
+// GenUnitCaseRequest,
+// UnitID adalah ID dari gen_unit,
+// CaseID sama dengan historyID.hex()
+// CaseNote tidak masalah dikosongkan jika ingin menghapus Case
 type GenUnitCaseRequest struct {
 	UnitID       string
 	FilterBranch string

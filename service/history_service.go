@@ -27,6 +27,7 @@ type HistoryServiceAssumer interface {
 	InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError)
 	EditHistory(user mjwt.CustomClaim, historyID primitive.ObjectID, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError)
 	DeleteHistory(user mjwt.CustomClaim, id primitive.ObjectID) rest_err.APIError
+	// Upload Foto TODO
 
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -147,16 +148,35 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID primitive.
 
 func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id primitive.ObjectID) rest_err.APIError {
 
+	// Mengambil history untuk mendapatkan parentID dan completeStatus
+	// Sementara menggunakan cara ini karena di mongogodriver tidak bisa FindOneAndDelete return document
+	// DB
+	history, err := h.daoH.GetHistoryByID(id)
+
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
-
-	err := h.daoH.DeleteHistory(dto.FilterIDBranchTime{
-		ID:     primitive.ObjectID{},
+	// DB
+	err = h.daoH.DeleteHistory(dto.FilterIDBranchTime{
+		ID:     id,
 		Branch: user.Branch,
 		Time:   timeMinusOneDay.Unix(),
 	})
 	if err != nil {
 		return err
+	}
+
+	// Jika history complete, berarti harus dihapus di parentnya karena masih nyantol
+	if history.CompleteStatus != enum.HComplete {
+		// DB
+		_, err = h.daoG.DeleteCase(dto.GenUnitCaseRequest{
+			UnitID:       history.ParentID,
+			FilterBranch: user.Branch,
+			CaseID:       id.Hex(),
+			CaseNote:     "",
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
