@@ -118,6 +118,17 @@ type HistoryEdit struct {
 	UpdatedByID    string   `json:"updated_by_id" bson:"updated_by_id"`
 }
 
+type HistoryEditRequest struct {
+	FilterTimestamp int64 `json:"filter_timestamp"`
+
+	Status         string   `json:"status" bson:"status"`
+	Problem        string   `json:"problem" bson:"problem"`
+	ProblemResolve string   `json:"problem_resolve" bson:"problem_resolve"`
+	CompleteStatus int      `json:"complete_status" bson:"complete_status"`
+	DateEnd        int64    `json:"date_end" bson:"date_end"`
+	Tag            []string `json:"tag" bson:"tag"`
+}
+
 type FilterBranchCatComplete struct {
 	Branch         string
 	Category       string

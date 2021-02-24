@@ -24,8 +24,8 @@ type historyService struct {
 	daoG gen_unit_dao.GenUnitDaoAssumer
 }
 type HistoryServiceAssumer interface {
-	InsertHistory(input dto.HistoryRequest, user mjwt.CustomClaim) (*string, rest_err.APIError)
-	//EditHistory
+	InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError)
+	EditHistory(user mjwt.CustomClaim, historyID primitive.ObjectID, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError)
 
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -33,7 +33,7 @@ type HistoryServiceAssumer interface {
 	GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError)
 }
 
-func (h *historyService) InsertHistory(input dto.HistoryRequest, user mjwt.CustomClaim) (*string, rest_err.APIError) {
+func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError) {
 
 	// Cek apakah image tersedia untuk ID tersebut TODO
 	imagePath := ""
@@ -92,6 +92,56 @@ func (h *historyService) InsertHistory(input dto.HistoryRequest, user mjwt.Custo
 		return nil, err
 	}
 	return insertedID, nil
+}
+
+func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID primitive.ObjectID, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError) {
+
+	// Filling data
+	timeNow := time.Now().Unix()
+	data := dto.HistoryEdit{
+		FilterBranch:    user.Branch,
+		FilterTimestamp: input.FilterTimestamp,
+		Status:          input.Status,
+		Problem:         input.Problem,
+		ProblemResolve:  input.ProblemResolve,
+		CompleteStatus:  input.CompleteStatus,
+		DateEnd:         input.DateEnd,
+		Tag:             input.Tag,
+		UpdatedAt:       timeNow,
+		UpdatedBy:       user.Name,
+		UpdatedByID:     user.Identity,
+	}
+
+	//DB
+	historyEdited, err := h.daoH.EditHistory(historyID, data)
+	if err != nil {
+		return nil, err
+	}
+
+	//Hapus Case pada parrent (jika complete status tidak complete maka perlu ditambahkan lagi case baru)
+	// DB
+	_, err = h.daoG.DeleteCase(dto.GenUnitCaseRequest{
+		UnitID:       historyEdited.ParentID,
+		FilterBranch: user.Branch,
+		CaseID:       historyID.Hex(),
+		CaseNote:     "",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// jika complete status tidak complete maka perlu ditambahkan lagi case baru
+	if input.CompleteStatus != enum.HComplete {
+		//DB
+		_, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
+			UnitID:       historyEdited.ParentID,
+			FilterBranch: user.Branch,
+			CaseID:       historyID.Hex(), // gunakan history id sebagai caseID
+			CaseNote:     fmt.Sprintf("#%s# %s : %s", enum.GetProgressString(input.CompleteStatus), input.Status, input.Problem),
+		})
+	}
+
+	return historyEdited, nil
 }
 
 func (h *historyService) FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
