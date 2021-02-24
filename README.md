@@ -19,10 +19,13 @@ Restfull Backend for Risa Aplication Pelindo III using Golang (Fiber) and MongoD
 
 ## LOG
 
-- `all_unit` domain. `all_unit` digunakan untuk meng-collect semua perangkat dengan hanya menyimpan data umumnya saja
+- `gen_unit` domain. `gen_unit` digunakan untuk meng-collect semua perangkat dengan hanya menyimpan data umumnya saja
   dan meninggalkan data detil.
-  `all_unit` dibuat karena ada permintaan dari client agar semua perangkat dapat dicari menggunakan satu buah kolom
+  `gen_unit` dibuat karena ada permintaan dari client agar semua perangkat dapat dicari menggunakan satu buah kolom
   pencarian tanpa harus memilih kategori. Semakin banyak data akan semakin lambat sehingga kedepan akan diganti
   menggunakan database elasticsearch. domain ini tidak bersentuhan secara langsung dengan user dari segi inputan.
   updatenya akan dilakukan dibelakang layar berasarkan : pembuatan perangkat pada kategori apapun, pengeditan jika nama,
   ip , category, cabang berubah. dan penghapusan. serta ada update pada history/incident.
+- `history` digunakan untuk mencatat semua riwayat perangkat, riwayat ini memiliki status progress (1), persetujuan
+  pending (2), pending (3), complete (4). Setiap penambahan `history` yang belum komplit akan mengupdate field `cases`
+  pada domain `gen_unit` dan jika `history` diubah statusnya menjadi complete maka case di `gen_unit` akan dikurangi 
