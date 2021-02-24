@@ -54,13 +54,10 @@ type HistoryDaoAssumer interface {
 	DeleteHistory(input dto.FilterIDBranchTime) rest_err.APIError
 
 	GetHistoryByID(historyID primitive.ObjectID) (*dto.HistoryResponse, rest_err.APIError)
+	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
-	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
-	//InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError)
-	//DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError)
-	////insertPing
-	//
+	GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError)
 }
 
 func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIError) {
@@ -203,6 +200,63 @@ func (h *historyDao) GetHistoryByID(historyID primitive.ObjectID) (*dto.HistoryR
 	return &history, nil
 }
 
+func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
+	coll := db.Db.Collection(keyHistColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	filterA.Branch = strings.ToUpper(filterA.Branch)
+	filterA.Category = strings.ToUpper(filterA.Category)
+
+	// set default limit
+	if filterB.Limit == 0 {
+		filterB.Limit = 100
+	}
+
+	// empty filter
+	filter := bson.M{}
+
+	// filter condition
+	if filterA.Branch != "" {
+		filter[keyHistBranch] = filterA.Branch
+	}
+	if filterA.Category != "" {
+		filter[keyHistCategory] = filterA.Category
+	}
+	if filterA.CompleteStatus != 0 {
+		filter[keyHistCompleteStatus] = filterA.CompleteStatus
+	}
+
+	// option range
+	if filterB.Start != 0 {
+		filter[keyHistDateStart] = bson.M{"$gte": filterB.Start}
+	}
+	if filterB.End != 0 {
+		filter[keyHistDateEnd] = bson.M{"$lte": filterB.Start}
+	}
+
+	opts := options.Find()
+	opts.SetSort(bson.D{{keyHistID, -1}})
+	opts.SetLimit(filterB.Limit)
+
+	cursor, err := coll.Find(ctx, filter, opts)
+
+	if err != nil {
+		logger.Error("Gagal mendapatkan daftar history dari database (FindHistory)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.HistoryResponseMinList{}, apiErr
+	}
+
+	histories := dto.HistoryResponseMinList{}
+	if err = cursor.All(ctx, &histories); err != nil {
+		logger.Error("Gagal decode histories cursor ke objek slice (FindHistory)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.HistoryResponseMinList{}, apiErr
+	}
+
+	return histories, nil
+}
+
 func (h *historyDao) FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError) {
 	coll := db.Db.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
@@ -262,7 +316,7 @@ func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeR
 	opts.SetSort(bson.D{{keyHistID, -1}})
 	opts.SetLimit(filterOpt.Limit)
 
-	Cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctx, filter, opts)
 
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar history dari database (FindHistoryForUser)", err)
@@ -271,7 +325,7 @@ func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeR
 	}
 
 	histories := dto.HistoryResponseMinList{}
-	if err = Cursor.All(ctx, &histories); err != nil {
+	if err = cursor.All(ctx, &histories); err != nil {
 		logger.Error("Gagal decode histories cursor ke objek slice (FindHistoryForuser)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryResponseMinList{}, apiErr
@@ -280,61 +334,53 @@ func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeR
 	return histories, nil
 }
 
-func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
+//get_histories_in_progress_count
+func (h *historyDao) GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError) {
 	coll := db.Db.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
-	filterA.Branch = strings.ToUpper(filterA.Branch)
-	filterA.Category = strings.ToUpper(filterA.Category)
+	// Jika branch ada isinya maka hanya menampilkan branch tersebut,
+	// umumnya digunakan dengan branch kosong untuk melihat semua cabang
+	branchIfSpecific = strings.ToUpper(branchIfSpecific)
 
-	// set default limit
-	if filterB.Limit == 0 {
-		filterB.Limit = 100
+	filter := bson.M{
+		keyHistCompleteStatus: statusComplete,
+	}
+	if branchIfSpecific != "" {
+		filter[keyHistBranch] = branchIfSpecific
 	}
 
-	// empty filter
-	filter := bson.M{}
-
-	// filter condition
-	if filterA.Branch != "" {
-		filter[keyHistBranch] = filterA.Branch
+	matchStage := bson.D{
+		{"$match", filter},
 	}
-	if filterA.Category != "" {
-		filter[keyHistCategory] = filterA.Category
+	groupStage := bson.D{
+		{"$group", bson.D{
+			{"_id", "$branch"},
+			{"count", bson.M{"$sum": 1}},
+		}},
 	}
-	if filterA.CompleteStatus != 0 {
-		filter[keyHistCompleteStatus] = filterA.CompleteStatus
-	}
-
-	// option range
-	if filterB.Start != 0 {
-		filter[keyHistDateStart] = bson.M{"$gte": filterB.Start}
-	}
-	if filterB.End != 0 {
-		filter[keyHistDateEnd] = bson.M{"$lte": filterB.Start}
+	sortStage := bson.D{
+		{"$sort", bson.D{
+			{"count", -1},
+			{"_id", -1},
+		}},
 	}
 
-	opts := options.Find()
-	opts.SetSort(bson.D{{keyHistID, -1}})
-	opts.SetLimit(filterB.Limit)
-
-	Cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Aggregate(ctx, mongo.Pipeline{matchStage, groupStage, sortStage})
 
 	if err != nil {
-		logger.Error("Gagal mendapatkan daftar history dari database (FindHistory)", err)
+		logger.Error("Gagal mendapatkan history count dari database (GetHistoryCount)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
-		return dto.HistoryResponseMinList{}, apiErr
+		return dto.HistoryCountList{}, apiErr
 	}
 
-	histories := dto.HistoryResponseMinList{}
-	if err = Cursor.All(ctx, &histories); err != nil {
-		logger.Error("Gagal decode histories cursor ke objek slice (FindHistory)", err)
+	histories := dto.HistoryCountList{}
+	if err = cursor.All(ctx, &histories); err != nil {
+		logger.Error("Gagal decode history count ke objek slice (GetHistoryCount)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
-		return dto.HistoryResponseMinList{}, apiErr
+		return dto.HistoryCountList{}, apiErr
 	}
 
 	return histories, nil
 }
-
-//get_histories_in_progress_count

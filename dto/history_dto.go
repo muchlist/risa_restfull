@@ -71,6 +71,14 @@ type HistoryResponseMin struct {
 	Image          string             `json:"image" bson:"image"`
 }
 
+type HistoryCountList []HistoryCountResponse
+
+// HistoryCountResponse tipe return dari aggregate, bson _id dirubah ke json menjadi branch
+type HistoryCountResponse struct {
+	Branch string `json:"branch" bson:"_id"`
+	Count  int    `json:"count" bson:"count"`
+}
+
 type HistoryEdit struct {
 	FilterBranch    string `json:"filter_branch"`
 	FilterTimestamp int64  `json:"filter_timestamp"`
