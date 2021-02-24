@@ -148,15 +148,10 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID primitive.
 
 func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id primitive.ObjectID) rest_err.APIError {
 
-	// Mengambil history untuk mendapatkan parentID dan completeStatus
-	// Sementara menggunakan cara ini karena di mongogodriver tidak bisa FindOneAndDelete return document
-	// DB
-	history, err := h.daoH.GetHistoryByID(id)
-
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	err = h.daoH.DeleteHistory(dto.FilterIDBranchTime{
+	history, err := h.daoH.DeleteHistory(dto.FilterIDBranchTime{
 		ID:     id,
 		Branch: user.Branch,
 		Time:   timeMinusOneDay.Unix(),

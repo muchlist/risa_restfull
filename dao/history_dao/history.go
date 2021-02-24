@@ -51,7 +51,7 @@ type historyDao struct {
 type HistoryDaoAssumer interface {
 	InsertHistory(input dto.History) (*string, rest_err.APIError)
 	EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit) (*dto.HistoryResponse, rest_err.APIError)
-	DeleteHistory(input dto.FilterIDBranchTime) rest_err.APIError
+	DeleteHistory(input dto.FilterIDBranchTime) (*dto.HistoryResponse, rest_err.APIError)
 
 	GetHistoryByID(historyID primitive.ObjectID) (*dto.HistoryResponse, rest_err.APIError)
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -145,7 +145,7 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 	return &history, nil
 }
 
-func (h *historyDao) DeleteHistory(input dto.FilterIDBranchTime) rest_err.APIError {
+func (h *historyDao) DeleteHistory(input dto.FilterIDBranchTime) (*dto.HistoryResponse, rest_err.APIError) {
 	coll := db.Db.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -156,22 +156,19 @@ func (h *historyDao) DeleteHistory(input dto.FilterIDBranchTime) rest_err.APIErr
 		keyHistCreatedAt: bson.M{"$gte": input.Time},
 	}
 
-	result, err := coll.DeleteOne(ctx, filter)
+	var history dto.HistoryResponse
+	err := coll.FindOneAndDelete(ctx, filter).Decode(&history)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return rest_err.NewBadRequestError("History gagal dihapus, limit waktu terlampaui, id atau cabang salah")
+			return nil, rest_err.NewBadRequestError("History gagal dihapus, limit waktu terlampaui, id atau cabang salah")
 		}
 
 		logger.Error("Gagal menghapus history dari database (DeleteHistory)", err)
 		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan history dari database", err)
-		return apiErr
+		return nil, apiErr
 	}
 
-	if result.DeletedCount == 0 {
-		return rest_err.NewBadRequestError("History gagal dihapus, limit waktu terlampaui, id atau cabang salah")
-	}
-
-	return nil
+	return &history, nil
 }
 
 func (h *historyDao) GetHistoryByID(historyID primitive.ObjectID) (*dto.HistoryResponse, rest_err.APIError) {
