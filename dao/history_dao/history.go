@@ -52,6 +52,7 @@ type HistoryDaoAssumer interface {
 	InsertHistory(input dto.History) (*string, rest_err.APIError)
 	EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit) (*dto.HistoryResponse, rest_err.APIError)
 	DeleteHistory(input dto.FilterIDBranchTime) (*dto.HistoryResponse, rest_err.APIError)
+	UploadImage(historyID primitive.ObjectID, imagePath string, filterBranch string) (*dto.HistoryResponse, rest_err.APIError)
 
 	GetHistoryByID(historyID primitive.ObjectID) (*dto.HistoryResponse, rest_err.APIError)
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -377,4 +378,38 @@ func (h *historyDao) GetHistoryCount(branchIfSpecific string, statusComplete int
 	}
 
 	return histories, nil
+}
+
+// UploadImage tidak digunakan saat pembuatan history dengan langsung
+// menyertakan image, hanya untuk keperluan update pada dokumen yang sudah ada
+func (h *historyDao) UploadImage(historyID primitive.ObjectID, imagePath string, filterBranch string) (*dto.HistoryResponse, rest_err.APIError) {
+	coll := db.Db.Collection(keyHistColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyHistID:     historyID,
+		keyHistBranch: filterBranch,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			keyHistImage: imagePath,
+		},
+	}
+
+	var history dto.HistoryResponse
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&history); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, history dengan id %s tidak ditemukan", historyID.Hex()))
+		}
+
+		logger.Error("Memasukkan path image history ke db gagal, (UploadImage)", err)
+		apiErr := rest_err.NewInternalServerError("Memasukkan path image history ke db gagal", err)
+		return nil, apiErr
+	}
+
+	return &history, nil
 }

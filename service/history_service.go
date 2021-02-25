@@ -27,7 +27,7 @@ type HistoryServiceAssumer interface {
 	InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError)
 	EditHistory(user mjwt.CustomClaim, historyID primitive.ObjectID, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError)
 	DeleteHistory(user mjwt.CustomClaim, id primitive.ObjectID) rest_err.APIError
-	// Upload Foto TODO
+	PutImage(user mjwt.CustomClaim, id primitive.ObjectID, imagePath string) (*dto.HistoryResponse, rest_err.APIError)
 
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -207,4 +207,13 @@ func (h *historyService) GetHistoryCount(branchIfSpecific string, statusComplete
 		return nil, err
 	}
 	return historyCountList, nil
+}
+
+//PutImage memasukkan lokasi file (path) ke dalam database history dengan mengecek kesesuaian branch
+func (h *historyService) PutImage(user mjwt.CustomClaim, id primitive.ObjectID, imagePath string) (*dto.HistoryResponse, rest_err.APIError) {
+	history, err := h.daoH.UploadImage(id, imagePath, user.Branch)
+	if err != nil {
+		return nil, err
+	}
+	return history, nil
 }
