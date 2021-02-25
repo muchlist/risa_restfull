@@ -16,15 +16,16 @@ func mapUrls(app *fiber.App) {
 
 	api := app.Group("/api/v1")
 	api.Get("/ping", pingHandler.Ping)
+
+	// USER
 	api.Post("/login", userHandler.Login)
 	api.Post("/refresh", userHandler.RefreshToken)
-
 	api.Get("/users", middleware.NormalAuth(), userHandler.Find)
 	api.Get("/profile", middleware.NormalAuth(), userHandler.GetProfile)
 	api.Post("/avatar", middleware.NormalAuth(), userHandler.UploadImage)
-
 	api.Post("/change-password", middleware.FreshAuth(), userHandler.ChangePassword)
 
+	//USER ADMIN
 	apiAuthAdmin := app.Group("/api/v1/admin")
 	apiAuthAdmin.Use(middleware.NormalAuth(roles.RoleAdmin))
 	apiAuthAdmin.Post("/users", userHandler.Register)
@@ -42,4 +43,5 @@ func mapUrls(app *fiber.App) {
 	api.Get("/histories-parent/:id", middleware.NormalAuth(), historyHandler.FindFromParent)
 	api.Get("/histories-user/:id", middleware.NormalAuth(), historyHandler.FindFromUser)
 	api.Post("/histories", middleware.NormalAuth(), historyHandler.Insert)
+	api.Put("/histories/:id", middleware.NormalAuth(), historyHandler.Edit)
 }

@@ -43,6 +43,28 @@ func (h *historyHandler) Insert(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
+func (h *historyHandler) Edit(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	historyID := c.Params("id")
+
+	var req dto.HistoryEditRequest
+	if err := c.BodyParser(&req); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	if err := req.Validate(); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	historyEdited, apiErr := h.service.EditHistory(*claims, historyID, req)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+	return c.JSON(historyEdited)
+}
+
 // Find menampilkan list history
 // Query [branch, category, c_status, start, end, limit]
 func (h *historyHandler) Find(c *fiber.Ctx) error {

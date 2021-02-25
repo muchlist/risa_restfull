@@ -14,3 +14,12 @@ func (h HistoryRequest) Validate() error {
 		validation.Field(&h.CompleteStatus, validation.Max(enum.HComplete), validation.Min(0)),
 	)
 }
+
+func (h HistoryEditRequest) Validate() error {
+	return validation.ValidateStruct(&h,
+		validation.Field(&h.FilterTimestamp, validation.Required),
+		validation.Field(&h.Status, validation.Required),
+		validation.Field(&h.Problem, validation.Required),
+		validation.Field(&h.CompleteStatus, validation.Max(enum.HComplete), validation.Min(0)),
+	)
+}
