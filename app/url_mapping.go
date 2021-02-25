@@ -36,5 +36,6 @@ func mapUrls(app *fiber.App) {
 	api.Get("/general", middleware.NormalAuth(), genUnitHandler.Find)
 
 	//History
+	api.Get("/histories", middleware.NormalAuth(), historyHandler.Find)
 	api.Post("/histories", middleware.NormalAuth(), historyHandler.Insert)
 }

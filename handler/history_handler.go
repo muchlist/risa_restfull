@@ -43,15 +43,16 @@ func (h *historyHandler) Insert(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
-//Find menampilkan list user
+// Find menampilkan list user
+// Query [branch, category, c_status, start, end, limit]
 func (h *historyHandler) Find(c *fiber.Ctx) error {
 
 	branch := c.Query("branch")
 	category := c.Query("category")
-	cStatus := queryToInt(c, "complete_status")
-	start := queryToInt(c, "start")
-	end := queryToInt(c, "end")
-	limit := queryToInt(c, "limit")
+	cStatus := stringToInt(c.Query("c_status"))
+	start := stringToInt(c.Query("start"))
+	end := stringToInt(c.Query("end"))
+	limit := stringToInt(c.Query("limit"))
 
 	filterA := dto.FilterBranchCatComplete{
 		Branch:         branch,
@@ -73,10 +74,10 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"histories": histories})
 }
 
-func queryToInt(c *fiber.Ctx, queryKey string) int {
-	inted, err := strconv.Atoi(c.Query(queryKey))
+func stringToInt(queryString string) int {
+	number, err := strconv.Atoi(queryString)
 	if err != nil {
 		return 0
 	}
-	return inted
+	return number
 }
