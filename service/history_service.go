@@ -37,9 +37,21 @@ type HistoryServiceAssumer interface {
 
 func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError) {
 
+	// jika ID tersedia, gunakan ID , jika tidak buatkan object ID
+	// memastikan ID yang diinputkan bisa diubah ke ObjectID
+	oid := primitive.NewObjectID()
+	var errT error
+	if input.ID != "" {
+		oid, errT = primitive.ObjectIDFromHex(input.ID)
+		if errT != nil {
+			return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan dari frontend salah")
+		}
+	}
+
 	// Cek apakah image tersedia untuk ID tersebut TODO
 	imagePath := ""
 
+	// Mengambil gen_unit
 	// Tambahkan Case jika history status bukan Complete, akan gagal jika ID dan Cabang tidak sesuai
 	// jika complete gunakan GetUnitByID untuk memastikan ID dan Cabang sesuai
 	var parent *dto.GenUnitResponse
@@ -49,7 +61,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		parent, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
 			UnitID:       input.ParentID,
 			FilterBranch: user.Branch,
-			CaseID:       input.ID.Hex(), // gunakan history id sebagai caseID
+			CaseID:       input.ID, // gunakan history id sebagai caseID
 			CaseNote:     fmt.Sprintf("#%s# %s : %s", enum.GetProgressString(input.CompleteStatus), input.Status, input.Problem),
 		})
 	} else {
@@ -67,6 +79,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	// Filling data
 	timeNow := time.Now().Unix()
 	data := dto.History{
+		ID:             oid,
 		CreatedAt:      timeNow,
 		CreatedBy:      user.Name,
 		CreatedByID:    user.Identity,
@@ -75,7 +88,6 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		UpdatedByID:    user.Identity,
 		Category:       parent.Category,
 		Branch:         user.Branch,
-		ID:             primitive.ObjectID{},
 		ParentID:       input.ParentID,
 		ParentName:     parent.Name,
 		Status:         input.Status,

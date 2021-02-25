@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
+	"github.com/muchlist/risa_restfull/dao/history_dao"
 	"github.com/muchlist/risa_restfull/dao/user_dao"
 	"github.com/muchlist/risa_restfull/handler"
 	"github.com/muchlist/risa_restfull/service"
@@ -17,13 +18,16 @@ var (
 	//Dao
 	userDao    = user_dao.NewUserDao()
 	genUnitDao = gen_unit_dao.NewGenUnitDao()
+	historyDao = history_dao.NewHistoryDao()
 
 	//Service
 	userService    = service.NewUserService(userDao, cryptoUtils, jwt)
 	genUnitService = service.NewGenUnitService(genUnitDao)
+	historyService = service.NewHistoryService(historyDao, genUnitDao)
 
 	//Controller or Handler
 	pingHandler    = handler.NewPingHandler()
 	userHandler    = handler.NewUserHandler(userService)
 	genUnitHandler = handler.NewGenUnitHandler(genUnitService)
+	historyHandler = handler.NewHistoryHandler(historyService)
 )

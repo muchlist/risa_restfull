@@ -16,6 +16,7 @@ func NewGenUnitService(dao gen_unit_dao.GenUnitDaoAssumer) GenUnitServiceAssumer
 type genUnitService struct {
 	dao gen_unit_dao.GenUnitDaoAssumer
 }
+
 type GenUnitServiceAssumer interface {
 	FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError)
 }
