@@ -43,6 +43,7 @@ const (
 	identityKey  = "identity"
 	nameKey      = "name"
 	rolesKey     = "roles"
+	branchKey    = "branch"
 	tokenTypeKey = "type"
 	expKey       = "exp"
 	freshKey     = "fresh"
@@ -58,6 +59,7 @@ func (j *jwtUtils) GenerateToken(claims CustomClaim) (string, rest_err.APIError)
 	jwtClaim[identityKey] = claims.Identity
 	jwtClaim[nameKey] = claims.Name
 	jwtClaim[rolesKey] = claims.Roles
+	jwtClaim[branchKey] = claims.Branch
 	jwtClaim[expKey] = expired
 	jwtClaim[tokenTypeKey] = claims.Type
 	jwtClaim[freshKey] = claims.Fresh
@@ -87,6 +89,7 @@ func (j *jwtUtils) ReadToken(token *jwt.Token) (*CustomClaim, rest_err.APIError)
 		Name:     claims[nameKey].(string),
 		Exp:      int64(claims[expKey].(float64)),
 		Roles:    iToSliceString(claims[rolesKey]),
+		Branch:   claims[branchKey].(string),
 		Type:     int(claims[tokenTypeKey].(float64)),
 		Fresh:    claims[freshKey].(bool),
 	}

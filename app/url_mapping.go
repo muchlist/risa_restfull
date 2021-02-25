@@ -44,4 +44,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/histories-user/:id", middleware.NormalAuth(), historyHandler.FindFromUser)
 	api.Post("/histories", middleware.NormalAuth(), historyHandler.Insert)
 	api.Put("/histories/:id", middleware.NormalAuth(), historyHandler.Edit)
+
+	//CCTV
+	api.Post("/cctv", middleware.NormalAuth(), cctvHandler.Insert)
 }

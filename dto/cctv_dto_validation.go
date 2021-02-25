@@ -38,7 +38,7 @@ func (c CctvRequest) Validate() error {
 	}
 
 	// validate location
-	if err := locationValidation(c.Type); err != nil {
+	if err := locationValidation(c.Location); err != nil {
 		return err
 	}
 

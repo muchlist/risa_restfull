@@ -11,7 +11,7 @@ func (h HistoryRequest) Validate() error {
 		validation.Field(&h.ParentID, validation.Required),
 		validation.Field(&h.Status, validation.Required),
 		validation.Field(&h.Problem, validation.Required),
-		validation.Field(&h.CompleteStatus, validation.Max(enum.HComplete), validation.Min(0)),
+		validation.Field(&h.CompleteStatus, validation.Required, validation.Max(enum.HComplete), validation.Min(1)),
 	)
 }
 

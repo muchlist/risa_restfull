@@ -67,7 +67,7 @@ func (u *genUnitDao) InsertUnit(unit dto.GenUnitRequest) (*string, rest_err.APIE
 		keyGenCases:     []string{},
 		keyGenCasesSize: 0,
 		keyGenPingState: []dto.PingState{},
-		keyGenLastPing:  []string{},
+		keyGenLastPing:  "",
 	}
 
 	result, err := coll.InsertOne(ctx, insertDoc)

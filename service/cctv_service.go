@@ -46,6 +46,9 @@ func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (
 	} else {
 		input.IP = "0.0.0.0"
 	}
+	if input.Tag == nil {
+		input.Tag = []string{}
+	}
 
 	// Filling data
 	timeNow := time.Now().Unix()

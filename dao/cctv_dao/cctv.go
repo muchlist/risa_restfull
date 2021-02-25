@@ -76,7 +76,7 @@ func (c *cctvDao) InsertCctv(input dto.Cctv) (*string, rest_err.APIError) {
 		keyCtvLocationLon:     input.LocationLon,
 
 		keyCtvDate:  input.Date,
-		keyCtvTag:   input.Tag,
+		keyCtvTag:   input.Tag, // todo FIX null
 		keyCtvImage: input.Image,
 		keyCtvBrand: input.Brand,
 		keyCtvType:  input.Type,

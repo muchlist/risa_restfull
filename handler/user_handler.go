@@ -25,11 +25,6 @@ type userHandler struct {
 //Get menampilkan user berdasarkan ID (bukan email)
 func (u *userHandler) Get(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
-	//userID, err := primitive.ObjectIDFromHex(c.Params("user_id"))
-	//if err != nil {
-	//	apiErr := rest_err.NewBadRequestError("Format userID salah")
-	//	return c.Status(apiErr.Status()).JSON(apiErr)
-	//}
 
 	user, apiErr := u.service.GetUser(userID)
 	if apiErr != nil {

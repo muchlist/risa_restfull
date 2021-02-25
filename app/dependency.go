@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/muchlist/risa_restfull/dao/cctv_dao"
 	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
 	"github.com/muchlist/risa_restfull/dao/history_dao"
 	"github.com/muchlist/risa_restfull/dao/user_dao"
@@ -19,15 +20,18 @@ var (
 	userDao    = user_dao.NewUserDao()
 	genUnitDao = gen_unit_dao.NewGenUnitDao()
 	historyDao = history_dao.NewHistoryDao()
+	cctvDao    = cctv_dao.NewCctvDao()
 
 	//Service
 	userService    = service.NewUserService(userDao, cryptoUtils, jwt)
 	genUnitService = service.NewGenUnitService(genUnitDao)
 	historyService = service.NewHistoryService(historyDao, genUnitDao)
+	cctvService    = service.NewCctvService(cctvDao, historyDao, genUnitDao)
 
 	//Controller or Handler
 	pingHandler    = handler.NewPingHandler()
 	userHandler    = handler.NewUserHandler(userService)
 	genUnitHandler = handler.NewGenUnitHandler(genUnitService)
 	historyHandler = handler.NewHistoryHandler(historyService)
+	cctvHandler    = handler.NewCctvHandler(cctvService)
 )

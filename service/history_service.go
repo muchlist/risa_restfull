@@ -38,12 +38,21 @@ type HistoryServiceAssumer interface {
 
 func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError) {
 
+	// Default value
+	timeNow := time.Now().Unix()
+	if input.DateStart == 0 {
+		input.DateStart = timeNow
+	}
+	if input.Tag == nil {
+		input.Tag = []string{}
+	}
+
 	// jika ID tersedia, gunakan ID , jika tidak buatkan object ID
 	// memastikan ID yang diinputkan bisa diubah ke ObjectID
-	oid := primitive.NewObjectID()
+	generatedID := primitive.NewObjectID()
 	var errT error
 	if input.ID != "" {
-		oid, errT = primitive.ObjectIDFromHex(input.ID)
+		generatedID, errT = primitive.ObjectIDFromHex(input.ID)
 		if errT != nil {
 			return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan dari frontend salah")
 		}
@@ -57,12 +66,12 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	// jika complete gunakan GetUnitByID untuk memastikan ID dan Cabang sesuai
 	var parent *dto.GenUnitResponse
 	var err rest_err.APIError
-	if input.CompleteStatus == enum.HComplete {
+	if input.CompleteStatus != enum.HComplete {
 		//DB
 		parent, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
 			UnitID:       input.ParentID,
 			FilterBranch: user.Branch,
-			CaseID:       input.ID, // gunakan history id sebagai caseID
+			CaseID:       generatedID.Hex(), // gunakan history id sebagai caseID
 			CaseNote:     fmt.Sprintf("#%s# %s : %s", enum.GetProgressString(input.CompleteStatus), input.Status, input.Problem),
 		})
 	} else {
@@ -78,9 +87,8 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	}
 
 	// Filling data
-	timeNow := time.Now().Unix()
 	data := dto.History{
-		ID:             oid,
+		ID:             generatedID,
 		CreatedAt:      timeNow,
 		CreatedBy:      user.Name,
 		CreatedByID:    user.Identity,
