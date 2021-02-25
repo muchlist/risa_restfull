@@ -7,6 +7,7 @@ import (
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"strconv"
 )
 
 func NewHistoryHandler(histService service.HistoryServiceAssumer) *historyHandler {
@@ -40,4 +41,42 @@ func (h *historyHandler) Insert(c *fiber.Ctx) error {
 
 	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan history berhasi, ID: %s", *insertID)}
 	return c.JSON(res)
+}
+
+//Find menampilkan list user
+func (h *historyHandler) Find(c *fiber.Ctx) error {
+
+	branch := c.Query("branch")
+	category := c.Query("category")
+	cStatus := queryToInt(c, "complete_status")
+	start := queryToInt(c, "start")
+	end := queryToInt(c, "end")
+	limit := queryToInt(c, "limit")
+
+	filterA := dto.FilterBranchCatComplete{
+		Branch:         branch,
+		Category:       category,
+		CompleteStatus: cStatus,
+	}
+
+	filterB := dto.FilterTimeRangeLimit{
+		Start: int64(start),
+		End:   int64(end),
+		Limit: int64(limit),
+	}
+
+	histories, apiErr := h.service.FindHistory(filterA, filterB)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	return c.JSON(fiber.Map{"histories": histories})
+}
+
+func queryToInt(c *fiber.Ctx, queryKey string) int {
+	inted, err := strconv.Atoi(c.Query(queryKey))
+	if err != nil {
+		return 0
+	}
+	return inted
 }
