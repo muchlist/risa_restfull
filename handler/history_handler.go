@@ -88,7 +88,7 @@ func (h *historyHandler) FindFromParent(c *fiber.Ctx) error {
 }
 
 // Find menampilkan list history berdasarkan user
-// Query [branch, category, c_status, start, end, limit]
+// Query [start, end, limit]
 func (h *historyHandler) FindFromUser(c *fiber.Ctx) error {
 
 	userID := c.Params("id")
@@ -109,6 +109,19 @@ func (h *historyHandler) FindFromUser(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"histories": histories})
+}
+
+// GetHistory menampilkan historyDetail
+func (h *historyHandler) GetHistory(c *fiber.Ctx) error {
+
+	userID := c.Params("id")
+
+	history, apiErr := h.service.GetHistory(userID)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	return c.JSON(history)
 }
 
 func stringToInt(queryString string) int {
