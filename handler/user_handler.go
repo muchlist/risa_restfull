@@ -229,7 +229,7 @@ func (u *userHandler) UploadImage(c *fiber.Ctx) error {
 
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	file, err := c.FormFile("avatar")
+	file, err := c.FormFile("image")
 	if err != nil {
 		apiErr := rest_err.NewAPIError("File gagal di upload", http.StatusBadRequest, "bad_request", []interface{}{err.Error()})
 		return c.Status(apiErr.Status()).JSON(apiErr)
@@ -247,8 +247,9 @@ func (u *userHandler) UploadImage(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	path := "static/media/" + claims.Identity + fileExtension
-	pathInDb := "media/" + claims.Identity + fileExtension
+	// rename image to claims.Identity
+	path := "static/image/avatar/" + claims.Identity + fileExtension
+	pathInDb := "image/avatar/" + claims.Identity + fileExtension
 
 	err = c.SaveFile(file, path)
 	if err != nil {
