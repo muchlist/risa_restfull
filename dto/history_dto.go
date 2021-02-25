@@ -29,6 +29,7 @@ type History struct {
 	Image          string             `json:"image" bson:"image"`
 }
 
+// HistoryRequest user input
 type HistoryRequest struct {
 	ID             string   `json:"id,omitempty" bson:"_id,omitempty"`
 	ParentID       string   `json:"parent_id" bson:"parent_id"`
@@ -108,6 +109,7 @@ type HistoryEdit struct {
 	UpdatedByID    string   `json:"updated_by_id" bson:"updated_by_id"`
 }
 
+// HistoryEditRequest user input
 type HistoryEditRequest struct {
 	FilterTimestamp int64 `json:"filter_timestamp"`
 
@@ -117,22 +119,4 @@ type HistoryEditRequest struct {
 	CompleteStatus int      `json:"complete_status" bson:"complete_status"`
 	DateEnd        int64    `json:"date_end" bson:"date_end"`
 	Tag            []string `json:"tag" bson:"tag"`
-}
-
-type FilterBranchCatComplete struct {
-	Branch         string
-	Category       string
-	CompleteStatus int
-}
-
-type FilterIDBranchTime struct {
-	ID     primitive.ObjectID
-	Branch string
-	Time   int64
-}
-
-type FilterTimeRangeLimit struct {
-	Start int64
-	End   int64
-	Limit int64
 }
