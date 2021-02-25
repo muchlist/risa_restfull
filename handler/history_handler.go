@@ -43,7 +43,7 @@ func (h *historyHandler) Insert(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
-// Find menampilkan list user
+// Find menampilkan list history
 // Query [branch, category, c_status, start, end, limit]
 func (h *historyHandler) Find(c *fiber.Ctx) error {
 
@@ -67,6 +67,43 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 	}
 
 	histories, apiErr := h.service.FindHistory(filterA, filterB)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	return c.JSON(fiber.Map{"histories": histories})
+}
+
+// Find menampilkan list history berdasarkan parent string
+func (h *historyHandler) FindFromParent(c *fiber.Ctx) error {
+
+	parentID := c.Params("id")
+
+	histories, apiErr := h.service.FindHistoryForParent(parentID)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	return c.JSON(fiber.Map{"histories": histories})
+}
+
+// Find menampilkan list history berdasarkan user
+// Query [branch, category, c_status, start, end, limit]
+func (h *historyHandler) FindFromUser(c *fiber.Ctx) error {
+
+	userID := c.Params("id")
+
+	start := stringToInt(c.Query("start"))
+	end := stringToInt(c.Query("end"))
+	limit := stringToInt(c.Query("limit"))
+
+	filter := dto.FilterTimeRangeLimit{
+		Start: int64(start),
+		End:   int64(end),
+		Limit: int64(limit),
+	}
+
+	histories, apiErr := h.service.FindHistoryForUser(userID, filter)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
