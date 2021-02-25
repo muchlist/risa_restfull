@@ -25,9 +25,9 @@ type historyService struct {
 }
 type HistoryServiceAssumer interface {
 	InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError)
-	EditHistory(user mjwt.CustomClaim, historyID primitive.ObjectID, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError)
-	DeleteHistory(user mjwt.CustomClaim, id primitive.ObjectID) rest_err.APIError
-	PutImage(user mjwt.CustomClaim, id primitive.ObjectID, imagePath string) (*dto.HistoryResponse, rest_err.APIError)
+	EditHistory(user mjwt.CustomClaim, historyID string, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError)
+	DeleteHistory(user mjwt.CustomClaim, id string) rest_err.APIError
+	PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError)
 
 	GetHistory(parentID string) (*dto.HistoryResponse, rest_err.APIError)
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -109,7 +109,12 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	return insertedID, nil
 }
 
-func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID primitive.ObjectID, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError) {
+
+	oid, errT := primitive.ObjectIDFromHex(historyID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
 
 	// Filling data
 	timeNow := time.Now().Unix()
@@ -128,7 +133,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID primitive.
 	}
 
 	//DB
-	historyEdited, err := h.daoH.EditHistory(historyID, data)
+	historyEdited, err := h.daoH.EditHistory(oid, data)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +143,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID primitive.
 	_, err = h.daoG.DeleteCase(dto.GenUnitCaseRequest{
 		UnitID:       historyEdited.ParentID,
 		FilterBranch: user.Branch,
-		CaseID:       historyID.Hex(),
+		CaseID:       historyID,
 		CaseNote:     "",
 	})
 	if err != nil {
@@ -151,7 +156,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID primitive.
 		_, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
 			UnitID:       historyEdited.ParentID,
 			FilterBranch: user.Branch,
-			CaseID:       historyID.Hex(), // gunakan history id sebagai caseID
+			CaseID:       historyID, // gunakan history id sebagai caseID
 			CaseNote:     fmt.Sprintf("#%s# %s : %s", enum.GetProgressString(input.CompleteStatus), input.Status, input.Problem),
 		})
 	}
@@ -159,13 +164,18 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID primitive.
 	return historyEdited, nil
 }
 
-func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id primitive.ObjectID) rest_err.APIError {
+func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_err.APIError {
+
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
 
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
 	history, err := h.daoH.DeleteHistory(dto.FilterIDBranchTime{
-		ID:     id,
+		ID:     oid,
 		Branch: user.Branch,
 		Time:   timeMinusOneDay.Unix(),
 	})
@@ -179,7 +189,7 @@ func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id primitive.Objec
 		_, err = h.daoG.DeleteCase(dto.GenUnitCaseRequest{
 			UnitID:       history.ParentID,
 			FilterBranch: user.Branch,
-			CaseID:       id.Hex(),
+			CaseID:       id,
 			CaseNote:     "",
 		})
 		if err != nil {
@@ -236,8 +246,14 @@ func (h *historyService) GetHistoryCount(branchIfSpecific string, statusComplete
 }
 
 //PutImage memasukkan lokasi file (path) ke dalam database history dengan mengecek kesesuaian branch
-func (h *historyService) PutImage(user mjwt.CustomClaim, id primitive.ObjectID, imagePath string) (*dto.HistoryResponse, rest_err.APIError) {
-	history, err := h.daoH.UploadImage(id, imagePath, user.Branch)
+func (h *historyService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError) {
+
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	history, err := h.daoH.UploadImage(oid, imagePath, user.Branch)
 	if err != nil {
 		return nil, err
 	}

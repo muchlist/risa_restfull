@@ -124,6 +124,18 @@ func (h *historyHandler) GetHistory(c *fiber.Ctx) error {
 	return c.JSON(history)
 }
 
+func (h *historyHandler) Delete(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+
+	apiErr := h.service.DeleteHistory(*claims, id)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	return c.JSON(fiber.Map{"msg": fmt.Sprintf("history %s berhasil dihapus", id)})
+}
+
 func stringToInt(queryString string) int {
 	number, err := strconv.Atoi(queryString)
 	if err != nil {

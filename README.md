@@ -36,6 +36,6 @@ Restfull Backend for Risa Aplication Pelindo III using Golang (Fiber) and MongoD
 - Handler digunakan untuk mengekstrak inputan dari user. params, query, json body, claims dari jwt serta validasi input
   ,termasuk memastikan dan menimpa huruf besar atau kecil.
 - Service digunakan untuk bisnis logic, menggabungkan dua atau lebih dao atau utilitas pembantu lainnya, mengisi data
-  yang dibutuhkan dao misalnya saat perpindahan dari requestData (data sedikit) ke Data (data banyak).
+  yang dibutuhkan dao misalnya saat perpindahan dari requestData (data sedikit) ke Data (data banyak). termasuk merubah string menjadi ObjectID.
 - Dao berkomunikasi langsung ke database. Sedikit juga memastikan inputan huruf besar dan kecil pada inputan database
   yang caseSensitif untuk memaksimalkan indexing.
