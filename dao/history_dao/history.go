@@ -54,7 +54,7 @@ type HistoryDaoAssumer interface {
 	DeleteHistory(input dto.FilterIDBranchTime) (*dto.HistoryResponse, rest_err.APIError)
 	UploadImage(historyID primitive.ObjectID, imagePath string, filterBranch string) (*dto.HistoryResponse, rest_err.APIError)
 
-	GetHistoryByID(historyID primitive.ObjectID) (*dto.HistoryResponse, rest_err.APIError)
+	GetHistoryByID(historyID primitive.ObjectID, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -179,15 +179,20 @@ func (h *historyDao) DeleteHistory(input dto.FilterIDBranchTime) (*dto.HistoryRe
 	return &history, nil
 }
 
-func (h *historyDao) GetHistoryByID(historyID primitive.ObjectID) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyDao) GetHistoryByID(historyID primitive.ObjectID, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError) {
 	coll := db.Db.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
-	var history dto.HistoryResponse
-	opts := options.FindOne()
+	// filter
+	filter := bson.M{keyHistID: historyID}
 
-	if err := coll.FindOne(ctx, bson.M{keyHistID: historyID}, opts).Decode(&history); err != nil {
+	// filter conditional
+	if branchIfSpecific != "" {
+		filter[keyHistBranch] = strings.ToUpper(branchIfSpecific)
+	}
+	var history dto.HistoryResponse
+	if err := coll.FindOne(ctx, filter).Decode(&history); err != nil {
 
 		if err == mongo.ErrNoDocuments {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("History dengan ID %s tidak ditemukan", historyID.Hex()))

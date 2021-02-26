@@ -47,8 +47,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/histories-user/:id", middleware.NormalAuth(), historyHandler.FindFromUser)
 	api.Post("/histories", middleware.NormalAuth(), historyHandler.Insert)
 	api.Put("/histories/:id", middleware.NormalAuth(), historyHandler.Edit)
-	//TODO
-	// post image
+	api.Post("/history-image/:id", middleware.NormalAuth(), historyHandler.UploadImage)
 
 	//CCTV
 	api.Post("/cctv", middleware.NormalAuth(), cctvHandler.Insert)
@@ -57,7 +56,6 @@ func mapUrls(app *fiber.App) {
 	api.Put("/cctv/:id", middleware.NormalAuth(), cctvHandler.Edit)
 	api.Get("/cctv", middleware.NormalAuth(), cctvHandler.Find) // IMPROVEMENT join table with gen_unit
 	api.Get("/cctv-avail/:id/:status", middleware.NormalAuth(), cctvHandler.DisableCctv)
+	api.Post("/cctv-image/:id", middleware.NormalAuth(), cctvHandler.UploadImage)
 
-	//TODO
-	// post image
 }

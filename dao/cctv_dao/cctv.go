@@ -58,7 +58,7 @@ type CctvDaoAssumer interface {
 	DisableCctv(cctvID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError)
 	UploadImage(cctvID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Cctv, rest_err.APIError)
 
-	GetCctvByID(cctvID primitive.ObjectID) (*dto.Cctv, rest_err.APIError)
+	GetCctvByID(cctvID primitive.ObjectID, branchIfSpecific string) (*dto.Cctv, rest_err.APIError)
 	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
 }
 
@@ -260,15 +260,18 @@ func (c *cctvDao) UploadImage(cctvID primitive.ObjectID, imagePath string, filte
 	return &cctv, nil
 }
 
-func (c *cctvDao) GetCctvByID(cctvID primitive.ObjectID) (*dto.Cctv, rest_err.APIError) {
+func (c *cctvDao) GetCctvByID(cctvID primitive.ObjectID, branchIfSpecific string) (*dto.Cctv, rest_err.APIError) {
 	coll := db.Db.Collection(keyCtvCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
-	var cctv dto.Cctv
-	opts := options.FindOne()
+	filter := bson.M{keyCtvID: cctvID}
+	if branchIfSpecific != "" {
+		filter[keyCtvBranch] = strings.ToUpper(branchIfSpecific)
+	}
 
-	if err := coll.FindOne(ctx, bson.M{keyCtvID: cctvID}, opts).Decode(&cctv); err != nil {
+	var cctv dto.Cctv
+	if err := coll.FindOne(ctx, filter).Decode(&cctv); err != nil {
 
 		if err == mongo.ErrNoDocuments {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Cctv dengan ID %s tidak ditemukan", cctvID.Hex()))

@@ -30,9 +30,10 @@ type cctvService struct {
 }
 type CctvServiceAssumer interface {
 	InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError)
-	GetCctvByID(cctvID string) (*dto.Cctv, rest_err.APIError)
+	GetCctvByID(cctvID string, branchIfSpecific string) (*dto.Cctv, rest_err.APIError)
 	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
 	DisableCctv(cctvID string, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError)
+	PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Cctv, rest_err.APIError)
 	DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIError
 	EditCctv(user mjwt.CustomClaim, cctvID string, input dto.CctvEditRequest) (*dto.Cctv, rest_err.APIError)
 }
@@ -100,13 +101,13 @@ func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (
 	return insertedID, nil
 }
 
-func (c *cctvService) GetCctvByID(cctvID string) (*dto.Cctv, rest_err.APIError) {
+func (c *cctvService) GetCctvByID(cctvID string, branchIfSpecific string) (*dto.Cctv, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(cctvID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	cctv, err := c.daoC.GetCctvByID(oid)
+	cctv, err := c.daoC.GetCctvByID(oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}
@@ -239,4 +240,19 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 	}
 
 	return cctvEdited, nil
+}
+
+//PutImage memasukkan lokasi file (path) ke dalam database cctv dengan mengecek kesesuaian branch
+func (c *cctvService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Cctv, rest_err.APIError) {
+
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	cctv, err := c.daoC.UploadImage(oid, imagePath, user.Branch)
+	if err != nil {
+		return nil, err
+	}
+	return cctv, nil
 }

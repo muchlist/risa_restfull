@@ -29,7 +29,7 @@ type HistoryServiceAssumer interface {
 	DeleteHistory(user mjwt.CustomClaim, id string) rest_err.APIError
 	PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError)
 
-	GetHistory(parentID string) (*dto.HistoryResponse, rest_err.APIError)
+	GetHistory(parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -205,13 +205,13 @@ func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_er
 	return nil
 }
 
-func (h *historyService) GetHistory(parentID string) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyService) GetHistory(parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(parentID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	history, err := h.daoH.GetHistoryByID(oid)
+	history, err := h.daoH.GetHistoryByID(oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}

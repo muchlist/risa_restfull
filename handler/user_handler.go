@@ -8,8 +8,6 @@ import (
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
-	"net/http"
-	"path/filepath"
 )
 
 func NewUserHandler(userService service.UserServiceAssumer) *userHandler {
@@ -222,41 +220,14 @@ func (u *userHandler) RefreshToken(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-//UploadImage melakukan pengambilan file menggunakan form "avatar" mengecek ekstensi dan memasukkannya ke database
-//sesuai authorisasi aktif. File disimpan di folder static/images dengan nama file == jwt.identity alias email
+//UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
+//sesuai authorisasi aktif. File disimpan di folder static/images dengan nama file == jwt.identity alias username
 func (u *userHandler) UploadImage(c *fiber.Ctx) error {
 
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	file, err := c.FormFile("image")
-	if err != nil {
-		apiErr := rest_err.NewAPIError("File gagal di upload", http.StatusBadRequest, "bad_request", []interface{}{err.Error()})
-		logger.Info(fmt.Sprintf("u: %s | formfile | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
-	}
-
-	fileName := file.Filename
-	fileExtension := filepath.Ext(fileName)
-	if !(fileExtension == ".jpg" || fileExtension == ".png" || fileExtension == ".jpeg") {
-		apiErr := rest_err.NewBadRequestError("Ektensi file tidak di support")
-		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, apiErr.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
-	}
-
-	if file.Size > 1*1024*1024 { // 1 MB
-		apiErr := rest_err.NewBadRequestError("Ukuran file tidak dapat melebihi 1MB")
-		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, apiErr.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
-	}
-
-	// rename image to claims.Identity
-	path := "static/image/avatar/" + claims.Identity + fileExtension
-	pathInDb := "image/avatar/" + claims.Identity + fileExtension
-
-	err = c.SaveFile(file, path)
-	if err != nil {
-		logger.Error(fmt.Sprintf("%s gagal mengupload file", claims.Name), err)
-		apiErr := rest_err.NewInternalServerError("File gagal di upload", err)
+	pathInDb, apiErr := saveImage(c, *claims, "avatar", claims.Identity)
+	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 

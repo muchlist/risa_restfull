@@ -8,7 +8,6 @@ import (
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
-	"strconv"
 )
 
 func NewHistoryHandler(histService service.HistoryServiceAssumer) *historyHandler {
@@ -143,7 +142,7 @@ func (h *historyHandler) GetHistory(c *fiber.Ctx) error {
 
 	userID := c.Params("id")
 
-	history, apiErr := h.service.GetHistory(userID)
+	history, apiErr := h.service.GetHistory(userID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
@@ -163,10 +162,28 @@ func (h *historyHandler) Delete(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"msg": fmt.Sprintf("history %s berhasil dihapus", id)})
 }
 
-func stringToInt(queryString string) int {
-	number, err := strconv.Atoi(queryString)
-	if err != nil {
-		return 0
+//UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
+func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+
+	// cek apakah ID history && branch ada
+	_, apiErr := h.service.GetHistory(id, claims.Branch)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
-	return number
+
+	// simpan image
+	pathInDb, apiErr := saveImage(c, *claims, "history", id)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	// update path image di database
+	cctvResult, apiErr := h.service.PutImage(*claims, id, pathInDb)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	return c.JSON(cctvResult)
 }

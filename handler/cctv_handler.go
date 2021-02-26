@@ -51,7 +51,7 @@ func (x *cctvHandler) GetCctv(c *fiber.Ctx) error {
 
 	cctvID := c.Params("id")
 
-	cctv, apiErr := x.service.GetCctvByID(cctvID)
+	cctv, apiErr := x.service.GetCctvByID(cctvID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
@@ -149,4 +149,30 @@ func (x *cctvHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 	return c.JSON(cctvEdited)
+}
+
+//UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
+func (x *cctvHandler) UploadImage(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+
+	// cek apakah ID cctv && branch ada
+	_, apiErr := x.service.GetCctvByID(id, claims.Branch)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	// simpan image
+	pathInDb, apiErr := saveImage(c, *claims, "cctv", id)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	// update path image di database
+	cctvResult, apiErr := x.service.PutImage(*claims, id, pathInDb)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	return c.JSON(cctvResult)
 }
