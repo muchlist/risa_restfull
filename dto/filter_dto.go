@@ -27,3 +27,8 @@ type FilterTimeRangeLimit struct {
 	End   int64
 	Limit int64
 }
+
+type FilterBranchCategory struct {
+	Branch   string
+	Category string
+}

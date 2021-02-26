@@ -40,7 +40,6 @@ func mapUrls(app *fiber.App) {
 	api.Get("/general", middleware.NormalAuth(), genUnitHandler.Find)
 	api.Get("/general-ip", genUnitHandler.GetIPList)
 	//TODO
-	// find list of cctp ip address
 	// state update
 
 	//History

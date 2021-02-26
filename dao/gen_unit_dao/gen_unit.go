@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/db"
 	"github.com/muchlist/risa_restfull/dto"
 	"go.mongodb.org/mongo-driver/bson"
@@ -375,4 +376,50 @@ func (u *genUnitDao) GetIPList(branchIfSpecific string, category string) ([]stri
 	}
 
 	return ipAddressList, nil
+}
+
+func (u *genUnitDao) AppendPingState(filterBranchISCat dto.FilterBranchCategory, ipList []string, pingCodeState int) (int64, rest_err.APIError) {
+	coll := db.Db.Collection(keyGenUnitColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	pingState := dto.PingState{
+		Code:   pingCodeState,
+		Time:   time.Now().Unix(),
+		Status: enum.GetPingString(pingCodeState),
+	}
+
+	// Filter
+	filter := bson.M{
+		keyGenCategory: strings.ToUpper(filterBranchISCat.Category),
+		keyGenDisable:  false,
+		keyGenIP:       bson.M{"$in": ipList},
+	}
+
+	if filterBranchISCat.Branch != "" {
+		filter[keyGenBranch] = strings.ToUpper(filterBranchISCat.Branch)
+	}
+
+	update := bson.M{
+		"$push": bson.M{
+			keyGenPingState: bson.M{
+				"$each":     bson.A{pingState}, // TODO pingstate bukan bson.M .. perhatikan
+				"$position": 0,
+				"$slice":    12,
+			},
+		},
+		"$set": bson.M{
+			keyGenLastPing: enum.GetPingString(pingCodeState),
+		},
+	}
+
+	result, err := coll.UpdateMany(ctx, filter, update)
+
+	if err != nil {
+		logger.Error("Gagal update many unit pingstate dari database (AppendPingState)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return 0, apiErr
+	}
+
+	return result.ModifiedCount, nil
 }
