@@ -304,7 +304,9 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 		filter[keyGenCategory] = filterInput.Category
 	}
 	if filterInput.Name != "" {
-		filter[keyGenName] = filterInput.Name
+		filter[keyGenName] = bson.M{
+			"$regex": fmt.Sprintf(".*%s", filterInput.Name),
+		} // {'$regex': f'.*{cctv_name.upper()}.*'}
 	}
 	if filterInput.IP != "" {
 		filter[keyGenIP] = filterInput.IP

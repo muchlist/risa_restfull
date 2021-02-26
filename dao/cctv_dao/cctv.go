@@ -295,7 +295,9 @@ func (c *cctvDao) FindCctv(filterA dto.FilterBranchLocIPNameDisable) (dto.CctvRe
 
 	// filter condition
 	if filterA.Name != "" {
-		filter[keyCtvName] = filterA.Name // Todo regex
+		filter[keyCtvName] = bson.M{
+			"$regex": fmt.Sprintf(".*%s", filterA.Name),
+		}
 	}
 	if filterA.Location != "" {
 		filter[keyCtvLocation] = filterA.Location
