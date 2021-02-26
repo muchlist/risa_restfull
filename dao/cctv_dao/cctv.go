@@ -7,6 +7,7 @@ import (
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/db"
 	"github.com/muchlist/risa_restfull/dto"
+	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -54,7 +55,7 @@ type CctvDaoAssumer interface {
 	InsertCctv(input dto.Cctv) (*string, rest_err.APIError)
 	EditCctv(input dto.CctvEdit) (*dto.Cctv, rest_err.APIError)
 	DeleteCctv(input dto.FilterIDBranchTime) (*dto.Cctv, rest_err.APIError)
-	DisableCctv(cctvID primitive.ObjectID, branch string, value bool) (*dto.Cctv, rest_err.APIError)
+	DisableCctv(cctvID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError)
 	UploadImage(cctvID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Cctv, rest_err.APIError)
 
 	GetCctvByID(cctvID primitive.ObjectID) (*dto.Cctv, rest_err.APIError)
@@ -191,7 +192,8 @@ func (c *cctvDao) DeleteCctv(input dto.FilterIDBranchTime) (*dto.Cctv, rest_err.
 	return &cctv, nil
 }
 
-func (c *cctvDao) DisableCctv(cctvID primitive.ObjectID, branch string, value bool) (*dto.Cctv, rest_err.APIError) {
+// DisableCctv if value true , cctv will disabled
+func (c *cctvDao) DisableCctv(cctvID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError) {
 	coll := db.Db.Collection(keyCtvCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -201,12 +203,15 @@ func (c *cctvDao) DisableCctv(cctvID primitive.ObjectID, branch string, value bo
 
 	filter := bson.M{
 		keyCtvID:     cctvID,
-		keyCtvBranch: branch,
+		keyCtvBranch: user.Branch,
 	}
 
 	update := bson.M{
 		"$set": bson.M{
-			keyCtvDisable: value,
+			keyCtvDisable:     value,
+			keyCtvUpdatedAt:   time.Now().Unix(),
+			keyCtvUpdatedByID: user.Identity,
+			keyCtvUpdatedBy:   user.Name,
 		},
 	}
 
@@ -287,13 +292,15 @@ func (c *cctvDao) FindCctv(filterA dto.FilterBranchLocIPNameDisable) (dto.CctvRe
 	filterA.Branch = strings.ToUpper(filterA.Branch)
 	filterA.Name = strings.ToUpper(filterA.Name)
 
-	// empty filter
+	// filter
 	filter := bson.M{
-		keyCtvBranch:  filterA.Branch,
 		keyCtvDisable: filterA.Disable,
 	}
 
 	// filter condition
+	if filterA.Branch != "" {
+		filter[keyCtvBranch] = filterA.Branch
+	}
 	if filterA.Name != "" {
 		filter[keyCtvName] = bson.M{
 			"$regex": fmt.Sprintf(".*%s", filterA.Name),
@@ -311,7 +318,6 @@ func (c *cctvDao) FindCctv(filterA dto.FilterBranchLocIPNameDisable) (dto.CctvRe
 	opts.SetLimit(500)
 
 	cursor, err := coll.Find(ctx, filter, opts)
-
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar cctv dari database (FindCctv)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)

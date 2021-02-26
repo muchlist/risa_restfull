@@ -32,6 +32,7 @@ type CctvServiceAssumer interface {
 	InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError)
 	GetCctvByID(cctvID string) (*dto.Cctv, rest_err.APIError)
 	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
+	DisableCctv(cctvID string, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError)
 }
 
 func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError) {
@@ -125,4 +126,19 @@ func (c *cctvService) FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.Cct
 		return nil, err
 	}
 	return historyList, nil
+}
+
+// DisableCctv if value true , cctv will disabled
+func (c *cctvService) DisableCctv(cctvID string, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError) {
+
+	oid, errT := primitive.ObjectIDFromHex(cctvID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	cctv, err := c.daoC.DisableCctv(oid, user, value)
+	if err != nil {
+		return nil, err
+	}
+	return cctv, nil
 }

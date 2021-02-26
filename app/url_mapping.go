@@ -35,6 +35,9 @@ func mapUrls(app *fiber.App) {
 
 	//Unit GENERAL
 	api.Get("/general", middleware.NormalAuth(), genUnitHandler.Find)
+	//TODO
+	// find list of cctp ip address
+	// state update
 
 	//History
 	api.Get("/histories", middleware.NormalAuth(), historyHandler.Find)
@@ -44,7 +47,18 @@ func mapUrls(app *fiber.App) {
 	api.Get("/histories-user/:id", middleware.NormalAuth(), historyHandler.FindFromUser)
 	api.Post("/histories", middleware.NormalAuth(), historyHandler.Insert)
 	api.Put("/histories/:id", middleware.NormalAuth(), historyHandler.Edit)
+	//TODO
+	// post image
 
 	//CCTV
 	api.Post("/cctv", middleware.NormalAuth(), cctvHandler.Insert)
+	api.Get("/cctv/:id", middleware.NormalAuth(), cctvHandler.GetCctv)
+	api.Get("/cctv", middleware.NormalAuth(), cctvHandler.Find)
+	api.Get("/cctv-avail/:id/:status", middleware.NormalAuth(), cctvHandler.DisableCctv)
+
+	//TODO
+	// disable cctv
+	// edit cctv
+	// delete cctv
+	// post image
 }
