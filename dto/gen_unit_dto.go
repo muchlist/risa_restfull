@@ -76,3 +76,8 @@ type GenUnitResponse struct {
 	LastPing   string      `json:"last_ping,omitempty" bson:"last_ping,omitempty"`
 	Disable    bool        `json:"-" bson:"disable"`
 }
+
+type GenUnitIPList []IPAddressContainer
+type IPAddressContainer struct {
+	IP string `json:"ip" bson:"ip"`
+}

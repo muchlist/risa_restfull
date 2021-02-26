@@ -39,3 +39,17 @@ func (u *genUnitHandler) Find(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"units": userList})
 }
+
+//Find menampilkan list ip address. Query branch, category
+func (u *genUnitHandler) GetIPList(c *fiber.Ctx) error {
+
+	branch := c.Query("branch")
+	category := c.Query("category")
+
+	ipList, apiErr := u.service.GetIPList(branch, category)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	return c.JSON(fiber.Map{"ip_list": ipList})
+}

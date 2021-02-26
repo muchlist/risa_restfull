@@ -19,6 +19,7 @@ type genUnitService struct {
 
 type GenUnitServiceAssumer interface {
 	FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError)
+	GetIPList(branchIfSpecific string, category string) ([]string, rest_err.APIError)
 }
 
 func (g *genUnitService) FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError) {
@@ -37,4 +38,13 @@ func (g *genUnitService) FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponse
 		return nil, err
 	}
 	return unitList, nil
+}
+
+func (g *genUnitService) GetIPList(branchIfSpecific string, category string) ([]string, rest_err.APIError) {
+	// DB
+	ipAddressList, err := g.dao.GetIPList(branchIfSpecific, category)
+	if err != nil {
+		return nil, err
+	}
+	return ipAddressList, nil
 }

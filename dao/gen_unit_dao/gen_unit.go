@@ -51,6 +51,7 @@ type GenUnitDaoAssumer interface {
 
 	GetUnitByID(unitID string, branchSpecific string) (*dto.GenUnitResponse, rest_err.APIError)
 	FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError)
+	GetIPList(branchIfSpecific string, category string) ([]string, rest_err.APIError)
 }
 
 func (u *genUnitDao) InsertUnit(unit dto.GenUnitRequest) (*string, rest_err.APIError) {
@@ -332,4 +333,46 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 	}
 
 	return units, nil
+}
+
+func (u *genUnitDao) GetIPList(branchIfSpecific string, category string) ([]string, rest_err.APIError) {
+	coll := db.Db.Collection(keyGenUnitColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		keyGenCategory: strings.ToUpper(category),
+		keyGenIP:       bson.M{"$nin": bson.A{"0.0.0.0", ""}},
+		keyGenDisable:  false,
+	}
+
+	if branchIfSpecific != "" {
+		filter[keyGenBranch] = strings.ToUpper(branchIfSpecific)
+	}
+
+	opts := options.Find()
+	opts.SetProjection(bson.D{{keyGenIP, 1}})
+	opts.SetSort(bson.D{{keyGenName, 1}})
+	opts.SetLimit(200)
+	sortCursor, err := coll.Find(ctx, filter, opts)
+
+	if err != nil {
+		logger.Error("Gagal mendapatkan unit dari database (GetIPList)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return []string{}, apiErr
+	}
+
+	units := dto.GenUnitIPList{}
+	if err = sortCursor.All(ctx, &units); err != nil {
+		logger.Error("Gagal decode units ip ke objek slice (GetIPList)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return []string{}, apiErr
+	}
+
+	ipAddressList := make([]string, len(units))
+	for i, v := range units {
+		ipAddressList[i] = v.IP
+	}
+
+	return ipAddressList, nil
 }
