@@ -31,6 +31,7 @@ func (g *genUnitService) FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponse
 		filter.Name = ""
 	}
 
+	// DB
 	unitList, err := g.dao.FindUnit(filter)
 	if err != nil {
 		return nil, err

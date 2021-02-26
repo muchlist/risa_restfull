@@ -88,6 +88,8 @@ func (x *cctvHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"cctv_list": cctvList})
 }
 
+//DisableCctv menghilangkan cctv dari list
+// Param status [enable, disable]
 func (x *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 

@@ -136,9 +136,18 @@ func (c *cctvService) DisableCctv(cctvID string, user mjwt.CustomClaim, value bo
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
+	// IMPROVEMENT : Can use goroutine in next improvement
+	// set disable enable cctv
 	cctv, err := c.daoC.DisableCctv(oid, user, value)
 	if err != nil {
 		return nil, err
 	}
+
+	// set disable enable gen_unit
+	_, err = c.daoG.DisableUnit(oid.Hex(), value)
+	if err != nil {
+		return nil, err
+	}
+
 	return cctv, nil
 }

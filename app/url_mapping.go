@@ -57,7 +57,6 @@ func mapUrls(app *fiber.App) {
 	api.Get("/cctv-avail/:id/:status", middleware.NormalAuth(), cctvHandler.DisableCctv)
 
 	//TODO
-	// disable cctv
 	// edit cctv
 	// delete cctv
 	// post image
