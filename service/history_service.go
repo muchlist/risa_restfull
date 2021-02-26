@@ -43,9 +43,6 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	if input.DateStart == 0 {
 		input.DateStart = timeNow
 	}
-	if input.Tag == nil {
-		input.Tag = []string{}
-	}
 
 	// jika ID tersedia, gunakan ID , jika tidak buatkan object ID
 	// memastikan ID yang diinputkan bisa diubah ke ObjectID

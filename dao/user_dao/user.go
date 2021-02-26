@@ -49,6 +49,9 @@ func (u *userDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 	user.Name = strings.ToUpper(user.Name)
 	user.ID = strings.ToUpper(user.ID)
 	user.Email = strings.ToLower(user.Email)
+	if user.Roles == nil {
+		user.Roles = []string{}
+	}
 
 	insertDoc := bson.D{
 		{keyUserID, user.ID},
@@ -82,6 +85,9 @@ func (u *userDao) EditUser(userID string, userRequest dto.UserEditRequest) (*dto
 
 	userRequest.Name = strings.ToUpper(userRequest.Name)
 	userID = strings.ToUpper(userID)
+	if userRequest.Roles == nil {
+		userRequest.Roles = []string{}
+	}
 
 	opts := options.FindOneAndUpdate()
 	opts.SetReturnDocument(1)

@@ -24,6 +24,7 @@ type GenUnit struct {
 	CasesSize  int         `json:"cases_size" bson:"cases_size"`
 	PingsState []PingState `json:"pings_state,omitempty" bson:"pings_state,omitempty"`
 	LastPing   string      `json:"last_ping,omitempty" bson:"last_ping,omitempty"`
+	Disable    bool        `json:"disable" bson:"disable"`
 }
 
 type GenUnitRequest struct {
@@ -39,6 +40,7 @@ type GenUnitFilter struct {
 	Name     string
 	Category string
 	IP       string
+	Disable  bool `json:"disable" bson:"disable"`
 }
 
 // GenUnitCaseRequest,
@@ -72,4 +74,5 @@ type GenUnitResponse struct {
 	CasesSize  int         `json:"cases_size" bson:"cases_size"`
 	PingsState []PingState `json:"pings_state,omitempty" bson:"pings_state,omitempty"`
 	LastPing   string      `json:"last_ping,omitempty" bson:"last_ping,omitempty"`
+	Disable    bool        `json:"-" bson:"disable"`
 }

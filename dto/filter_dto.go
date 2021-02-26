@@ -8,6 +8,14 @@ type FilterBranchCatComplete struct {
 	CompleteStatus int
 }
 
+type FilterBranchLocIPNameDisable struct {
+	Branch   string
+	Location string
+	IP       string
+	Name     string
+	Disable  bool
+}
+
 type FilterIDBranchTime struct {
 	ID     primitive.ObjectID
 	Branch string

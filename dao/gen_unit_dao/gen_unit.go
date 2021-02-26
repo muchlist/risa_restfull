@@ -27,6 +27,7 @@ const (
 	keyGenCasesSize = "cases_size"
 	keyGenPingState = "ping_state"
 	keyGenLastPing  = "last_ping"
+	keyGenDisable   = "disable"
 
 	keyCaseID   = "case_id"
 	keyCaseNote = "case_note"
@@ -45,6 +46,7 @@ type GenUnitDaoAssumer interface {
 	DeleteUnit(unitID string) rest_err.APIError
 	InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError)
 	DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError)
+	DisableUnit(unitID string, value bool) (*dto.GenUnitResponse, rest_err.APIError)
 	//insertPing
 
 	GetUnitByID(unitID string, branchSpecific string) (*dto.GenUnitResponse, rest_err.APIError)
@@ -68,6 +70,7 @@ func (u *genUnitDao) InsertUnit(unit dto.GenUnitRequest) (*string, rest_err.APIE
 		keyGenCasesSize: 0,
 		keyGenPingState: []dto.PingState{},
 		keyGenLastPing:  "",
+		keyGenDisable:   false,
 	}
 
 	result, err := coll.InsertOne(ctx, insertDoc)
@@ -144,6 +147,38 @@ func (u *genUnitDao) DeleteUnit(unitID string) rest_err.APIError {
 	}
 
 	return nil
+}
+
+func (u *genUnitDao) DisableUnit(unitID string, value bool) (*dto.GenUnitResponse, rest_err.APIError) {
+	coll := db.Db.Collection(keyGenUnitColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyGenID: unitID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			keyGenDisable: value,
+		},
+	}
+
+	var unit dto.GenUnitResponse
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID tidak valid")
+		}
+
+		logger.Error("Gagal mendapatkan unit dari database (DisableUnit)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
+		return nil, apiErr
+	}
+
+	return &unit, nil
 }
 
 func (u *genUnitDao) InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError) {
@@ -262,7 +297,8 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 	filterInput.Category = strings.ToUpper(filterInput.Category)
 
 	filter := bson.M{
-		keyGenBranch: filterInput.Branch,
+		keyGenBranch:  filterInput.Branch,
+		keyGenDisable: false,
 	}
 	if filterInput.Category != "" {
 		filter[keyGenCategory] = filterInput.Category

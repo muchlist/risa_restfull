@@ -68,6 +68,9 @@ func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIErro
 
 	input.Branch = strings.ToUpper(input.Branch)
 	input.Category = strings.ToUpper(input.Category)
+	if input.Tag == nil {
+		input.Tag = []string{}
+	}
 
 	insertDoc := bson.M{
 		keyHistID:             input.ID,
@@ -107,6 +110,10 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 	coll := db.Db.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
+
+	if input.Tag == nil {
+		input.Tag = []string{}
+	}
 
 	opts := options.FindOneAndUpdate()
 	opts.SetReturnDocument(1)
@@ -392,7 +399,7 @@ func (h *historyDao) UploadImage(historyID primitive.ObjectID, imagePath string,
 
 	filter := bson.M{
 		keyHistID:     historyID,
-		keyHistBranch: filterBranch,
+		keyHistBranch: strings.ToUpper(filterBranch),
 	}
 	update := bson.M{
 		"$set": bson.M{

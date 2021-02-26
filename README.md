@@ -39,5 +39,5 @@ Restfull Backend for Risa Aplication Pelindo III using Golang (Fiber) and MongoD
 - Service digunakan untuk bisnis logic, menggabungkan dua atau lebih dao atau utilitas pembantu lainnya, mengisi data
   yang dibutuhkan dao misalnya saat perpindahan dari requestData (data sedikit) ke Data (data banyak). termasuk merubah
   string menjadi ObjectID dan Pengecekan IP address.
-- Dao berkomunikasi langsung ke database. Sedikit juga memastikan inputan huruf besar dan kecil pada inputan database
-  yang caseSensitif untuk memaksimalkan indexing.
+- Dao berkomunikasi langsung ke database. Beberapa kasus juga memastikan inputan huruf besar dan kecil pada inputan database
+  yang caseSensitif untuk memaksimalkan indexing, memastikan nilai yang di input array<T> apabila array nil.
