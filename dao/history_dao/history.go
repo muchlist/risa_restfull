@@ -135,7 +135,7 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 	var history dto.HistoryResponse
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&history); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, rest_err.NewBadRequestError("History tidak diupdate karena ID atau timestamp tidak valid")
+			return nil, rest_err.NewBadRequestError("History tidak diupdate : validasi id branch timestamp status_complete")
 		}
 
 		logger.Error("Gagal mendapatkan history dari database (EditHistory)", err)
@@ -161,7 +161,7 @@ func (h *historyDao) DeleteHistory(input dto.FilterIDBranchTime) (*dto.HistoryRe
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&history)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, rest_err.NewBadRequestError("History gagal dihapus, limit waktu terlampaui, id atau cabang salah")
+			return nil, rest_err.NewBadRequestError("History tidak diupdate : validasi id branch time_reach")
 		}
 
 		logger.Error("Gagal menghapus history dari database (DeleteHistory)", err)
