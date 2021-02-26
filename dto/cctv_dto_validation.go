@@ -32,7 +32,30 @@ func (c CctvRequest) Validate() error {
 		return err
 	}
 
-	// validate role
+	// validate type
+	if err := cctvTypeValidation(c.Type); err != nil {
+		return err
+	}
+
+	// validate location
+	if err := locationValidation(c.Location); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c CctvEditRequest) Validate() error {
+	if err := validation.ValidateStruct(&c,
+		validation.Field(&c.Name, validation.Required),
+		validation.Field(&c.Location, validation.Required),
+		validation.Field(&c.Type, validation.Required),
+		validation.Field(&c.FilterTimestamp, validation.Required),
+	); err != nil {
+		return err
+	}
+
+	// validate type
 	if err := cctvTypeValidation(c.Type); err != nil {
 		return err
 	}

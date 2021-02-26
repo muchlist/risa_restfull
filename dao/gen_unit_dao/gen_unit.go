@@ -111,11 +111,12 @@ func (u *genUnitDao) EditUnit(unitID string, unitRequest dto.GenUnitEditRequest)
 	var unit dto.GenUnitResponse
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID atau timestamp tidak valid")
+			logger.Error("Gagal mengedit unit dari database (EditUnit)", err)
+			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID tidak valid")
 		}
 
-		logger.Error("Gagal mendapatkan unit dari database (EditUnit)", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
+		logger.Error("Gagal mengedit unit dari database (EditUnit)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mengedit unit dari database", err)
 		return nil, apiErr
 	}
 
@@ -138,7 +139,7 @@ func (u *genUnitDao) DeleteUnit(unitID string) rest_err.APIError {
 		}
 
 		logger.Error("Gagal menghapus unit dari database (DeleteUnit)", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan unit dari database", err)
+		apiErr := rest_err.NewInternalServerError("Gagal menghapus unit dari database", err)
 		return apiErr
 	}
 

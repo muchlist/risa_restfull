@@ -64,7 +64,6 @@ type CctvEdit struct {
 	LocationLon     string
 	Date            int64
 	Tag             []string
-	Image           string
 
 	Brand string
 	Type  string

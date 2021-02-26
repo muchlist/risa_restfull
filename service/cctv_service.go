@@ -34,6 +34,7 @@ type CctvServiceAssumer interface {
 	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
 	DisableCctv(cctvID string, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError)
 	DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIError
+	EditCctv(user mjwt.CustomClaim, cctvID string, input dto.CctvEditRequest) (*dto.Cctv, rest_err.APIError)
 }
 
 func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError) {
@@ -180,4 +181,62 @@ func (c *cctvService) DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIE
 	}
 
 	return nil
+}
+
+func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.CctvEditRequest) (*dto.Cctv, rest_err.APIError) {
+
+	oid, errT := primitive.ObjectIDFromHex(cctvID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// cek apakah ip address valid, jika kosong masukkan ip default 0.0.0.0
+	if input.IP != "" {
+		if net.ParseIP(input.IP) == nil {
+			return nil, rest_err.NewBadRequestError("IP Address tidak valid")
+		}
+	} else {
+		input.IP = "0.0.0.0"
+	}
+
+	// Filling data
+	timeNow := time.Now().Unix()
+	data := dto.CctvEdit{
+		ID:              oid,
+		FilterBranch:    user.Branch,
+		FilterTimestamp: input.FilterTimestamp,
+		UpdatedAt:       timeNow,
+		UpdatedBy:       user.Name,
+		UpdatedByID:     user.Identity,
+		Name:            input.Name,
+		IP:              input.IP,
+		InventoryNumber: input.InventoryNumber,
+		Location:        input.Location,
+		LocationLat:     input.LocationLat,
+		LocationLon:     input.LocationLon,
+		Date:            input.Date,
+		Tag:             input.Tag,
+		Brand:           input.Brand,
+		Type:            input.Type,
+		Note:            input.Note,
+	}
+
+	//DB
+	cctvEdited, err := c.daoC.EditCctv(data)
+	if err != nil {
+		return nil, err
+	}
+
+	//DB
+	_, err = c.daoG.EditUnit(cctvID, dto.GenUnitEditRequest{
+		Category: category.Cctv,
+		Name:     cctvEdited.Name,
+		IP:       cctvEdited.IP,
+		Branch:   cctvEdited.Branch,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return cctvEdited, nil
 }

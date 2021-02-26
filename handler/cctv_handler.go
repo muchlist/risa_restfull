@@ -42,7 +42,7 @@ func (x *cctvHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan cctv berhasi, ID: %s", *insertID)}
+	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan cctv berhasil, ID: %s", *insertID)}
 	return c.JSON(res)
 }
 
@@ -125,4 +125,28 @@ func (x *cctvHandler) Delete(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"msg": fmt.Sprintf("cctv %s berhasil dihapus", id)})
+}
+
+func (x *cctvHandler) Edit(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	cctvID := c.Params("id")
+
+	var req dto.CctvEditRequest
+	if err := c.BodyParser(&req); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	if err := req.Validate(); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	cctvEdited, apiErr := x.service.EditCctv(*claims, cctvID, req)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+	return c.JSON(cctvEdited)
 }

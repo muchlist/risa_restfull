@@ -145,7 +145,6 @@ func (c *cctvDao) EditCctv(input dto.CctvEdit) (*dto.Cctv, rest_err.APIError) {
 
 			keyCtvDate:  input.Date,
 			keyCtvTag:   input.Tag,
-			keyCtvImage: input.Image,
 			keyCtvBrand: input.Brand,
 			keyCtvType:  input.Type,
 			keyCtvNote:  input.Note,
