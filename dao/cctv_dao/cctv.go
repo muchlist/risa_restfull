@@ -53,9 +53,9 @@ type cctvDao struct {
 type CctvDaoAssumer interface {
 	InsertCctv(input dto.Cctv) (*string, rest_err.APIError)
 	EditCctv(input dto.CctvEdit) (*dto.Cctv, rest_err.APIError)
-	UploadImage(cctvID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Cctv, rest_err.APIError)
 	DeleteCctv(input dto.FilterIDBranchTime) (*dto.Cctv, rest_err.APIError)
 	DisableCctv(cctvID primitive.ObjectID, branch string, value bool) (*dto.Cctv, rest_err.APIError)
+	UploadImage(cctvID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Cctv, rest_err.APIError)
 
 	GetCctvByID(cctvID primitive.ObjectID) (*dto.Cctv, rest_err.APIError)
 	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
@@ -165,38 +165,6 @@ func (c *cctvDao) EditCctv(input dto.CctvEdit) (*dto.Cctv, rest_err.APIError) {
 	return &cctv, nil
 }
 
-func (c *cctvDao) UploadImage(cctvID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Cctv, rest_err.APIError) {
-	coll := db.Db.Collection(keyCtvCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
-	defer cancel()
-
-	opts := options.FindOneAndUpdate()
-	opts.SetReturnDocument(1)
-
-	filter := bson.M{
-		keyCtvID:     cctvID,
-		keyCtvBranch: strings.ToUpper(filterBranch),
-	}
-	update := bson.M{
-		"$set": bson.M{
-			keyCtvImage: imagePath,
-		},
-	}
-
-	var cctv dto.Cctv
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&cctv); err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, cctv dengan id %s tidak ditemukan", cctvID.Hex()))
-		}
-
-		logger.Error("Memasukkan path image cctv ke db gagal, (UploadImage)", err)
-		apiErr := rest_err.NewInternalServerError("Memasukkan path image cctv ke db gagal", err)
-		return nil, apiErr
-	}
-
-	return &cctv, nil
-}
-
 func (c *cctvDao) DeleteCctv(input dto.FilterIDBranchTime) (*dto.Cctv, rest_err.APIError) {
 	coll := db.Db.Collection(keyCtvCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
@@ -250,6 +218,38 @@ func (c *cctvDao) DisableCctv(cctvID primitive.ObjectID, branch string, value bo
 
 		logger.Error("Gagal mendapatkan cctv dari database (DisableCctv)", err)
 		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan cctv dari database", err)
+		return nil, apiErr
+	}
+
+	return &cctv, nil
+}
+
+func (c *cctvDao) UploadImage(cctvID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Cctv, rest_err.APIError) {
+	coll := db.Db.Collection(keyCtvCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyCtvID:     cctvID,
+		keyCtvBranch: strings.ToUpper(filterBranch),
+	}
+	update := bson.M{
+		"$set": bson.M{
+			keyCtvImage: imagePath,
+		},
+	}
+
+	var cctv dto.Cctv
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&cctv); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, cctv dengan id %s tidak ditemukan", cctvID.Hex()))
+		}
+
+		logger.Error("Memasukkan path image cctv ke db gagal, (UploadImage)", err)
+		apiErr := rest_err.NewInternalServerError("Memasukkan path image cctv ke db gagal", err)
 		return nil, apiErr
 	}
 

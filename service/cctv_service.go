@@ -30,6 +30,8 @@ type cctvService struct {
 }
 type CctvServiceAssumer interface {
 	InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError)
+	GetCctvByID(cctvID string) (*dto.Cctv, rest_err.APIError)
+	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
 }
 
 func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError) {
@@ -93,4 +95,34 @@ func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (
 	}
 
 	return insertedID, nil
+}
+
+func (c *cctvService) GetCctvByID(cctvID string) (*dto.Cctv, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(cctvID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	history, err := c.daoC.GetCctvByID(oid)
+	if err != nil {
+		return nil, err
+	}
+	return history, nil
+}
+
+func (c *cctvService) FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError) {
+
+	// cek apakah ip address valid, jika valid maka set filter.Name ke kosong supaya pencarian berdasarkan IP
+	if filter.IP != "" {
+		if net.ParseIP(filter.IP) == nil {
+			return nil, rest_err.NewBadRequestError("IP Address tidak valid")
+		}
+		filter.Name = ""
+	}
+
+	historyList, err := c.daoC.FindCctv(filter)
+	if err != nil {
+		return nil, err
+	}
+	return historyList, nil
 }

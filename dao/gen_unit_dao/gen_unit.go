@@ -314,6 +314,7 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 
 	opts := options.Find()
 	opts.SetSort(bson.D{{keyGenName, 1}})
+	opts.SetLimit(200)
 	sortCursor, err := coll.Find(ctx, filter, opts)
 
 	if err != nil {
