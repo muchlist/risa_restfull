@@ -53,11 +53,11 @@ func mapUrls(app *fiber.App) {
 	//CCTV
 	api.Post("/cctv", middleware.NormalAuth(), cctvHandler.Insert)
 	api.Get("/cctv/:id", middleware.NormalAuth(), cctvHandler.GetCctv)
-	api.Get("/cctv", middleware.NormalAuth(), cctvHandler.Find)
+	api.Delete("/cctv/:id", middleware.NormalAuth(), cctvHandler.Delete)
+	api.Get("/cctv", middleware.NormalAuth(), cctvHandler.Find) // IMPROVEMENT join table with gen_unit
 	api.Get("/cctv-avail/:id/:status", middleware.NormalAuth(), cctvHandler.DisableCctv)
 
 	//TODO
 	// edit cctv
-	// delete cctv
 	// post image
 }

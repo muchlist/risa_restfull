@@ -114,3 +114,15 @@ func (x *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"cctv_list": cctvList})
 }
+
+func (x *cctvHandler) Delete(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+
+	apiErr := x.service.DeleteCctv(*claims, id)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	return c.JSON(fiber.Map{"msg": fmt.Sprintf("cctv %s berhasil dihapus", id)})
+}

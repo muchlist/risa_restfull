@@ -33,6 +33,7 @@ type CctvServiceAssumer interface {
 	GetCctvByID(cctvID string) (*dto.Cctv, rest_err.APIError)
 	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
 	DisableCctv(cctvID string, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError)
+	DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIError
 }
 
 func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError) {
@@ -104,11 +105,11 @@ func (c *cctvService) GetCctvByID(cctvID string) (*dto.Cctv, rest_err.APIError) 
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	history, err := c.daoC.GetCctvByID(oid)
+	cctv, err := c.daoC.GetCctvByID(oid)
 	if err != nil {
 		return nil, err
 	}
-	return history, nil
+	return cctv, nil
 }
 
 func (c *cctvService) FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError) {
@@ -121,11 +122,11 @@ func (c *cctvService) FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.Cct
 		filter.Name = ""
 	}
 
-	historyList, err := c.daoC.FindCctv(filter)
+	cctvList, err := c.daoC.FindCctv(filter)
 	if err != nil {
 		return nil, err
 	}
-	return historyList, nil
+	return cctvList, nil
 }
 
 // DisableCctv if value true , cctv will disabled
@@ -150,4 +151,33 @@ func (c *cctvService) DisableCctv(cctvID string, user mjwt.CustomClaim, value bo
 	}
 
 	return cctv, nil
+}
+
+func (c *cctvService) DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIError {
+
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
+	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
+	// DB
+	_, err := c.daoC.DeleteCctv(dto.FilterIDBranchTime{
+		ID:     oid,
+		Branch: user.Branch,
+		Time:   timeMinusOneDay.Unix(),
+	})
+	if err != nil {
+		return err
+	}
+
+	// Delete unit_gen
+	// DB
+	err = c.daoG.DeleteUnit(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
