@@ -180,11 +180,13 @@ func (u *userHandler) Login(c *fiber.Ctx) error {
 	var login dto.UserLoginRequest
 	if err := c.BodyParser(&login); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: - | parse | %s", err.Error()))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
 	if err := login.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: - | validate | %s", err.Error()))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
@@ -202,11 +204,13 @@ func (u *userHandler) RefreshToken(c *fiber.Ctx) error {
 	var payload dto.UserRefreshTokenRequest
 	if err := c.BodyParser(&payload); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: - | parse | %s", err.Error()))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
 	if err := payload.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: - | parse | %s", err.Error()))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
@@ -227,6 +231,7 @@ func (u *userHandler) UploadImage(c *fiber.Ctx) error {
 	file, err := c.FormFile("image")
 	if err != nil {
 		apiErr := rest_err.NewAPIError("File gagal di upload", http.StatusBadRequest, "bad_request", []interface{}{err.Error()})
+		logger.Info(fmt.Sprintf("u: %s | formfile | %s", claims.Name, err.Error()))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
@@ -234,11 +239,13 @@ func (u *userHandler) UploadImage(c *fiber.Ctx) error {
 	fileExtension := filepath.Ext(fileName)
 	if !(fileExtension == ".jpg" || fileExtension == ".png" || fileExtension == ".jpeg") {
 		apiErr := rest_err.NewBadRequestError("Ektensi file tidak di support")
+		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, apiErr.Error()))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
 	if file.Size > 1*1024*1024 { // 1 MB
 		apiErr := rest_err.NewBadRequestError("Ukuran file tidak dapat melebihi 1MB")
+		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, apiErr.Error()))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
@@ -248,7 +255,7 @@ func (u *userHandler) UploadImage(c *fiber.Ctx) error {
 
 	err = c.SaveFile(file, path)
 	if err != nil {
-		logger.Error(fmt.Sprintf("%s gagal mengupload file", claims.Identity), err)
+		logger.Error(fmt.Sprintf("%s gagal mengupload file", claims.Name), err)
 		apiErr := rest_err.NewInternalServerError("File gagal di upload", err)
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}

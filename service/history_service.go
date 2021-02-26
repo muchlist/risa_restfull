@@ -192,7 +192,7 @@ func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_er
 	}
 
 	// Jika history complete, berarti harus dihapus di parentnya karena masih nyantol
-	if history.CompleteStatus != enum.HComplete {
+	if history.CompleteStatus == enum.HComplete {
 		// DB
 		_, err = h.daoG.DeleteCase(dto.GenUnitCaseRequest{
 			UnitID:       history.ParentID,

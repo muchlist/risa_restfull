@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
@@ -25,11 +26,13 @@ func (x *cctvHandler) Insert(c *fiber.Ctx) error {
 	var req dto.CctvRequest
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
