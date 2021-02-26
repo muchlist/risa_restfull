@@ -46,10 +46,14 @@ func (u *userDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
+	user.Name = strings.ToUpper(user.Name)
+	user.ID = strings.ToUpper(user.ID)
+	user.Email = strings.ToLower(user.Email)
+
 	insertDoc := bson.D{
 		{keyUserID, user.ID},
 		{keyUserName, user.Name},
-		{keyUserEmail, strings.ToLower(user.Email)},
+		{keyUserEmail, user.Email},
 		{keyUserRoles, user.Roles},
 		{keyUserBranch, user.Branch},
 		{keyUserAvatar, user.Avatar},
@@ -76,11 +80,14 @@ func (u *userDao) EditUser(userID string, userRequest dto.UserEditRequest) (*dto
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
+	userRequest.Name = strings.ToUpper(userRequest.Name)
+	userID = strings.ToUpper(userID)
+
 	opts := options.FindOneAndUpdate()
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyUserID:        strings.ToUpper(userID),
+		keyUserID:        userID,
 		keyUserTimeStamp: userRequest.TimestampFilter,
 	}
 	update := bson.M{
