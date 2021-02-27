@@ -72,12 +72,19 @@ type GenUnitResponse struct {
 	Branch     string      `json:"branch" bson:"branch"`
 	Cases      []Case      `json:"cases" bson:"cases"`
 	CasesSize  int         `json:"cases_size" bson:"cases_size"`
-	PingsState []PingState `json:"pings_state,omitempty" bson:"pings_state,omitempty"`
-	LastPing   string      `json:"last_ping,omitempty" bson:"last_ping,omitempty"`
+	PingsState []PingState `json:"pings_state" bson:"pings_state"`
+	LastPing   string      `json:"last_ping" bson:"last_ping"`
 	Disable    bool        `json:"-" bson:"disable"`
 }
 
 type GenUnitIPList []IPAddressContainer
 type IPAddressContainer struct {
 	IP string `json:"ip" bson:"ip"`
+}
+
+type GenUnitPingStateRequest struct {
+	Branch      string   `json:"branch"`
+	Category    string   `json:"category"`
+	IPAddresses []string `json:"ip_addresses"`
+	PingCode    int      `json:"ping_code"`
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
 	"github.com/muchlist/risa_restfull/dto"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"net"
 )
 
@@ -20,6 +21,7 @@ type genUnitService struct {
 type GenUnitServiceAssumer interface {
 	FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError)
 	GetIPList(branchIfSpecific string, category string) ([]string, rest_err.APIError)
+	AppendPingState(input dto.GenUnitPingStateRequest) (int64, rest_err.APIError)
 }
 
 func (g *genUnitService) FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError) {
@@ -46,5 +48,17 @@ func (g *genUnitService) GetIPList(branchIfSpecific string, category string) ([]
 	if err != nil {
 		return nil, err
 	}
-	return ipAddressList, nil
+
+	uniqueIPList := sfunc.Unique(ipAddressList)
+	return uniqueIPList, nil
+}
+
+func (g *genUnitService) AppendPingState(input dto.GenUnitPingStateRequest) (int64, rest_err.APIError) {
+	// DB
+	unitUpdatedCount, err := g.dao.AppendPingState(input)
+	if err != nil {
+		return 0, err
+	}
+
+	return unitUpdatedCount, nil
 }

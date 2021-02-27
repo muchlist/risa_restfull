@@ -26,7 +26,7 @@ const (
 	keyGenBranch    = "branch"
 	keyGenCases     = "cases"
 	keyGenCasesSize = "cases_size"
-	keyGenPingState = "ping_state"
+	keyGenPingState = "pings_state"
 	keyGenLastPing  = "last_ping"
 	keyGenDisable   = "disable"
 
@@ -48,7 +48,7 @@ type GenUnitDaoAssumer interface {
 	InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError)
 	DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError)
 	DisableUnit(unitID string, value bool) (*dto.GenUnitResponse, rest_err.APIError)
-	//insertPing
+	AppendPingState(input dto.GenUnitPingStateRequest) (int64, rest_err.APIError)
 
 	GetUnitByID(unitID string, branchSpecific string) (*dto.GenUnitResponse, rest_err.APIError)
 	FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError)
@@ -378,26 +378,32 @@ func (u *genUnitDao) GetIPList(branchIfSpecific string, category string) ([]stri
 	return ipAddressList, nil
 }
 
-func (u *genUnitDao) AppendPingState(filterBranchISCat dto.FilterBranchCategory, ipList []string, pingCodeState int) (int64, rest_err.APIError) {
+func (u *genUnitDao) AppendPingState(input dto.GenUnitPingStateRequest) (int64, rest_err.APIError) {
 	coll := db.Db.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
-	pingState := dto.PingState{
-		Code:   pingCodeState,
-		Time:   time.Now().Unix(),
-		Status: enum.GetPingString(pingCodeState),
+	// default value
+	if input.IPAddresses == nil {
+		input.IPAddresses = []string{}
 	}
 
 	// Filter
 	filter := bson.M{
-		keyGenCategory: strings.ToUpper(filterBranchISCat.Category),
+		keyGenCategory: strings.ToUpper(input.Category),
 		keyGenDisable:  false,
-		keyGenIP:       bson.M{"$in": ipList},
+		keyGenIP:       bson.M{"$in": input.IPAddresses},
 	}
 
-	if filterBranchISCat.Branch != "" {
-		filter[keyGenBranch] = strings.ToUpper(filterBranchISCat.Branch)
+	if input.Branch != "" {
+		filter[keyGenBranch] = strings.ToUpper(input.Branch)
+	}
+
+	// filling data
+	pingState := dto.PingState{
+		Code:   input.PingCode,
+		Time:   time.Now().Unix(),
+		Status: enum.GetPingString(input.PingCode),
 	}
 
 	update := bson.M{
@@ -409,7 +415,7 @@ func (u *genUnitDao) AppendPingState(filterBranchISCat dto.FilterBranchCategory,
 			},
 		},
 		"$set": bson.M{
-			keyGenLastPing: enum.GetPingString(pingCodeState),
+			keyGenLastPing: enum.GetPingString(input.PingCode),
 		},
 	}
 

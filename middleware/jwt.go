@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/muchlist/erru_utils_go/rest_err"
-	"github.com/muchlist/risa_restfull/utils"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"strings"
 )
 
@@ -74,7 +74,7 @@ func authMustHaveRoleValidator(authHeader string, mustFresh bool, rolesRequired 
 
 	if len(rolesRequired) != 0 {
 		for _, roleReq := range rolesRequired {
-			if !utils.InSlice(roleReq, claims.Roles) {
+			if !sfunc.InSlice(roleReq, claims.Roles) {
 				apiErr := rest_err.NewUnauthorizedError(fmt.Sprintf("Unauthorized, memerlukan hak akses %s", roleReq))
 				return nil, apiErr
 			}

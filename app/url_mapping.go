@@ -39,8 +39,7 @@ func mapUrls(app *fiber.App) {
 	//Unit GENERAL
 	api.Get("/general", middleware.NormalAuth(), genUnitHandler.Find)
 	api.Get("/general-ip", genUnitHandler.GetIPList)
-	//TODO
-	// state update
+	api.Post("/general-ip-state", genUnitHandler.UpdatePingState)
 
 	//History
 	api.Get("/histories", middleware.NormalAuth(), historyHandler.Find)

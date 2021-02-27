@@ -7,8 +7,8 @@ import (
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
-	"github.com/muchlist/risa_restfull/utils"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 )
 
 func NewCctvHandler(cctvService service.CctvServiceAssumer) *cctvHandler {
@@ -98,7 +98,7 @@ func (x *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 
 	// validation
 	statusAvailable := []string{"disable", "enable"}
-	if !utils.InSlice(status, statusAvailable) {
+	if !sfunc.InSlice(status, statusAvailable) {
 		apiErr := rest_err.NewBadRequestError(fmt.Sprintf("Status yang dimasukkan tidak tersedia. gunakan %s", statusAvailable))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}

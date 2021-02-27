@@ -1,4 +1,4 @@
-package utils
+package sfunc
 
 import (
 	"github.com/muchlist/risa_restfull/constants/roles"

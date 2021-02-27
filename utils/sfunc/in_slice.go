@@ -1,4 +1,4 @@
-package utils
+package sfunc
 
 // InSlice seperti fungsi in, apakah target ada didalam slice.
 func InSlice(target string, slice []string) bool {
