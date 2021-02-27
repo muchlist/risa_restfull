@@ -23,8 +23,6 @@ const (
 	keyCtvID          = "_id"
 	keyCtvName        = "name"
 	keyCtvCreatedAt   = "created_at"
-	keyCtvCreatedBy   = "created_by"
-	keyCtvCreatedByID = "created_by_id"
 	keyCtvUpdatedAt   = "updated_at"
 	keyCtvUpdatedBy   = "updated_by"
 	keyCtvUpdatedByID = "updated_by_id"
@@ -72,34 +70,9 @@ func (c *cctvDao) InsertCctv(input dto.Cctv) (*string, rest_err.APIError) {
 	if input.Tag == nil {
 		input.Tag = []string{}
 	}
+	input.Disable = false
 
-	insertDoc := bson.M{
-		keyCtvID:          input.ID,
-		keyCtvName:        input.Name,
-		keyCtvCreatedAt:   input.CreatedAt,
-		keyCtvCreatedBy:   input.CreatedBy,
-		keyCtvCreatedByID: input.CreatedByID,
-		keyCtvUpdatedAt:   input.UpdatedAt,
-		keyCtvUpdatedBy:   input.UpdatedBy,
-		keyCtvUpdatedByID: input.UpdatedByID,
-		keyCtvBranch:      input.Branch,
-		keyCtvDisable:     false,
-
-		keyCtvIP:              input.IP,
-		keyCtvInventoryNumber: input.InventoryNumber,
-		keyCtvLocation:        input.Location,
-		keyCtvLocationLat:     input.LocationLat,
-		keyCtvLocationLon:     input.LocationLon,
-
-		keyCtvDate:  input.Date,
-		keyCtvTag:   input.Tag,
-		keyCtvImage: input.Image,
-		keyCtvBrand: input.Brand,
-		keyCtvType:  input.Type,
-		keyCtvNote:  input.Note,
-	}
-
-	result, err := coll.InsertOne(ctx, insertDoc)
+	result, err := coll.InsertOne(ctx, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan cctv ke database", err)
 		logger.Error("Gagal menyimpan cctv ke database, (InsertCctv)", err)

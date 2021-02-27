@@ -42,7 +42,7 @@ type genUnitDao struct {
 }
 
 type GenUnitDaoAssumer interface {
-	InsertUnit(unit dto.GenUnitRequest) (*string, rest_err.APIError)
+	InsertUnit(unit dto.GenUnit) (*string, rest_err.APIError)
 	EditUnit(unitID string, unitRequest dto.GenUnitEditRequest) (*dto.GenUnitResponse, rest_err.APIError)
 	DeleteUnit(unitID string) rest_err.APIError
 	InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError)
@@ -55,27 +55,18 @@ type GenUnitDaoAssumer interface {
 	GetIPList(branchIfSpecific string, category string) ([]string, rest_err.APIError)
 }
 
-func (u *genUnitDao) InsertUnit(unit dto.GenUnitRequest) (*string, rest_err.APIError) {
+func (u *genUnitDao) InsertUnit(unit dto.GenUnit) (*string, rest_err.APIError) {
 	coll := db.Db.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
 	unit.Name = strings.ToUpper(unit.Name)
+	unit.Cases = []dto.Case{}
+	unit.CasesSize = 0
+	unit.PingsState = []dto.PingState{}
+	unit.LastPing = ""
 
-	insertDoc := bson.M{
-		keyGenID:        unit.ID,
-		keyGenCategory:  unit.Category,
-		keyGenBranch:    unit.Branch,
-		keyGenName:      unit.Name,
-		keyGenIP:        unit.IP,
-		keyGenCases:     []string{},
-		keyGenCasesSize: 0,
-		keyGenPingState: []dto.PingState{},
-		keyGenLastPing:  "",
-		keyGenDisable:   false,
-	}
-
-	result, err := coll.InsertOne(ctx, insertDoc)
+	result, err := coll.InsertOne(ctx, unit)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan unit ke database", err)
 		logger.Error("Gagal menyimpan unit ke database, InsertUnit", err)

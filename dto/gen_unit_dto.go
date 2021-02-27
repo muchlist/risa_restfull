@@ -20,11 +20,11 @@ type GenUnit struct {
 	Name       string      `json:"name" bson:"name"`
 	IP         string      `json:"ip" bson:"ip"`
 	Branch     string      `json:"branch" bson:"branch"`
+	Disable    bool        `json:"disable" bson:"disable"`
 	Cases      []Case      `json:"cases" bson:"cases"`
 	CasesSize  int         `json:"cases_size" bson:"cases_size"`
 	PingsState []PingState `json:"pings_state,omitempty" bson:"pings_state,omitempty"`
 	LastPing   string      `json:"last_ping,omitempty" bson:"last_ping,omitempty"`
-	Disable    bool        `json:"disable" bson:"disable"`
 }
 
 type GenUnitRequest struct {

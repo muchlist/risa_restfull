@@ -87,7 +87,7 @@ func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (
 	// Menambahkan juga General Unit dengan ID yang sama
 	//DB
 	_, err = c.daoG.InsertUnit(
-		dto.GenUnitRequest{
+		dto.GenUnit{
 			ID:       idGenerated.Hex(),
 			Category: category.Cctv,
 			Name:     input.Name,

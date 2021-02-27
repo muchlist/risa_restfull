@@ -22,7 +22,6 @@ const (
 
 	keyHistID             = "_id"
 	keyHistCreatedAt      = "created_at"
-	keyHistCreatedBy      = "created_by"
 	keyHistCreatedByID    = "created_by_id"
 	keyHistUpdatedAt      = "updated_at"
 	keyHistUpdatedBy      = "updated_by"
@@ -30,7 +29,6 @@ const (
 	keyHistBranch         = "branch"
 	keyHistCategory       = "category"
 	keyHistParentID       = "parent_id"
-	keyHistParentName     = "parent_name"
 	keyHistStatus         = "status"
 	keyHistProblem        = "problem"
 	keyHistProblemResolve = "problem_resolve"
@@ -72,29 +70,7 @@ func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIErro
 		input.Tag = []string{}
 	}
 
-	insertDoc := bson.M{
-		keyHistID:             input.ID,
-		keyHistCreatedAt:      input.CreatedAt,
-		keyHistCreatedBy:      input.CreatedBy,
-		keyHistCreatedByID:    input.CreatedByID,
-		keyHistUpdatedAt:      input.UpdatedAt,
-		keyHistUpdatedBy:      input.UpdatedBy,
-		keyHistUpdatedByID:    input.UpdatedByID,
-		keyHistBranch:         input.Branch,
-		keyHistCategory:       input.Category,
-		keyHistParentID:       input.ParentID,
-		keyHistParentName:     input.ParentName,
-		keyHistStatus:         input.Status,
-		keyHistProblem:        input.Problem,
-		keyHistProblemResolve: input.ProblemResolve,
-		keyHistCompleteStatus: input.CompleteStatus,
-		keyHistDateStart:      input.DateStart,
-		keyHistDateEnd:        input.DateEnd,
-		keyHistTag:            input.Tag,
-		keyHistImage:          input.Image,
-	}
-
-	result, err := coll.InsertOne(ctx, insertDoc)
+	result, err := coll.InsertOne(ctx, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan history ke database", err)
 		logger.Error("Gagal menyimpan history ke database, (InsertHistory)", err)
