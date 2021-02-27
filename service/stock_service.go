@@ -29,6 +29,13 @@ type stockService struct {
 type StockServiceAssumer interface {
 	InsertStock(user mjwt.CustomClaim, input dto.StockRequest) (*string, rest_err.APIError)
 	EditStock(user mjwt.CustomClaim, stockID string, input dto.StockEditRequest) (*dto.Stock, rest_err.APIError)
+	DeleteStock(user mjwt.CustomClaim, id string) rest_err.APIError
+	DisableStock(stockID string, user mjwt.CustomClaim, value bool) (*dto.Stock, rest_err.APIError)
+	PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Stock, rest_err.APIError)
+	ChangeQtyStock(user mjwt.CustomClaim, stockID string, data dto.StockChangeRequest) (*dto.Stock, rest_err.APIError)
+	GetStockByID(stockID string, branchIfSpecific string) (*dto.Stock, rest_err.APIError)
+	FindStock(filter dto.FilterBranchNameCatDisable) (dto.StockResponseMinList, rest_err.APIError)
+	FindNeedReStock(branch string) (dto.StockResponseMinList, rest_err.APIError)
 }
 
 func (s *stockService) InsertStock(user mjwt.CustomClaim, input dto.StockRequest) (*string, rest_err.APIError) {
@@ -219,6 +226,10 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 		return nil, err
 	}
 
+	// IMPROVEMENT
+	//jika stockEdited qty lebih kurang atau semadengan threshold
+	//send notification to firebase
+
 	return stockEdited, nil
 }
 
@@ -242,4 +253,27 @@ func (s *stockService) FindStock(filter dto.FilterBranchNameCatDisable) (dto.Sto
 		return nil, err
 	}
 	return stockList, nil
+}
+
+func (s *stockService) FindNeedReStock(branch string) (dto.StockResponseMinList, rest_err.APIError) {
+
+	stockList, err := s.daoS.FindStock(dto.FilterBranchNameCatDisable{
+		Branch: branch,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var needRestockList dto.StockResponseMinList
+	for _, v := range stockList {
+		qtyIsZero := v.Qty == 0
+		qtyNeedRestock := v.Qty <= v.Threshold
+
+		if qtyIsZero || qtyNeedRestock {
+			needRestockList = append(needRestockList, v)
+		}
+	}
+
+	return needRestockList, nil
 }
