@@ -16,7 +16,7 @@ type Cctv struct {
 	ID              primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Name            string             `json:"name" bson:"name"`
 	IP              string             `json:"ip" bson:"ip"`
-	InventoryNumber string             `json:"inventory_number" bsom:"inventory_number"`
+	InventoryNumber string             `json:"inventory_number" bson:"inventory_number"`
 	Location        string             `json:"location" bson:"location"`
 	LocationLat     string             `json:"location_lat" bson:"location_lat"`
 	LocationLon     string             `json:"location_lon" bson:"location_lon"`
@@ -34,7 +34,7 @@ type CctvRequest struct {
 	ID              string   `json:"-" bson:"-"`
 	Name            string   `json:"name" bson:"name"`
 	IP              string   `json:"ip" bson:"ip"`
-	InventoryNumber string   `json:"inventory_number" bsom:"inventory_number"`
+	InventoryNumber string   `json:"inventory_number" bson:"inventory_number"`
 	Location        string   `json:"location" bson:"location"`
 	LocationLat     string   `json:"location_lat" bson:"location_lat"`
 	LocationLon     string   `json:"location_lon" bson:"location_lon"`
@@ -76,7 +76,7 @@ type CctvEditRequest struct {
 
 	Name            string   `json:"name" bson:"name"`
 	IP              string   `json:"ip" bson:"ip"`
-	InventoryNumber string   `json:"inventory_number" bsom:"inventory_number"`
+	InventoryNumber string   `json:"inventory_number" bson:"inventory_number"`
 	Location        string   `json:"location" bson:"location"`
 	LocationLat     string   `json:"location_lat" bson:"location_lat"`
 	LocationLon     string   `json:"location_lon" bson:"location_lon"`

@@ -333,17 +333,13 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 	}
 
 	units := dto.GenUnitResponseList{}
-	//if err = cursor.All(ctx, &units); err != nil {
-	//	logger.Error("Gagal decode unitsCursor ke objek slice (FindUnit)", err)
-	//	apiErr := rest_err.NewInternalServerError("Database error", err)
-	//	return dto.GenUnitResponseList{}, apiErr
-	//}
+
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
 		var unit dto.GenUnitResponse
 		err := cursor.Decode(&unit)
 		if err != nil {
-			logger.Error("Gagal decode unitsCursor ke objek slice (FindUnit)", err)
+			logger.Error("Gagal decode unitsCursor ke objek (FindUnit)", err)
 			apiErr := rest_err.NewInternalServerError("Database error", err)
 			return dto.GenUnitResponseList{}, apiErr
 		}
