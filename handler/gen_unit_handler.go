@@ -27,12 +27,17 @@ func (u *genUnitHandler) Find(c *fiber.Ctx) error {
 	nameSearch := c.Query("name")
 	categorySearch := c.Query("category")
 	ipSearch := c.Query("ip")
+	var pingsRetrieve bool
+	if c.Query("pings") != "" {
+		pingsRetrieve = true
+	}
 
 	payload := dto.GenUnitFilter{
 		Branch:   claims.Branch,
 		Name:     nameSearch,
 		Category: categorySearch,
 		IP:       ipSearch,
+		Pings:    pingsRetrieve,
 	}
 
 	userList, apiErr := u.service.FindUnit(payload)

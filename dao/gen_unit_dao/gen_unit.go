@@ -316,6 +316,12 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 	}
 
 	opts := options.Find()
+
+	// jika pings false (default) sembunyikan pingsState
+	if !filterInput.Pings {
+		opts.SetProjection(bson.M{keyGenPingState: 0})
+	}
+
 	opts.SetSort(bson.D{{keyGenName, 1}})
 	opts.SetLimit(200)
 	sortCursor, err := coll.Find(ctx, filter, opts)

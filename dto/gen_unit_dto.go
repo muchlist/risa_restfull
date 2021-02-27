@@ -40,7 +40,8 @@ type GenUnitFilter struct {
 	Name     string
 	Category string
 	IP       string
-	Disable  bool `json:"disable" bson:"disable"`
+	Disable  bool
+	Pings    bool
 }
 
 // GenUnitCaseRequest,
