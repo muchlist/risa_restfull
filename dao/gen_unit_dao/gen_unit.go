@@ -415,7 +415,7 @@ func (u *genUnitDao) AppendPingState(input dto.GenUnitPingStateRequest) (int64, 
 	update := bson.M{
 		"$push": bson.M{
 			keyGenPingState: bson.M{
-				"$each":     bson.A{pingState}, // TODO pingstate bukan bson.M .. perhatikan
+				"$each":     bson.A{pingState},
 				"$position": 0,
 				"$slice":    12,
 			},
