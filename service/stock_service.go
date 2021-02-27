@@ -138,3 +138,108 @@ func (s *stockService) EditStock(user mjwt.CustomClaim, stockID string, input dt
 
 	return stockEdited, nil
 }
+
+func (s *stockService) DeleteStock(user mjwt.CustomClaim, id string) rest_err.APIError {
+
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
+	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
+	// DB
+	_, err := s.daoS.DeleteStock(dto.FilterIDBranchTime{
+		ID:     oid,
+		Branch: user.Branch,
+		Time:   timeMinusOneDay.Unix(),
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DisableStock if value true , stock will disabled
+func (s *stockService) DisableStock(stockID string, user mjwt.CustomClaim, value bool) (*dto.Stock, rest_err.APIError) {
+
+	oid, errT := primitive.ObjectIDFromHex(stockID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// set disable enable stock
+	stock, err := s.daoS.DisableStock(oid, user, value)
+	if err != nil {
+		return nil, err
+	}
+
+	return stock, nil
+}
+
+//PutImage memasukkan lokasi file (path) ke dalam database stock dengan mengecek kesesuaian branch
+func (s *stockService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Stock, rest_err.APIError) {
+
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	stock, err := s.daoS.UploadImage(oid, imagePath, user.Branch)
+	if err != nil {
+		return nil, err
+	}
+	return stock, nil
+}
+
+func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, data dto.StockChangeRequest) (*dto.Stock, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(stockID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// Filling data=
+	incDec := dto.StockChange{
+		DummyID:  time.Now().UnixNano(),
+		Author:   user.Name,
+		Qty:      data.Qty,
+		BaNumber: data.BaNumber,
+		Note:     data.Note,
+		Time:     time.Now().Unix(),
+	}
+
+	filter := dto.FilterIDBranch{
+		ID:     oid,
+		Branch: user.Branch,
+	}
+
+	//DB
+	stockEdited, err := s.daoS.ChangeQtyStock(filter, incDec)
+	if err != nil {
+		return nil, err
+	}
+
+	return stockEdited, nil
+}
+
+func (s *stockService) GetStockByID(stockID string, branchIfSpecific string) (*dto.Stock, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(stockID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	stock, err := s.daoS.GetStockByID(oid, branchIfSpecific)
+	if err != nil {
+		return nil, err
+	}
+	return stock, nil
+}
+
+func (s *stockService) FindStock(filter dto.FilterBranchNameCatDisable) (dto.StockResponseMinList, rest_err.APIError) {
+
+	stockList, err := s.daoS.FindStock(filter)
+	if err != nil {
+		return nil, err
+	}
+	return stockList, nil
+}

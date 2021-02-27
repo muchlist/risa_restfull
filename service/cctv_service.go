@@ -30,12 +30,13 @@ type cctvService struct {
 }
 type CctvServiceAssumer interface {
 	InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError)
-	GetCctvByID(cctvID string, branchIfSpecific string) (*dto.Cctv, rest_err.APIError)
-	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
+	EditCctv(user mjwt.CustomClaim, cctvID string, input dto.CctvEditRequest) (*dto.Cctv, rest_err.APIError)
+	DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIError
 	DisableCctv(cctvID string, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError)
 	PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Cctv, rest_err.APIError)
-	DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIError
-	EditCctv(user mjwt.CustomClaim, cctvID string, input dto.CctvEditRequest) (*dto.Cctv, rest_err.APIError)
+
+	GetCctvByID(cctvID string, branchIfSpecific string) (*dto.Cctv, rest_err.APIError)
+	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
 }
 
 func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError) {
@@ -100,90 +101,6 @@ func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (
 
 	return insertedID, nil
 }
-
-func (c *cctvService) GetCctvByID(cctvID string, branchIfSpecific string) (*dto.Cctv, rest_err.APIError) {
-	oid, errT := primitive.ObjectIDFromHex(cctvID)
-	if errT != nil {
-		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
-	}
-
-	cctv, err := c.daoC.GetCctvByID(oid, branchIfSpecific)
-	if err != nil {
-		return nil, err
-	}
-	return cctv, nil
-}
-
-func (c *cctvService) FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError) {
-
-	// cek apakah ip address valid, jika valid maka set filter.Name ke kosong supaya pencarian berdasarkan IP
-	if filter.IP != "" {
-		if net.ParseIP(filter.IP) == nil {
-			return nil, rest_err.NewBadRequestError("IP Address tidak valid")
-		}
-		filter.Name = ""
-	}
-
-	cctvList, err := c.daoC.FindCctv(filter)
-	if err != nil {
-		return nil, err
-	}
-	return cctvList, nil
-}
-
-// DisableCctv if value true , cctv will disabled
-func (c *cctvService) DisableCctv(cctvID string, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError) {
-
-	oid, errT := primitive.ObjectIDFromHex(cctvID)
-	if errT != nil {
-		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
-	}
-
-	// IMPROVEMENT : Can use goroutine in next improvement
-	// set disable enable cctv
-	cctv, err := c.daoC.DisableCctv(oid, user, value)
-	if err != nil {
-		return nil, err
-	}
-
-	// set disable enable gen_unit
-	_, err = c.daoG.DisableUnit(oid.Hex(), value)
-	if err != nil {
-		return nil, err
-	}
-
-	return cctv, nil
-}
-
-func (c *cctvService) DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIError {
-
-	oid, errT := primitive.ObjectIDFromHex(id)
-	if errT != nil {
-		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
-	}
-
-	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
-	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
-	// DB
-	_, err := c.daoC.DeleteCctv(dto.FilterIDBranchTime{
-		ID:     oid,
-		Branch: user.Branch,
-		Time:   timeMinusOneDay.Unix(),
-	})
-	if err != nil {
-		return err
-	}
-
-	// Delete unit_gen
-	// DB
-	err = c.daoG.DeleteUnit(id)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.CctvEditRequest) (*dto.Cctv, rest_err.APIError) {
 
 	oid, errT := primitive.ObjectIDFromHex(cctvID)
@@ -241,6 +158,58 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 
 	return cctvEdited, nil
 }
+func (c *cctvService) DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIError {
+
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
+	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
+	// DB
+	_, err := c.daoC.DeleteCctv(dto.FilterIDBranchTime{
+		ID:     oid,
+		Branch: user.Branch,
+		Time:   timeMinusOneDay.Unix(),
+	})
+	if err != nil {
+		return err
+	}
+
+	// Delete unit_gen
+	// DB
+	err = c.daoG.DeleteUnit(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DisableCctv if value true , cctv will disabled
+func (c *cctvService) DisableCctv(cctvID string, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError) {
+
+	oid, errT := primitive.ObjectIDFromHex(cctvID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// IMPROVEMENT : Can use goroutine in next improvement
+	// set disable enable cctv
+	cctv, err := c.daoC.DisableCctv(oid, user, value)
+	if err != nil {
+		return nil, err
+	}
+
+	// set disable enable gen_unit
+	_, err = c.daoG.DisableUnit(oid.Hex(), value)
+	if err != nil {
+		return nil, err
+	}
+
+	return cctv, nil
+}
 
 //PutImage memasukkan lokasi file (path) ke dalam database cctv dengan mengecek kesesuaian branch
 func (c *cctvService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Cctv, rest_err.APIError) {
@@ -255,4 +224,34 @@ func (c *cctvService) PutImage(user mjwt.CustomClaim, id string, imagePath strin
 		return nil, err
 	}
 	return cctv, nil
+}
+
+func (c *cctvService) GetCctvByID(cctvID string, branchIfSpecific string) (*dto.Cctv, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(cctvID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	cctv, err := c.daoC.GetCctvByID(oid, branchIfSpecific)
+	if err != nil {
+		return nil, err
+	}
+	return cctv, nil
+}
+
+func (c *cctvService) FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError) {
+
+	// cek apakah ip address valid, jika valid maka set filter.Name ke kosong supaya pencarian berdasarkan IP
+	if filter.IP != "" {
+		if net.ParseIP(filter.IP) == nil {
+			return nil, rest_err.NewBadRequestError("IP Address tidak valid")
+		}
+		filter.Name = ""
+	}
+
+	cctvList, err := c.daoC.FindCctv(filter)
+	if err != nil {
+		return nil, err
+	}
+	return cctvList, nil
 }

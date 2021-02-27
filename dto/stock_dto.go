@@ -27,7 +27,18 @@ type Stock struct {
 	Note          string        `json:"note" bson:"note"`
 }
 
+// StockChange disertakan di model penuh Stock
 type StockChange struct {
+	DummyID  int64  `json:"dummy_id" bson:"dummy_id"`
+	Author   string `json:"author" bson:"author"`
+	Qty      int    `json:"qty" bson:"qty"`
+	BaNumber string `json:"ba_number" bson:"ba_number"`
+	Note     string `json:"note" bson:"note"`
+	Time     int64  `json:"time" bson:"time"`
+}
+
+// StockChangeRequest input user
+type StockChangeRequest struct {
 	DummyID  int64  `json:"dummy_id" bson:"dummy_id"`
 	Author   string `json:"author" bson:"author"`
 	Qty      int    `json:"qty" bson:"qty"`
@@ -93,28 +104,3 @@ type StockResponseMin struct {
 	Image         string   `json:"image" bson:"image"`
 	Note          string   `json:"note" bson:"note"`
 }
-
-type StockChangeData struct {
-	FilterID     primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	FilterBranch string             `json:"branch" bson:"branch"`
-
-	Author   string `json:"author" bson:"author"`
-	Qty      int    `json:"qty" bson:"qty"`
-	BaNumber string `json:"ba_number" bson:"ba_number"`
-	Note     string `json:"note" bson:"note"`
-	Time     int64  `json:"time" bson:"time"`
-
-	Disable bool `json:"disable" bson:"disable"`
-}
-
-/*
-class UseStockDto(NamedTuple):
-    parent_id: str
-    branch: str
-    author: str
-    qty: float
-    ba_number: str
-    note: str
-    time: datetime
-
-*/
