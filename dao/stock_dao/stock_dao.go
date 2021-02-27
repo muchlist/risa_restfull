@@ -8,6 +8,8 @@ import (
 	"github.com/muchlist/risa_restfull/dto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"strings"
 	"time"
 )
@@ -48,6 +50,7 @@ type stockDao struct {
 
 type StockDaoAssumer interface {
 	InsertStock(input dto.Stock) (*string, rest_err.APIError)
+	EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError)
 }
 
 func (s *stockDao) InsertStock(input dto.Stock) (*string, rest_err.APIError) {
@@ -67,32 +70,7 @@ func (s *stockDao) InsertStock(input dto.Stock) (*string, rest_err.APIError) {
 		input.Decrement = []dto.StockChange{}
 	}
 
-	insertDoc := bson.M{
-		keyStoID:          input.ID,
-		keyStoName:        input.Name,
-		keyStoCreatedAt:   input.CreatedAt,
-		keyStoCreatedBy:   input.CreatedBy,
-		keyStoCreatedByID: input.CreatedByID,
-		keyStoUpdatedAt:   input.UpdatedAt,
-		keyStoUpdatedBy:   input.UpdatedBy,
-		keyStoUpdatedByID: input.UpdatedByID,
-		keyStoBranch:      input.Branch,
-		keyStoDisable:     false,
-
-		keyStoCategory:  input.StockCategory,
-		keyStoUnit:      input.Unit,
-		keyStoQty:       input.Qty,
-		keyStoThreshold: input.Threshold,
-		keyStoIncrement: input.Increment,
-		keyStoDecrement: input.Decrement,
-		keyStoLocation:  input.Location,
-
-		keyStoTag:   input.Tag,
-		keyStoImage: input.Image,
-		keyStoNote:  input.Note,
-	}
-
-	result, err := coll.InsertOne(ctx, insertDoc)
+	result, err := coll.InsertOne(ctx, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan stock ke database", err)
 		logger.Error("Gagal menyimpan stock ke database, (InsertStock)", err)
@@ -102,4 +80,51 @@ func (s *stockDao) InsertStock(input dto.Stock) (*string, rest_err.APIError) {
 	insertID := result.InsertedID.(primitive.ObjectID).Hex()
 
 	return &insertID, nil
+}
+
+func (s *stockDao) EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError) {
+	coll := db.Db.Collection(keyStoCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	input.Name = strings.ToUpper(input.Name)
+	if input.Tag == nil {
+		input.Tag = []string{}
+	}
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyStoID:        input.ID,
+		keyStoBranch:    input.FilterBranch,
+		keyStoUpdatedAt: input.FilterTimestamp,
+	}
+
+	update := bson.D{
+		{"$set", bson.M{
+			keyStoName:        input.Name,
+			keyStoUpdatedAt:   input.UpdatedAt,
+			keyStoUpdatedBy:   input.UpdatedBy,
+			keyStoUpdatedByID: input.UpdatedByID,
+			keyStoUnit:        input.Unit,
+			keyStoLocation:    input.Location,
+			keyStoThreshold:   input.Threshold,
+			keyStoTag:         input.Tag,
+			keyStoNote:        input.Note,
+		}},
+	}
+
+	var stock dto.Stock
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&stock); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError("Stock tidak diupdate : validasi id branch timestamp")
+		}
+
+		logger.Error("Gagal mendapatkan stock dari database (EditStock)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan stock dari database", err)
+		return nil, apiErr
+	}
+
+	return &stock, nil
 }

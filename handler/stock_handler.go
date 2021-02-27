@@ -44,3 +44,27 @@ func (s *stockHandler) Insert(c *fiber.Ctx) error {
 	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan stock berhasil, ID: %s", *insertID)}
 	return c.JSON(res)
 }
+
+func (s *stockHandler) Edit(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	stockID := c.Params("id")
+
+	var req dto.StockEditRequest
+	if err := c.BodyParser(&req); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	if err := req.Validate(); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+
+	stockEdited, apiErr := s.service.EditStock(*claims, stockID, req)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(apiErr)
+	}
+	return c.JSON(stockEdited)
+}

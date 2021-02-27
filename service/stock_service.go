@@ -28,6 +28,7 @@ type stockService struct {
 }
 type StockServiceAssumer interface {
 	InsertStock(user mjwt.CustomClaim, input dto.StockRequest) (*string, rest_err.APIError)
+	EditStock(user mjwt.CustomClaim, stockID string, input dto.StockEditRequest) (*dto.Stock, rest_err.APIError)
 }
 
 func (s *stockService) InsertStock(user mjwt.CustomClaim, input dto.StockRequest) (*string, rest_err.APIError) {
@@ -103,4 +104,37 @@ func (s *stockService) InsertStock(user mjwt.CustomClaim, input dto.StockRequest
 	}
 
 	return insertedID, nil
+}
+
+func (s *stockService) EditStock(user mjwt.CustomClaim, stockID string, input dto.StockEditRequest) (*dto.Stock, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(stockID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// Filling data
+	timeNow := time.Now().Unix()
+	data := dto.StockEdit{
+		ID:              oid,
+		FilterBranch:    user.Branch,
+		FilterTimestamp: input.FilterTimestamp,
+		UpdatedAt:       timeNow,
+		UpdatedBy:       user.Name,
+		UpdatedByID:     user.Identity,
+		StockCategory:   input.StockCategory,
+		Unit:            input.Unit,
+		Threshold:       input.Threshold,
+		Name:            input.Name,
+		Location:        input.Location,
+		Tag:             input.Tag,
+		Note:            input.Note,
+	}
+
+	//DB
+	stockEdited, err := s.daoS.EditStock(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return stockEdited, nil
 }

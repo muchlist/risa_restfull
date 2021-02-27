@@ -4,27 +4,27 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 
 // Stock struct penuh dari domain cctv
 type Stock struct {
-	CreatedAt   int64  `json:"created_at" bson:"created_at"`
-	CreatedBy   string `json:"created_by" bson:"created_by"`
-	CreatedByID string `json:"created_by_id" bson:"created_by_id"`
-	UpdatedAt   int64  `json:"updated_at" bson:"updated_at"`
-	UpdatedBy   string `json:"updated_by" bson:"updated_by"`
-	UpdatedByID string `json:"updated_by_id" bson:"updated_by_id"`
-	Branch      string `json:"branch" bson:"branch"`
-	Disable     bool   `json:"disable" bson:"disable"`
+	ID          primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	CreatedAt   int64              `json:"created_at" bson:"created_at"`
+	CreatedBy   string             `json:"created_by" bson:"created_by"`
+	CreatedByID string             `json:"created_by_id" bson:"created_by_id"`
+	UpdatedAt   int64              `json:"updated_at" bson:"updated_at"`
+	UpdatedBy   string             `json:"updated_by" bson:"updated_by"`
+	UpdatedByID string             `json:"updated_by_id" bson:"updated_by_id"`
+	Branch      string             `json:"branch" bson:"branch"`
+	Disable     bool               `json:"disable" bson:"disable"`
 
-	ID            primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Name          string             `json:"name" bson:"name"`
-	StockCategory string             `json:"stock_category" bson:"stock_category"`
-	Unit          string             `json:"unit" bson:"unit"`
-	Qty           int                `json:"qty" bson:"qty"`
-	Location      string             `json:"location" bson:"location"`
-	Threshold     int                `json:"threshold" bson:"threshold"`
-	Increment     []StockChange      `json:"increment" bson:"increment"`
-	Decrement     []StockChange      `json:"decrement" bson:"decrement"`
-	Tag           []string           `json:"tag" bson:"tag"`
-	Image         string             `json:"image" bson:"image"`
-	Note          string             `json:"note" bson:"note"`
+	Name          string        `json:"name" bson:"name"`
+	StockCategory string        `json:"stock_category" bson:"stock_category"`
+	Unit          string        `json:"unit" bson:"unit"`
+	Qty           int           `json:"qty" bson:"qty"`
+	Location      string        `json:"location" bson:"location"`
+	Threshold     int           `json:"threshold" bson:"threshold"`
+	Increment     []StockChange `json:"increment" bson:"increment"`
+	Decrement     []StockChange `json:"decrement" bson:"decrement"`
+	Tag           []string      `json:"tag" bson:"tag"`
+	Image         string        `json:"image" bson:"image"`
+	Note          string        `json:"note" bson:"note"`
 }
 
 type StockChange struct {
@@ -45,4 +45,34 @@ type StockRequest struct {
 	Threshold     int      `json:"threshold" bson:"threshold"`
 	Tag           []string `json:"tag" bson:"tag"`
 	Note          string   `json:"note" bson:"note"`
+}
+
+type StockEdit struct {
+	ID              primitive.ObjectID
+	FilterBranch    string
+	FilterTimestamp int64
+
+	UpdatedAt   int64
+	UpdatedBy   string
+	UpdatedByID string
+
+	Name          string
+	StockCategory string
+	Unit          string
+	Location      string
+	Threshold     int
+	Tag           []string
+	Note          string
+}
+
+type StockEditRequest struct {
+	FilterTimestamp int64 `json:"filter_timestamp"`
+
+	Name          string   `json:"name"`
+	StockCategory string   `json:"stock_category"`
+	Unit          string   `json:"unit"`
+	Location      string   `json:"location"`
+	Threshold     int      `json:"threshold"`
+	Tag           []string `json:"tag"`
+	Note          string   `json:"note"`
 }

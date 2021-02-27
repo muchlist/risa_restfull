@@ -62,5 +62,6 @@ func mapUrls(app *fiber.App) {
 
 	//STOCK
 	api.Post("/stock", middleware.NormalAuth(), stockHandler.Insert)
+	api.Put("/stock/:id", middleware.NormalAuth(), stockHandler.Edit)
 
 }
