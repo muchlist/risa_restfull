@@ -92,12 +92,12 @@ type CctvResponseMinList []CctvResponseMin
 
 // CctvResponse
 type CctvResponseMin struct {
-	Branch  string `json:"branch" bson:"branch"`
-	Disable bool   `json:"disable" bson:"disable"`
+	ID      primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Branch  string             `json:"branch" bson:"branch"`
+	Disable bool               `json:"disable" bson:"disable"`
 
-	ID       primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Name     string             `json:"name" bson:"name"`
-	IP       string             `json:"ip" bson:"ip"`
-	Location string             `json:"location" bson:"location"`
-	Tag      []string           `json:"tag" bson:"tag"`
+	Name     string   `json:"name" bson:"name"`
+	IP       string   `json:"ip" bson:"ip"`
+	Location string   `json:"location" bson:"location"`
+	Tag      []string `json:"tag" bson:"tag"`
 }

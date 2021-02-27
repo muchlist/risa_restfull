@@ -2,14 +2,17 @@ package stock_dao
 
 import (
 	"context"
+	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/db"
 	"github.com/muchlist/risa_restfull/dto"
+	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"math"
 	"strings"
 	"time"
 )
@@ -21,8 +24,6 @@ const (
 	keyStoID          = "_id"
 	keyStoName        = "name"
 	keyStoCreatedAt   = "created_at"
-	keyStoCreatedBy   = "created_by"
-	keyStoCreatedByID = "created_by_id"
 	keyStoUpdatedAt   = "updated_at"
 	keyStoUpdatedBy   = "updated_by"
 	keyStoUpdatedByID = "updated_by_id"
@@ -51,6 +52,13 @@ type stockDao struct {
 type StockDaoAssumer interface {
 	InsertStock(input dto.Stock) (*string, rest_err.APIError)
 	EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError)
+	DeleteStock(input dto.FilterIDBranchTime) (*dto.Stock, rest_err.APIError)
+	DisableStock(stockID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Stock, rest_err.APIError)
+	UploadImage(stockID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Stock, rest_err.APIError)
+	ChangeQtyStock(filterA dto.FilterIDBranch, data dto.StockChange) (*dto.Stock, rest_err.APIError)
+
+	GetStockByID(stockID primitive.ObjectID, branchIfSpecific string) (*dto.Stock, rest_err.APIError)
+	FindStock(filterA dto.FilterBranchNameCatDisable) (dto.StockResponseMinList, rest_err.APIError)
 }
 
 func (s *stockDao) InsertStock(input dto.Stock) (*string, rest_err.APIError) {
@@ -123,6 +131,225 @@ func (s *stockDao) EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError
 
 		logger.Error("Gagal mendapatkan stock dari database (EditStock)", err)
 		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan stock dari database", err)
+		return nil, apiErr
+	}
+
+	return &stock, nil
+}
+
+func (s *stockDao) DeleteStock(input dto.FilterIDBranchTime) (*dto.Stock, rest_err.APIError) {
+	coll := db.Db.Collection(keyStoCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		keyStoID:        input.ID,
+		keyStoBranch:    input.Branch,
+		keyStoCreatedAt: bson.M{"$gte": input.Time},
+	}
+
+	var stock dto.Stock
+	err := coll.FindOneAndDelete(ctx, filter).Decode(&stock)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError("Stock tidak diupdate : validasi id branch time_reach")
+		}
+
+		logger.Error("Gagal menghapus stock dari database (DeleteStock)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan stock dari database", err)
+		return nil, apiErr
+	}
+
+	return &stock, nil
+}
+
+// DisableStock if value true , stock will disabled
+func (s *stockDao) DisableStock(stockID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Stock, rest_err.APIError) {
+	coll := db.Db.Collection(keyStoCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyStoID:     stockID,
+		keyStoBranch: user.Branch,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			keyStoDisable:     value,
+			keyStoUpdatedAt:   time.Now().Unix(),
+			keyStoUpdatedByID: user.Identity,
+			keyStoUpdatedBy:   user.Name,
+		},
+	}
+
+	var stock dto.Stock
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&stock); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError("Stock tidak diupdate : validasi id branch")
+		}
+
+		logger.Error("Gagal mendapatkan stock dari database (DisableStock)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan stock dari database", err)
+		return nil, apiErr
+	}
+
+	return &stock, nil
+}
+
+func (s *stockDao) UploadImage(stockID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Stock, rest_err.APIError) {
+	coll := db.Db.Collection(keyStoCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyStoID:     stockID,
+		keyStoBranch: strings.ToUpper(filterBranch),
+	}
+	update := bson.M{
+		"$set": bson.M{
+			keyStoImage: imagePath,
+		},
+	}
+
+	var stock dto.Stock
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&stock); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, stock dengan id %s tidak ditemukan", stockID.Hex()))
+		}
+
+		logger.Error("Memasukkan path image stock ke db gagal, (UploadImage)", err)
+		apiErr := rest_err.NewInternalServerError("Memasukkan path image stock ke db gagal", err)
+		return nil, apiErr
+	}
+
+	return &stock, nil
+}
+
+func (s *stockDao) GetStockByID(stockID primitive.ObjectID, branchIfSpecific string) (*dto.Stock, rest_err.APIError) {
+	coll := db.Db.Collection(keyStoCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	filter := bson.M{keyStoID: stockID}
+	if branchIfSpecific != "" {
+		filter[keyStoBranch] = strings.ToUpper(branchIfSpecific)
+	}
+
+	var stock dto.Stock
+	if err := coll.FindOne(ctx, filter).Decode(&stock); err != nil {
+
+		if err == mongo.ErrNoDocuments {
+			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Stock dengan ID %s tidak ditemukan", stockID.Hex()))
+			return nil, apiErr
+		}
+
+		logger.Error("gagal mendapatkan stock dari database (GetStockByID)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan stock dari database", err)
+		return nil, apiErr
+	}
+
+	return &stock, nil
+}
+
+func (s *stockDao) FindStock(filterA dto.FilterBranchNameCatDisable) (dto.StockResponseMinList, rest_err.APIError) {
+	coll := db.Db.Collection(keyStoCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	filterA.Branch = strings.ToUpper(filterA.Branch)
+	filterA.Name = strings.ToUpper(filterA.Name)
+
+	// filter
+	filter := bson.M{
+		keyStoDisable: filterA.Disable,
+	}
+
+	// filter condition
+	if filterA.Branch != "" {
+		filter[keyStoBranch] = filterA.Branch
+	}
+	if filterA.Category != "" {
+		filter[keyStoCategory] = filterA.Category
+	}
+	if filterA.Name != "" {
+		filter[keyStoName] = bson.M{
+			"$regex": fmt.Sprintf(".*%s", filterA.Name),
+		}
+	}
+
+	opts := options.Find()
+	opts.SetSort(bson.D{{keyStoCategory, -1}})
+	opts.SetLimit(500)
+
+	cursor, err := coll.Find(ctx, filter, opts)
+	if err != nil {
+		logger.Error("Gagal mendapatkan daftar stock dari database (FindStock)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.StockResponseMinList{}, apiErr
+	}
+
+	stockList := dto.StockResponseMinList{}
+	if err = cursor.All(ctx, &stockList); err != nil {
+		logger.Error("Gagal decode stockList cursor ke objek slice (FindStock)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.StockResponseMinList{}, apiErr
+	}
+
+	return stockList, nil
+}
+
+func (s *stockDao) ChangeQtyStock(filterA dto.FilterIDBranch, data dto.StockChange) (*dto.Stock, rest_err.APIError) {
+	coll := db.Db.Collection(keyStoCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyStoID:     filterA.ID,
+		keyStoBranch: strings.ToUpper(filterA.Branch),
+	}
+
+	// Jika qty minus (decrement) beri filter qty agar tidak mengurangi sampai dengan minus
+	if data.Qty < 0 {
+		// cari nilai positifnya
+		positive := math.Abs(float64(data.Qty))
+		filter[keyStoQty] = bson.M{"$gte": int(positive)}
+	}
+
+	var update bson.D
+	if data.Qty < 0 {
+		// Minus , lakukan decrement
+		update = bson.D{
+			{"$set", bson.M{keyStoUpdatedAt: time.Now().Unix()}},
+			{"$inc", bson.M{keyStoQty: data.Qty}},
+			{"$push", bson.M{keyStoDecrement: data}},
+		}
+	} else {
+		// Increment
+		update = bson.D{
+			{"$set", bson.M{keyStoUpdatedAt: time.Now().Unix()}},
+			{"$inc", bson.M{keyStoQty: data.Qty}},
+			{"$push", bson.M{keyStoIncrement: data}},
+		}
+	}
+
+	var stock dto.Stock
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&stock); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Stock tidak diupdate : validasi qty (tidak mencukupi) id branch"))
+		}
+
+		logger.Error("Merubah jumlah stock gagal, (ChangeQtyStock)", err)
+		apiErr := rest_err.NewInternalServerError("Merubah jumlah stock gagal", err)
 		return nil, apiErr
 	}
 

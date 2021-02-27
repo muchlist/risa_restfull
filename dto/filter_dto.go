@@ -16,10 +16,21 @@ type FilterBranchLocIPNameDisable struct {
 	Disable  bool
 }
 
+type FilterBranchNameCatDisable struct {
+	Branch   string
+	Name     string
+	Category string
+	Disable  bool
+}
+
 type FilterIDBranchTime struct {
 	ID     primitive.ObjectID
 	Branch string
 	Time   int64
+}
+type FilterIDBranch struct {
+	ID     primitive.ObjectID
+	Branch string
 }
 
 type FilterTimeRangeLimit struct {

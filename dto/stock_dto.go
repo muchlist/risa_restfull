@@ -76,3 +76,45 @@ type StockEditRequest struct {
 	Tag           []string `json:"tag"`
 	Note          string   `json:"note"`
 }
+
+type StockResponseMinList []StockResponseMin
+type StockResponseMin struct {
+	ID      primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Branch  string             `json:"branch" bson:"branch"`
+	Disable bool               `json:"disable" bson:"disable"`
+
+	Name          string   `json:"name" bson:"name"`
+	StockCategory string   `json:"stock_category" bson:"stock_category"`
+	Unit          string   `json:"unit" bson:"unit"`
+	Qty           int      `json:"qty" bson:"qty"`
+	Location      string   `json:"location" bson:"location"`
+	Threshold     int      `json:"threshold" bson:"threshold"`
+	Tag           []string `json:"tag" bson:"tag"`
+	Image         string   `json:"image" bson:"image"`
+	Note          string   `json:"note" bson:"note"`
+}
+
+type StockChangeData struct {
+	FilterID     primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	FilterBranch string             `json:"branch" bson:"branch"`
+
+	Author   string `json:"author" bson:"author"`
+	Qty      int    `json:"qty" bson:"qty"`
+	BaNumber string `json:"ba_number" bson:"ba_number"`
+	Note     string `json:"note" bson:"note"`
+	Time     int64  `json:"time" bson:"time"`
+
+	Disable bool `json:"disable" bson:"disable"`
+}
+
+/*
+class UseStockDto(NamedTuple):
+    parent_id: str
+    branch: str
+    author: str
+    qty: float
+    ba_number: str
+    note: str
+    time: datetime
+
+*/
