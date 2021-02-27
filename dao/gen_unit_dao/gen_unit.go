@@ -324,7 +324,7 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 
 	opts.SetSort(bson.D{{keyGenName, 1}})
 	opts.SetLimit(200)
-	sortCursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctx, filter, opts)
 
 	if err != nil {
 		logger.Error("Gagal mendapatkan unit dari database (FindUnit)", err)
@@ -333,10 +333,25 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 	}
 
 	units := dto.GenUnitResponseList{}
-	if err = sortCursor.All(ctx, &units); err != nil {
+	if err = cursor.All(ctx, &units); err != nil {
 		logger.Error("Gagal decode unitsCursor ke objek slice (FindUnit)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.GenUnitResponseList{}, apiErr
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var unit dto.GenUnitResponse
+		err := cursor.Decode(&unit)
+		if err != nil {
+			logger.Error("Gagal decode unitsCursor ke objek slice (FindUnit)", err)
+			apiErr := rest_err.NewInternalServerError("Database error", err)
+			return dto.GenUnitResponseList{}, apiErr
+		}
+
+		// set default value agar tidak nil karena projection 0
+		unit.PingsState = []dto.PingState{}
+
+		units = append(units, unit)
 	}
 
 	return units, nil
