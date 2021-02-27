@@ -35,3 +35,14 @@ type StockChange struct {
 	Note     string `json:"note" bson:"note"`
 	Time     int64  `json:"time" bson:"time"`
 }
+
+type StockRequest struct {
+	Name          string   `json:"name" bson:"name"`
+	StockCategory string   `json:"stock_category" bson:"stock_category"`
+	Unit          string   `json:"unit" bson:"unit"`
+	Qty           int      `json:"qty" bson:"qty"`
+	Location      string   `json:"location" bson:"location"`
+	Threshold     int      `json:"threshold" bson:"threshold"`
+	Tag           []string `json:"tag" bson:"tag"`
+	Note          string   `json:"note" bson:"note"`
+}

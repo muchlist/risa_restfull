@@ -60,4 +60,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/cctv-avail/:id/:status", middleware.NormalAuth(), cctvHandler.DisableCctv)
 	api.Post("/cctv-image/:id", middleware.NormalAuth(), cctvHandler.UploadImage)
 
+	//STOCK
+	api.Post("/stock", middleware.NormalAuth(), stockHandler.Insert)
+
 }
