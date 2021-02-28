@@ -146,7 +146,7 @@ func (c *cctvDao) DeleteCctv(input dto.FilterIDBranchTime) (*dto.Cctv, rest_err.
 	filter := bson.M{
 		keyCtvID:        input.ID,
 		keyCtvBranch:    input.Branch,
-		keyCtvCreatedAt: bson.M{"$gte": input.Time},
+		keyCtvCreatedAt: bson.M{"$gte": input.CreateGTE},
 	}
 
 	var cctv dto.Cctv

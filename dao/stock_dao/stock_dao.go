@@ -145,7 +145,7 @@ func (s *stockDao) DeleteStock(input dto.FilterIDBranchTime) (*dto.Stock, rest_e
 	filter := bson.M{
 		keyStoID:        input.ID,
 		keyStoBranch:    input.Branch,
-		keyStoCreatedAt: bson.M{"$gte": input.Time},
+		keyStoCreatedAt: bson.M{"$gte": input.CreateGTE},
 	}
 
 	var stock dto.Stock

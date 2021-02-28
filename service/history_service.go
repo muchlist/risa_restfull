@@ -180,9 +180,9 @@ func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_er
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
 	history, err := h.daoH.DeleteHistory(dto.FilterIDBranchTime{
-		ID:     oid,
-		Branch: user.Branch,
-		Time:   timeMinusOneDay.Unix(),
+		ID:        oid,
+		Branch:    user.Branch,
+		CreateGTE: timeMinusOneDay.Unix(),
 	})
 	if err != nil {
 		return err

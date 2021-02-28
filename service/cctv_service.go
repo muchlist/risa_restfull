@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
+	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/cctv_dao"
 	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
 	"github.com/muchlist/risa_restfull/dao/history_dao"
@@ -119,7 +120,7 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 
 	// Filling data
 	timeNow := time.Now().Unix()
-	data := dto.CctvEdit{
+	data := dto.CctvEdit{ // Prefer filter dan datanya dipisah dengan dua struct
 		ID:              oid,
 		FilterBranch:    user.Branch,
 		FilterTimestamp: input.FilterTimestamp,
@@ -145,6 +146,7 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 		return nil, err
 	}
 
+	// IMROVEMENT jadikan goroutine EditUnit dan InsertHistory
 	//DB
 	_, err = c.daoG.EditUnit(cctvID, dto.GenUnitEditRequest{
 		Category: category.Cctv,
@@ -155,6 +157,30 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 	if err != nil {
 		return nil, err
 	}
+
+	//DB
+	_, err = c.daoH.InsertHistory(
+		dto.History{
+			ID:             primitive.NewObjectID(),
+			CreatedAt:      timeNow,
+			CreatedBy:      user.Name,
+			CreatedByID:    user.Identity,
+			UpdatedAt:      timeNow,
+			UpdatedBy:      user.Name,
+			UpdatedByID:    user.Identity,
+			Category:       category.Cctv,
+			Branch:         user.Branch,
+			ParentID:       cctvID,
+			ParentName:     cctvEdited.Name,
+			Status:         "Edit",
+			Problem:        "Detail Cctv dirubah",
+			ProblemResolve: "",
+			CompleteStatus: enum.HInfo,
+			DateStart:      timeNow,
+			DateEnd:        timeNow,
+			Tag:            []string{},
+			Image:          "",
+		})
 
 	return cctvEdited, nil
 }
@@ -169,9 +195,9 @@ func (c *cctvService) DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIE
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
 	_, err := c.daoC.DeleteCctv(dto.FilterIDBranchTime{
-		ID:     oid,
-		Branch: user.Branch,
-		Time:   timeMinusOneDay.Unix(),
+		ID:        oid,
+		Branch:    user.Branch,
+		CreateGTE: timeMinusOneDay.Unix(),
 	})
 	if err != nil {
 		return err

@@ -98,7 +98,7 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 		keyHistID:             historyID,
 		keyHistBranch:         input.FilterBranch,
 		keyHistUpdatedAt:      input.FilterTimestamp,
-		keyHistCompleteStatus: bson.M{"$ne": enum.HComplete},
+		keyHistCompleteStatus: bson.M{"$nin": bson.A{enum.HComplete, enum.HInfo}},
 	}
 
 	update := bson.M{
@@ -137,7 +137,7 @@ func (h *historyDao) DeleteHistory(input dto.FilterIDBranchTime) (*dto.HistoryRe
 	filter := bson.M{
 		keyHistID:        input.ID,
 		keyHistBranch:    input.Branch,
-		keyHistCreatedAt: bson.M{"$gte": input.Time},
+		keyHistCreatedAt: bson.M{"$gte": input.CreateGTE},
 	}
 
 	var history dto.HistoryResponse

@@ -157,9 +157,9 @@ func (s *stockService) DeleteStock(user mjwt.CustomClaim, id string) rest_err.AP
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
 	_, err := s.daoS.DeleteStock(dto.FilterIDBranchTime{
-		ID:     oid,
-		Branch: user.Branch,
-		Time:   timeMinusOneDay.Unix(),
+		ID:        oid,
+		Branch:    user.Branch,
+		CreateGTE: timeMinusOneDay.Unix(),
 	})
 	if err != nil {
 		return err

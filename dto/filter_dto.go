@@ -23,11 +23,15 @@ type FilterBranchNameCatDisable struct {
 	Disable  bool
 }
 
+// FilterIDBranchTime
+//field CreateGTE digunakan untuk memberikan batas waktu, misalnya saat akan menghapus dokumen
+//maka CreateGTE di isi dengan tanggal sekarang kurang sekian waktu (misalnya 1 hari)
 type FilterIDBranchTime struct {
-	ID     primitive.ObjectID
-	Branch string
-	Time   int64
+	ID        primitive.ObjectID
+	Branch    string
+	CreateGTE int64
 }
+
 type FilterIDBranch struct {
 	ID     primitive.ObjectID
 	Branch string

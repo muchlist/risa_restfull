@@ -26,7 +26,7 @@ Restfull Backend for Risa Aplication Pelindo III using Golang (Fiber) and MongoD
   menggunakan database elasticsearch. domain ini tidak bersentuhan secara langsung dengan user dari segi inputan.
   updatenya akan dilakukan dibelakang layar berasarkan : pembuatan perangkat pada kategori apapun, pengeditan jika nama,
   ip , category, cabang berubah. dan penghapusan. serta ada update pada history/incident.
-- `history` digunakan untuk mencatat semua riwayat perangkat, riwayat ini memiliki status progress (1), persetujuan
+- `history` digunakan untuk mencatat semua riwayat perangkat, riwayat ini memiliki status info (0), progress (1), persetujuan
   pending (2), pending (3), complete (4). Setiap penambahan `history` yang belum komplit akan mengupdate field `cases`
   pada domain `gen_unit` dan jika `history` diubah statusnya menjadi complete maka case di `gen_unit` akan dikurangi
 
