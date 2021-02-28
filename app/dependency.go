@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/muchlist/risa_restfull/dao/cctv_dao"
+	"github.com/muchlist/risa_restfull/dao/check_item_dao"
 	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
 	"github.com/muchlist/risa_restfull/dao/history_dao"
 	"github.com/muchlist/risa_restfull/dao/stock_dao"
@@ -18,24 +19,27 @@ var (
 	jwt         = mjwt.NewJwt()
 
 	//Dao
-	userDao    = user_dao.NewUserDao()
-	genUnitDao = gen_unit_dao.NewGenUnitDao()
-	historyDao = history_dao.NewHistoryDao()
-	cctvDao    = cctv_dao.NewCctvDao()
-	stockDao   = stock_dao.NewStockDao()
+	userDao      = user_dao.NewUserDao()
+	genUnitDao   = gen_unit_dao.NewGenUnitDao()
+	historyDao   = history_dao.NewHistoryDao()
+	cctvDao      = cctv_dao.NewCctvDao()
+	stockDao     = stock_dao.NewStockDao()
+	checkItemDao = check_item_dao.NewCheckItemDao()
 
 	//Service
-	userService    = service.NewUserService(userDao, cryptoUtils, jwt)
-	genUnitService = service.NewGenUnitService(genUnitDao)
-	historyService = service.NewHistoryService(historyDao, genUnitDao)
-	cctvService    = service.NewCctvService(cctvDao, historyDao, genUnitDao)
-	stockService   = service.NewStockService(stockDao, historyDao)
+	userService      = service.NewUserService(userDao, cryptoUtils, jwt)
+	genUnitService   = service.NewGenUnitService(genUnitDao)
+	historyService   = service.NewHistoryService(historyDao, genUnitDao)
+	cctvService      = service.NewCctvService(cctvDao, historyDao, genUnitDao)
+	stockService     = service.NewStockService(stockDao, historyDao)
+	checkItemService = service.NewCheckItemService(checkItemDao)
 
 	//Controller or Handler
-	pingHandler    = handler.NewPingHandler()
-	userHandler    = handler.NewUserHandler(userService)
-	genUnitHandler = handler.NewGenUnitHandler(genUnitService)
-	historyHandler = handler.NewHistoryHandler(historyService)
-	cctvHandler    = handler.NewCctvHandler(cctvService)
-	stockHandler   = handler.NewStockHandler(stockService)
+	pingHandler      = handler.NewPingHandler()
+	userHandler      = handler.NewUserHandler(userService)
+	genUnitHandler   = handler.NewGenUnitHandler(genUnitService)
+	historyHandler   = handler.NewHistoryHandler(historyService)
+	cctvHandler      = handler.NewCctvHandler(cctvService)
+	stockHandler     = handler.NewStockHandler(stockService)
+	checkItemHandler = handler.NewCheckItemHandler(checkItemService)
 )
