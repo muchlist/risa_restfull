@@ -16,6 +16,12 @@ type FilterBranchLocIPNameDisable struct {
 	FilterDisable  bool
 }
 
+type FilterBranchNameDisable struct {
+	FilterBranch  string
+	FilterName    string
+	FilterDisable bool
+}
+
 type FilterBranchNameCatDisable struct {
 	FilterBranch   string
 	FilterName     string

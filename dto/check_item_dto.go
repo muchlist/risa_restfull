@@ -62,13 +62,39 @@ type CheckItemEdit struct {
 	UpdatedBy   string
 	UpdatedByID string
 
-	Name        string   `json:"name" bson:"name"`
-	Location    string   `json:"location" bson:"location"`
-	LocationLat string   `json:"location_lat" bson:"location_lat"`
-	LocationLon string   `json:"location_lon" bson:"location_lon"`
-	Type        string   `json:"type" bson:"type"`
-	Tag         []string `json:"tag" bson:"tag"`
-	TagExtra    []string `json:"tag_extra" bson:"tag_extra"`
-	Note        string   `json:"note" bson:"note"`
-	Shifts      []string `json:"shifts" bson:"shifts"`
+	Name        string
+	Location    string
+	LocationLat string
+	LocationLon string
+	Type        string
+	Tag         []string
+	TagExtra    []string
+	Note        string
+	Shifts      []string
+}
+
+type CheckItemEditBySys struct {
+	FilterID primitive.ObjectID
+
+	UpdatedAt      int64
+	CheckedNote    string
+	HaveProblem    bool
+	CompleteStatus int
+}
+
+type CheckItemResponseMinList []CheckItemResponseMin
+type CheckItemResponseMin struct {
+	ID      primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Branch  string             `json:"branch" bson:"branch"`
+	Disable bool               `json:"disable" bson:"disable"`
+
+	Name     string   `json:"name" bson:"name"`
+	Location string   `json:"location" bson:"location"`
+	Type     string   `json:"type" bson:"type"`
+	Note     string   `json:"note" bson:"note"`
+	Shifts   []string `json:"shifts" bson:"shifts"`
+
+	CheckedNote    string `json:"checked_note" bson:"checked_note"`
+	HaveProblem    bool   `json:"have_problem" bson:"have_problem"`
+	CompleteStatus int    `json:"complete_status" bson:"complete_status"`
 }

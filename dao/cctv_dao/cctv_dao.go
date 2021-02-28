@@ -157,7 +157,7 @@ func (c *cctvDao) DeleteCctv(input dto.FilterIDBranchCreateGte) (*dto.Cctv, rest
 		}
 
 		logger.Error("Gagal menghapus cctv dari database (DeleteCctv)", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan cctv dari database", err)
+		apiErr := rest_err.NewInternalServerError("Gagal menghapus cctv dari database", err)
 		return nil, apiErr
 	}
 
@@ -193,8 +193,8 @@ func (c *cctvDao) DisableCctv(cctvID primitive.ObjectID, user mjwt.CustomClaim, 
 			return nil, rest_err.NewBadRequestError("Cctv tidak diupdate : validasi id branch")
 		}
 
-		logger.Error("Gagal mendapatkan cctv dari database (DisableCctv)", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan cctv dari database", err)
+		logger.Error("Gagal mendisable cctv dari database (DisableCctv)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendisable cctv dari database", err)
 		return nil, apiErr
 	}
 
