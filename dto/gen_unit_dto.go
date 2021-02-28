@@ -45,7 +45,7 @@ type GenUnitFilter struct {
 }
 
 // GenUnitCaseRequest,
-// UnitID adalah ID dari gen_unit,
+// UnitID adalah FilterID dari gen_unit,
 // CaseID sama dengan historyID.hex()
 // CaseNote tidak masalah dikosongkan jika ingin menghapus Case
 type GenUnitCaseRequest struct {

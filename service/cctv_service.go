@@ -42,14 +42,14 @@ type CctvServiceAssumer interface {
 
 func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError) {
 
-	// ID digunakan juga oleh gen_unit_dao sehingga dibuat disini, bukan di database
+	// FilterID digunakan juga oleh gen_unit_dao sehingga dibuat disini, bukan di database
 	idGenerated := primitive.NewObjectID()
 
 	// Default value
 	// jika ip address tidak kosong cek apakah ip address valid, jika kosong maka isikan nilai default
 	if input.IP != "" {
 		if net.ParseIP(input.IP) == nil {
-			return nil, rest_err.NewBadRequestError("IP Address tidak valid")
+			return nil, rest_err.NewBadRequestError("FilterIP Address tidak valid")
 		}
 	} else {
 		input.IP = "0.0.0.0"
@@ -86,7 +86,7 @@ func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (
 		return nil, err
 	}
 
-	// Menambahkan juga General Unit dengan ID yang sama
+	// Menambahkan juga General Unit dengan FilterID yang sama
 	//DB
 	_, err = c.daoG.InsertUnit(
 		dto.GenUnit{
@@ -112,7 +112,7 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 	// cek apakah ip address valid, jika kosong masukkan ip default 0.0.0.0
 	if input.IP != "" {
 		if net.ParseIP(input.IP) == nil {
-			return nil, rest_err.NewBadRequestError("IP Address tidak valid")
+			return nil, rest_err.NewBadRequestError("FilterIP Address tidak valid")
 		}
 	} else {
 		input.IP = "0.0.0.0"
@@ -194,10 +194,10 @@ func (c *cctvService) DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIE
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := c.daoC.DeleteCctv(dto.FilterIDBranchTime{
-		ID:        oid,
-		Branch:    user.Branch,
-		CreateGTE: timeMinusOneDay.Unix(),
+	_, err := c.daoC.DeleteCctv(dto.FilterIDBranchCreateGte{
+		FilterID:        oid,
+		FilterBranch:    user.Branch,
+		FilterCreateGTE: timeMinusOneDay.Unix(),
 	})
 	if err != nil {
 		return err
@@ -267,12 +267,12 @@ func (c *cctvService) GetCctvByID(cctvID string, branchIfSpecific string) (*dto.
 
 func (c *cctvService) FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError) {
 
-	// cek apakah ip address valid, jika valid maka set filter.Name ke kosong supaya pencarian berdasarkan IP
-	if filter.IP != "" {
-		if net.ParseIP(filter.IP) == nil {
+	// cek apakah ip address valid, jika valid maka set filter.FilterName ke kosong supaya pencarian berdasarkan IP
+	if filter.FilterIP != "" {
+		if net.ParseIP(filter.FilterIP) == nil {
 			return nil, rest_err.NewBadRequestError("IP Address tidak valid")
 		}
-		filter.Name = ""
+		filter.FilterName = ""
 	}
 
 	cctvList, err := c.daoC.FindCctv(filter)

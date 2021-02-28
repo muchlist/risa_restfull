@@ -3,47 +3,53 @@ package dto
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type FilterBranchCatComplete struct {
-	Branch         string
-	Category       string
-	CompleteStatus int
+	FilterBranch         string
+	FilterCategory       string
+	FilterCompleteStatus int
 }
 
 type FilterBranchLocIPNameDisable struct {
-	Branch   string
-	Location string
-	IP       string
-	Name     string
-	Disable  bool
+	FilterBranch   string
+	FilterLocation string
+	FilterIP       string
+	FilterName     string
+	FilterDisable  bool
 }
 
 type FilterBranchNameCatDisable struct {
-	Branch   string
-	Name     string
-	Category string
-	Disable  bool
+	FilterBranch   string
+	FilterName     string
+	FilterCategory string
+	FilterDisable  bool
 }
 
-// FilterIDBranchTime
-//field CreateGTE digunakan untuk memberikan batas waktu, misalnya saat akan menghapus dokumen
-//maka CreateGTE di isi dengan tanggal sekarang kurang sekian waktu (misalnya 1 hari)
-type FilterIDBranchTime struct {
-	ID        primitive.ObjectID
-	Branch    string
-	CreateGTE int64
+// FilterIDBranchCreateGte
+//field FilterCreateGTE digunakan untuk memberikan batas waktu, misalnya saat akan menghapus dokumen
+//maka FilterCreateGTE di isi dengan tanggal sekarang kurang sekian waktu (misalnya 1 hari)
+type FilterIDBranchCreateGte struct {
+	FilterID        primitive.ObjectID
+	FilterBranch    string
+	FilterCreateGTE int64
+}
+
+type FilterIDBranchTimestamp struct {
+	FilterID        primitive.ObjectID
+	FilterBranch    string
+	FilterTimestamp int64
 }
 
 type FilterIDBranch struct {
-	ID     primitive.ObjectID
-	Branch string
+	FilterID     primitive.ObjectID
+	FilterBranch string
 }
 
 type FilterTimeRangeLimit struct {
-	Start int64
-	End   int64
-	Limit int64
+	FilterStart int64
+	FilterEnd   int64
+	Limit       int64
 }
 
 type FilterBranchCategory struct {
-	Branch   string
-	Category string
+	FilterBranch   string
+	FilterCategory string
 }

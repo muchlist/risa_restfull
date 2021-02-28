@@ -44,8 +44,8 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		input.DateStart = timeNow
 	}
 
-	// jika ID tersedia, gunakan ID , jika tidak buatkan object ID
-	// memastikan ID yang diinputkan bisa diubah ke ObjectID
+	// jika FilterID tersedia, gunakan FilterID , jika tidak buatkan object FilterID
+	// memastikan FilterID yang diinputkan bisa diubah ke ObjectID
 	generatedID := primitive.NewObjectID()
 	var errT error
 	if input.ID != "" {
@@ -55,12 +55,12 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		}
 	}
 
-	// Cek apakah image tersedia untuk ID tersebut TODO
+	// Cek apakah image tersedia untuk FilterID tersebut TODO
 	imagePath := ""
 
 	// Mengambil gen_unit
-	// Tambahkan Case jika history status bukan Complete, akan gagal jika ID dan Cabang tidak sesuai
-	// jika complete gunakan GetUnitByID untuk memastikan ID dan Cabang sesuai
+	// Tambahkan Case jika history status bukan Complete, akan gagal jika FilterID dan Cabang tidak sesuai
+	// jika complete gunakan GetUnitByID untuk memastikan FilterID dan Cabang sesuai
 	var parent *dto.GenUnitResponse
 	var err rest_err.APIError
 	if input.CompleteStatus != enum.HComplete {
@@ -179,10 +179,10 @@ func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_er
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	history, err := h.daoH.DeleteHistory(dto.FilterIDBranchTime{
-		ID:        oid,
-		Branch:    user.Branch,
-		CreateGTE: timeMinusOneDay.Unix(),
+	history, err := h.daoH.DeleteHistory(dto.FilterIDBranchCreateGte{
+		FilterID:        oid,
+		FilterBranch:    user.Branch,
+		FilterCreateGTE: timeMinusOneDay.Unix(),
 	})
 	if err != nil {
 		return err

@@ -156,10 +156,10 @@ func (s *stockService) DeleteStock(user mjwt.CustomClaim, id string) rest_err.AP
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := s.daoS.DeleteStock(dto.FilterIDBranchTime{
-		ID:        oid,
-		Branch:    user.Branch,
-		CreateGTE: timeMinusOneDay.Unix(),
+	_, err := s.daoS.DeleteStock(dto.FilterIDBranchCreateGte{
+		FilterID:        oid,
+		FilterBranch:    user.Branch,
+		FilterCreateGTE: timeMinusOneDay.Unix(),
 	})
 	if err != nil {
 		return err
@@ -219,8 +219,8 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 	}
 
 	filter := dto.FilterIDBranch{
-		ID:     oid,
-		Branch: user.Branch,
+		FilterID:     oid,
+		FilterBranch: user.Branch,
 	}
 
 	//DB
@@ -313,7 +313,7 @@ func (s *stockService) FindStock(filter dto.FilterBranchNameCatDisable) (dto.Sto
 func (s *stockService) FindNeedReStock(branch string) (dto.StockResponseMinList, rest_err.APIError) {
 
 	stockList, err := s.daoS.FindStock(dto.FilterBranchNameCatDisable{
-		Branch: branch,
+		FilterBranch: branch,
 	})
 
 	if err != nil {

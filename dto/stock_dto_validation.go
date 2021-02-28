@@ -10,7 +10,7 @@ import (
 
 func stockCategoryValidation(stockCategory string) error {
 	if !sfunc.InSlice(stockCategory, stock_category.GetStockCategoryAvailable()) {
-		return errors.New(fmt.Sprintf("Kategory yang dimasukkan tidak tersedia. gunakan %s", stock_category.GetStockCategoryAvailable()))
+		return errors.New(fmt.Sprintf("Category yang dimasukkan tidak tersedia. gunakan %s", stock_category.GetStockCategoryAvailable()))
 	}
 	return nil
 }

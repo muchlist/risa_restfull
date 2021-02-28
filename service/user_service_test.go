@@ -45,14 +45,14 @@ func TestUserService_GetUser_NoUserFound(t *testing.T) {
 	objectID := "12345"
 
 	m := new(user_dao.MockDao)
-	m.On("GetUserByID", objectID).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %s tidak ditemukan", objectID)))
+	m.On("GetUserByID", objectID).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan FilterID %s tidak ditemukan", objectID)))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 	user, err := service.GetUser(objectID)
 
 	assert.Nil(t, user)
 	assert.NotNil(t, err)
-	assert.Equal(t, fmt.Sprintf("User dengan ID %v tidak ditemukan", objectID), err.Message())
+	assert.Equal(t, fmt.Sprintf("User dengan FilterID %v tidak ditemukan", objectID), err.Message())
 	assert.Equal(t, http.StatusNotFound, err.Status())
 }
 
@@ -85,7 +85,7 @@ func TestUserService_GetUserByID_NotFound(t *testing.T) {
 	userID := "12345"
 
 	m := new(user_dao.MockDao)
-	m.On("GetUserByID", userID).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %s tidak ditemukan", userID)))
+	m.On("GetUserByID", userID).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan FilterID %s tidak ditemukan", userID)))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
@@ -93,7 +93,7 @@ func TestUserService_GetUserByID_NotFound(t *testing.T) {
 
 	assert.Nil(t, user)
 	assert.NotNil(t, err)
-	assert.Equal(t, "User dengan ID 12345 tidak ditemukan", err.Message())
+	assert.Equal(t, "User dengan FilterID 12345 tidak ditemukan", err.Message())
 	assert.Equal(t, http.StatusNotFound, err.Status())
 }
 
@@ -203,7 +203,7 @@ func TestUserService_InsertUser_IDNotAvailable(t *testing.T) {
 
 	m := new(user_dao.MockDao)
 	m.On("InsertUser", mock.Anything).Return(&idResp, nil)
-	m.On("CheckIDAvailable", id).Return(false, rest_err.NewBadRequestError("ID tidak tersedia"))
+	m.On("CheckIDAvailable", id).Return(false, rest_err.NewBadRequestError("FilterID tidak tersedia"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
@@ -211,7 +211,7 @@ func TestUserService_InsertUser_IDNotAvailable(t *testing.T) {
 
 	assert.Nil(t, insertedId)
 	assert.NotNil(t, err)
-	assert.Equal(t, "ID tidak tersedia", err.Message())
+	assert.Equal(t, "FilterID tidak tersedia", err.Message())
 	assert.Equal(t, 400, err.Status())
 }
 
@@ -279,7 +279,7 @@ func TestUserService_EditUser_TimeStampNotmatch(t *testing.T) {
 	}
 
 	m := new(user_dao.MockDao)
-	m.On("EditUser", userID, userInput).Return(nil, rest_err.NewBadRequestError("User tidak diupdate karena ID atau timestamp tidak valid"))
+	m.On("EditUser", userID, userInput).Return(nil, rest_err.NewBadRequestError("User tidak diupdate karena FilterID atau timestamp tidak valid"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
@@ -287,7 +287,7 @@ func TestUserService_EditUser_TimeStampNotmatch(t *testing.T) {
 
 	assert.Nil(t, userResponse)
 	assert.NotNil(t, err)
-	assert.Equal(t, "User tidak diupdate karena ID atau timestamp tidak valid", err.Message())
+	assert.Equal(t, "User tidak diupdate karena FilterID atau timestamp tidak valid", err.Message())
 	assert.Equal(t, 400, err.Status())
 }
 

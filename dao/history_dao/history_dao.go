@@ -49,7 +49,7 @@ type historyDao struct {
 type HistoryDaoAssumer interface {
 	InsertHistory(input dto.History) (*string, rest_err.APIError)
 	EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit) (*dto.HistoryResponse, rest_err.APIError)
-	DeleteHistory(input dto.FilterIDBranchTime) (*dto.HistoryResponse, rest_err.APIError)
+	DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.HistoryResponse, rest_err.APIError)
 	UploadImage(historyID primitive.ObjectID, imagePath string, filterBranch string) (*dto.HistoryResponse, rest_err.APIError)
 
 	GetHistoryByID(historyID primitive.ObjectID, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
@@ -129,15 +129,15 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 	return &history, nil
 }
 
-func (h *historyDao) DeleteHistory(input dto.FilterIDBranchTime) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyDao) DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.HistoryResponse, rest_err.APIError) {
 	coll := db.Db.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
-		keyHistID:        input.ID,
-		keyHistBranch:    input.Branch,
-		keyHistCreatedAt: bson.M{"$gte": input.CreateGTE},
+		keyHistID:        input.FilterID,
+		keyHistBranch:    input.FilterBranch,
+		keyHistCreatedAt: bson.M{"$gte": input.FilterCreateGTE},
 	}
 
 	var history dto.HistoryResponse
@@ -188,8 +188,8 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
-	filterA.Branch = strings.ToUpper(filterA.Branch)
-	filterA.Category = strings.ToUpper(filterA.Category)
+	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
+	filterA.FilterCategory = strings.ToUpper(filterA.FilterCategory)
 
 	// set default limit
 	if filterB.Limit == 0 {
@@ -200,22 +200,22 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	filter := bson.M{}
 
 	// filter condition
-	if filterA.Branch != "" {
-		filter[keyHistBranch] = filterA.Branch
+	if filterA.FilterBranch != "" {
+		filter[keyHistBranch] = filterA.FilterBranch
 	}
-	if filterA.Category != "" {
-		filter[keyHistCategory] = filterA.Category
+	if filterA.FilterCategory != "" {
+		filter[keyHistCategory] = filterA.FilterCategory
 	}
-	if filterA.CompleteStatus != 0 {
-		filter[keyHistCompleteStatus] = filterA.CompleteStatus
+	if filterA.FilterCompleteStatus != 0 {
+		filter[keyHistCompleteStatus] = filterA.FilterCompleteStatus
 	}
 
 	// option range
-	if filterB.Start != 0 {
-		filter[keyHistDateStart] = bson.M{"$gte": filterB.Start}
+	if filterB.FilterStart != 0 {
+		filter[keyHistDateStart] = bson.M{"$gte": filterB.FilterStart}
 	}
-	if filterB.End != 0 {
-		filter[keyHistDateEnd] = bson.M{"$lte": filterB.Start}
+	if filterB.FilterEnd != 0 {
+		filter[keyHistDateEnd] = bson.M{"$lte": filterB.FilterStart}
 	}
 
 	opts := options.Find()
@@ -288,11 +288,11 @@ func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeR
 	}
 
 	// option range
-	if filterOpt.Start != 0 {
-		filter[keyHistDateStart] = bson.M{"$gte": filterOpt.Start}
+	if filterOpt.FilterStart != 0 {
+		filter[keyHistDateStart] = bson.M{"$gte": filterOpt.FilterStart}
 	}
-	if filterOpt.End != 0 {
-		filter[keyHistDateEnd] = bson.M{"$lte": filterOpt.Start}
+	if filterOpt.FilterEnd != 0 {
+		filter[keyHistDateEnd] = bson.M{"$lte": filterOpt.FilterStart}
 	}
 
 	opts := options.Find()

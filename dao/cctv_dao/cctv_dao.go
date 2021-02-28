@@ -52,7 +52,7 @@ type cctvDao struct {
 type CctvDaoAssumer interface {
 	InsertCctv(input dto.Cctv) (*string, rest_err.APIError)
 	EditCctv(input dto.CctvEdit) (*dto.Cctv, rest_err.APIError)
-	DeleteCctv(input dto.FilterIDBranchTime) (*dto.Cctv, rest_err.APIError)
+	DeleteCctv(input dto.FilterIDBranchCreateGte) (*dto.Cctv, rest_err.APIError)
 	DisableCctv(cctvID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError)
 	UploadImage(cctvID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Cctv, rest_err.APIError)
 
@@ -138,15 +138,15 @@ func (c *cctvDao) EditCctv(input dto.CctvEdit) (*dto.Cctv, rest_err.APIError) {
 	return &cctv, nil
 }
 
-func (c *cctvDao) DeleteCctv(input dto.FilterIDBranchTime) (*dto.Cctv, rest_err.APIError) {
+func (c *cctvDao) DeleteCctv(input dto.FilterIDBranchCreateGte) (*dto.Cctv, rest_err.APIError) {
 	coll := db.Db.Collection(keyCtvCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
-		keyCtvID:        input.ID,
-		keyCtvBranch:    input.Branch,
-		keyCtvCreatedAt: bson.M{"$gte": input.CreateGTE},
+		keyCtvID:        input.FilterID,
+		keyCtvBranch:    input.FilterBranch,
+		keyCtvCreatedAt: bson.M{"$gte": input.FilterCreateGTE},
 	}
 
 	var cctv dto.Cctv
@@ -264,28 +264,28 @@ func (c *cctvDao) FindCctv(filterA dto.FilterBranchLocIPNameDisable) (dto.CctvRe
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
-	filterA.Branch = strings.ToUpper(filterA.Branch)
-	filterA.Name = strings.ToUpper(filterA.Name)
+	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
+	filterA.FilterName = strings.ToUpper(filterA.FilterName)
 
 	// filter
 	filter := bson.M{
-		keyCtvDisable: filterA.Disable,
+		keyCtvDisable: filterA.FilterDisable,
 	}
 
 	// filter condition
-	if filterA.Branch != "" {
-		filter[keyCtvBranch] = filterA.Branch
+	if filterA.FilterBranch != "" {
+		filter[keyCtvBranch] = filterA.FilterBranch
 	}
-	if filterA.Name != "" {
+	if filterA.FilterName != "" {
 		filter[keyCtvName] = bson.M{
-			"$regex": fmt.Sprintf(".*%s", filterA.Name),
+			"$regex": fmt.Sprintf(".*%s", filterA.FilterName),
 		}
 	}
-	if filterA.Location != "" {
-		filter[keyCtvLocation] = filterA.Location
+	if filterA.FilterLocation != "" {
+		filter[keyCtvLocation] = filterA.FilterLocation
 	}
-	if filterA.IP != "" {
-		filter[keyCtvIP] = filterA.IP
+	if filterA.FilterIP != "" {
+		filter[keyCtvIP] = filterA.FilterIP
 	}
 
 	opts := options.Find()

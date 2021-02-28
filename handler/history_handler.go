@@ -41,7 +41,7 @@ func (h *historyHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan history berhasi, ID: %s", *insertID)}
+	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan history berhasi, FilterID: %s", *insertID)}
 	return c.JSON(res)
 }
 
@@ -81,15 +81,15 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 	limit := stringToInt(c.Query("limit"))
 
 	filterA := dto.FilterBranchCatComplete{
-		Branch:         branch,
-		Category:       category,
-		CompleteStatus: cStatus,
+		FilterBranch:         branch,
+		FilterCategory:       category,
+		FilterCompleteStatus: cStatus,
 	}
 
 	filterB := dto.FilterTimeRangeLimit{
-		Start: int64(start),
-		End:   int64(end),
-		Limit: int64(limit),
+		FilterStart: int64(start),
+		FilterEnd:   int64(end),
+		Limit:       int64(limit),
 	}
 
 	histories, apiErr := h.service.FindHistory(filterA, filterB)
@@ -124,9 +124,9 @@ func (h *historyHandler) FindFromUser(c *fiber.Ctx) error {
 	limit := stringToInt(c.Query("limit"))
 
 	filter := dto.FilterTimeRangeLimit{
-		Start: int64(start),
-		End:   int64(end),
-		Limit: int64(limit),
+		FilterStart: int64(start),
+		FilterEnd:   int64(end),
+		Limit:       int64(limit),
 	}
 
 	histories, apiErr := h.service.FindHistoryForUser(userID, filter)
@@ -167,7 +167,7 @@ func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	// cek apakah ID history && branch ada
+	// cek apakah FilterID history && branch ada
 	_, apiErr := h.service.GetHistory(id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)

@@ -54,3 +54,21 @@ type CheckItemEditRequest struct {
 	Note        string   `json:"note" bson:"note"`
 	Shifts      []string `json:"shifts" bson:"shifts"`
 }
+
+type CheckItemEdit struct {
+	FilterIDBranchTimestamp
+
+	UpdatedAt   int64
+	UpdatedBy   string
+	UpdatedByID string
+
+	Name        string   `json:"name" bson:"name"`
+	Location    string   `json:"location" bson:"location"`
+	LocationLat string   `json:"location_lat" bson:"location_lat"`
+	LocationLon string   `json:"location_lon" bson:"location_lon"`
+	Type        string   `json:"type" bson:"type"`
+	Tag         []string `json:"tag" bson:"tag"`
+	TagExtra    []string `json:"tag_extra" bson:"tag_extra"`
+	Note        string   `json:"note" bson:"note"`
+	Shifts      []string `json:"shifts" bson:"shifts"`
+}

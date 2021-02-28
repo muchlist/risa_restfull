@@ -20,7 +20,7 @@ type userHandler struct {
 	service service.UserServiceAssumer
 }
 
-//Get menampilkan user berdasarkan ID (bukan email)
+//Get menampilkan user berdasarkan FilterID (bukan email)
 func (u *userHandler) Get(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
 
@@ -63,7 +63,7 @@ func (u *userHandler) Register(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Register berhasil, ID: %s", *insertID)}
+	res := fiber.Map{"msg": fmt.Sprintf("Register berhasil, FilterID: %s", *insertID)}
 	return c.JSON(res)
 }
 

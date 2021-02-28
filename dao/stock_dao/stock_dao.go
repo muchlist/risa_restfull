@@ -52,7 +52,7 @@ type stockDao struct {
 type StockDaoAssumer interface {
 	InsertStock(input dto.Stock) (*string, rest_err.APIError)
 	EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError)
-	DeleteStock(input dto.FilterIDBranchTime) (*dto.Stock, rest_err.APIError)
+	DeleteStock(input dto.FilterIDBranchCreateGte) (*dto.Stock, rest_err.APIError)
 	DisableStock(stockID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Stock, rest_err.APIError)
 	UploadImage(stockID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Stock, rest_err.APIError)
 	ChangeQtyStock(filterA dto.FilterIDBranch, data dto.StockChange) (*dto.Stock, rest_err.APIError)
@@ -137,15 +137,15 @@ func (s *stockDao) EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError
 	return &stock, nil
 }
 
-func (s *stockDao) DeleteStock(input dto.FilterIDBranchTime) (*dto.Stock, rest_err.APIError) {
+func (s *stockDao) DeleteStock(input dto.FilterIDBranchCreateGte) (*dto.Stock, rest_err.APIError) {
 	coll := db.Db.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
-		keyStoID:        input.ID,
-		keyStoBranch:    input.Branch,
-		keyStoCreatedAt: bson.M{"$gte": input.CreateGTE},
+		keyStoID:        input.FilterID,
+		keyStoBranch:    input.FilterBranch,
+		keyStoCreatedAt: bson.M{"$gte": input.FilterCreateGTE},
 	}
 
 	var stock dto.Stock
@@ -263,24 +263,24 @@ func (s *stockDao) FindStock(filterA dto.FilterBranchNameCatDisable) (dto.StockR
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
-	filterA.Branch = strings.ToUpper(filterA.Branch)
-	filterA.Name = strings.ToUpper(filterA.Name)
+	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
+	filterA.FilterName = strings.ToUpper(filterA.FilterName)
 
 	// filter
 	filter := bson.M{
-		keyStoDisable: filterA.Disable,
+		keyStoDisable: filterA.FilterDisable,
 	}
 
 	// filter condition
-	if filterA.Branch != "" {
-		filter[keyStoBranch] = filterA.Branch
+	if filterA.FilterBranch != "" {
+		filter[keyStoBranch] = filterA.FilterBranch
 	}
-	if filterA.Category != "" {
-		filter[keyStoCategory] = filterA.Category
+	if filterA.FilterCategory != "" {
+		filter[keyStoCategory] = filterA.FilterCategory
 	}
-	if filterA.Name != "" {
+	if filterA.FilterName != "" {
 		filter[keyStoName] = bson.M{
-			"$regex": fmt.Sprintf(".*%s", filterA.Name),
+			"$regex": fmt.Sprintf(".*%s", filterA.FilterName),
 		}
 	}
 
@@ -314,8 +314,8 @@ func (s *stockDao) ChangeQtyStock(filterA dto.FilterIDBranch, data dto.StockChan
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyStoID:     filterA.ID,
-		keyStoBranch: strings.ToUpper(filterA.Branch),
+		keyStoID:     filterA.FilterID,
+		keyStoBranch: strings.ToUpper(filterA.FilterBranch),
 	}
 
 	// Jika qty minus (decrement) beri filter qty agar tidak mengurangi sampai dengan minus

@@ -230,12 +230,12 @@ func (u *userDao) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIErr
 	if err := coll.FindOne(ctx, bson.M{keyUserID: strings.ToUpper(userID)}, opts).Decode(&user); err != nil {
 
 		if err == mongo.ErrNoDocuments {
-			//apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %v tidak ditemukan", userID.Hex()))
+			//apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan FilterID %v tidak ditemukan", userID.Hex()))
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %s tidak ditemukan", userID))
 			return nil, apiErr
 		}
 
-		logger.Error("gagal mendapatkan user (by ID) dari database", err)
+		logger.Error("gagal mendapatkan user (GetUserByID) dari database", err)
 		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan user dari database", err)
 		return nil, apiErr
 	}
