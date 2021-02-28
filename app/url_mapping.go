@@ -54,14 +54,20 @@ func mapUrls(app *fiber.App) {
 	//CCTV
 	api.Post("/cctv", middleware.NormalAuth(), cctvHandler.Insert)
 	api.Get("/cctv/:id", middleware.NormalAuth(), cctvHandler.GetCctv)
-	api.Delete("/cctv/:id", middleware.NormalAuth(), cctvHandler.Delete)
 	api.Put("/cctv/:id", middleware.NormalAuth(), cctvHandler.Edit)
+	api.Delete("/cctv/:id", middleware.NormalAuth(), cctvHandler.Delete)
 	api.Get("/cctv", middleware.NormalAuth(), cctvHandler.Find) // IMPROVEMENT join table with gen_unit
 	api.Get("/cctv-avail/:id/:status", middleware.NormalAuth(), cctvHandler.DisableCctv)
 	api.Post("/cctv-image/:id", middleware.NormalAuth(), cctvHandler.UploadImage)
 
 	//STOCK
 	api.Post("/stock", middleware.NormalAuth(), stockHandler.Insert)
+	api.Get("/stock/:id", middleware.NormalAuth(), stockHandler.GetStock)
 	api.Put("/stock/:id", middleware.NormalAuth(), stockHandler.Edit)
+	api.Delete("/stock/:id", middleware.NormalAuth(), stockHandler.Delete)
+	api.Post("/stock-change/:id", middleware.NormalAuth(), stockHandler.ChangeQty)
+	api.Get("/stock", middleware.NormalAuth(), stockHandler.Find)
+	api.Get("/stock-avail/:id/:status", middleware.NormalAuth(), stockHandler.DisableStock)
+	api.Post("/stock-image/:id", middleware.NormalAuth(), stockHandler.UploadImage)
 
 }

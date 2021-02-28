@@ -206,13 +206,16 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 	}
 
 	// Filling data=
+	timeNow := time.Now().Unix()
 	incDec := dto.StockChange{
 		DummyID:  time.Now().UnixNano(),
 		Author:   user.Name,
 		Qty:      data.Qty,
 		BaNumber: data.BaNumber,
 		Note:     data.Note,
-		Time:     time.Now().Unix(),
+	}
+	if data.Time == 0 {
+		incDec.Time = timeNow
 	}
 
 	filter := dto.FilterIDBranch{
@@ -224,6 +227,58 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 	stockEdited, err := s.daoS.ChangeQtyStock(filter, incDec)
 	if err != nil {
 		return nil, err
+	}
+
+	// Filling Data history
+	history := dto.History{
+		ID:             primitive.NewObjectID(),
+		CreatedAt:      timeNow,
+		CreatedBy:      user.Name,
+		CreatedByID:    user.Identity,
+		UpdatedAt:      timeNow,
+		UpdatedBy:      user.Name,
+		UpdatedByID:    user.Identity,
+		Category:       category.Stock,
+		Branch:         user.Branch,
+		ParentID:       stockID,
+		ParentName:     stockEdited.Name,
+		Status:         "Change",
+		ProblemResolve: "",
+		CompleteStatus: enum.HComplete,
+		DateStart:      timeNow,
+		DateEnd:        timeNow,
+		Tag:            []string{},
+		Image:          "",
+	}
+	if data.Qty > 0 {
+		history.Problem = fmt.Sprintf("Menambahkan stok %d %s : %s", data.Qty, stockEdited.Unit, data.Note)
+	} else {
+		if stockEdited.Qty <= stockEdited.Threshold {
+			history.Problem = fmt.Sprintf("Mengurangi stok (%d) %s : %s - sisa stok %d %s (perlu restock)",
+				data.Qty,
+				stockEdited.Unit,
+				data.Note,
+				stockEdited.Qty,
+				stockEdited.Unit,
+			)
+		} else {
+			history.Problem = fmt.Sprintf("Mengurangi stok (%d) %s : %s - sisa stok %d %s",
+				data.Qty,
+				stockEdited.Unit,
+				data.Note,
+				stockEdited.Qty,
+				stockEdited.Unit,
+			)
+		}
+
+	}
+
+	//DB
+	_, err = s.daoH.InsertHistory(history)
+	if err != nil {
+		logger.Error("Berhasil membuat stock namun gagal membuat history (ChangeQtyStock)", err)
+		errPlus := rest_err.NewInternalServerError(fmt.Sprintf("galat : stock berhasil dirubah -> %s", err.Message()), err)
+		return nil, errPlus
 	}
 
 	// IMPROVEMENT

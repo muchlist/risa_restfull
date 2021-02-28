@@ -51,3 +51,10 @@ func (h StockEditRequest) Validate() error {
 
 	return nil
 }
+
+func (h StockChangeRequest) Validate() error {
+	return validation.ValidateStruct(&h,
+		validation.Field(&h.Qty, validation.Required),
+		validation.Field(&h.Note, validation.Required),
+	)
+}
