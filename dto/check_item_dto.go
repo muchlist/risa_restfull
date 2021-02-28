@@ -44,6 +44,8 @@ type CheckItemRequest struct {
 }
 
 type CheckItemEditRequest struct {
+	FilterTimestamp int64 `json:"filter_timestamp"`
+
 	Name        string   `json:"name" bson:"name"`
 	Location    string   `json:"location" bson:"location"`
 	LocationLat string   `json:"location_lat" bson:"location_lat"`
