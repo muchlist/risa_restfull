@@ -49,6 +49,12 @@ type checkItemDao struct {
 
 type CheckItemDaoAssumer interface {
 	InsertCheckItem(input dto.CheckItem) (*string, rest_err.APIError)
+	EditCheckItem(input dto.CheckItemEdit) (*dto.CheckItem, rest_err.APIError)
+	EditCheckItemValue(input dto.CheckItemEditBySys) (*dto.CheckItem, rest_err.APIError)
+	DeleteCheckItem(input dto.FilterIDBranch) (*dto.CheckItem, rest_err.APIError)
+	DisableCheckItem(checkItemID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.CheckItem, rest_err.APIError)
+	GetCheckItemByID(checkItemID primitive.ObjectID, branchIfSpecific string) (*dto.CheckItem, rest_err.APIError)
+	FindCheckItem(filterA dto.FilterBranchNameDisable, filterHaveProblem bool) (dto.CheckItemResponseMinList, rest_err.APIError)
 }
 
 func (c *checkItemDao) InsertCheckItem(input dto.CheckItem) (*string, rest_err.APIError) {
@@ -140,7 +146,7 @@ func (c *checkItemDao) EditCheckItem(input dto.CheckItemEdit) (*dto.CheckItem, r
 	return &checkItem, nil
 }
 
-func (c *checkItemDao) EditCheckItemBySystem(input dto.CheckItemEditBySys) (*dto.CheckItem, rest_err.APIError) {
+func (c *checkItemDao) EditCheckItemValue(input dto.CheckItemEditBySys) (*dto.CheckItem, rest_err.APIError) {
 	coll := db.Db.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -167,7 +173,7 @@ func (c *checkItemDao) EditCheckItemBySystem(input dto.CheckItemEditBySys) (*dto
 			return nil, rest_err.NewBadRequestError("CheckItem tidak diupdate : validasi id branch timestamp")
 		}
 
-		logger.Error("Gagal mendapatkan checkItem dari database (EditCheckItemBySystem)", err)
+		logger.Error("Gagal mendapatkan checkItem dari database (EditCheckItemValue)", err)
 		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan checkItem dari database", err)
 		return nil, apiErr
 	}
