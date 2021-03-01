@@ -90,11 +90,13 @@ type CheckItemResponseMin struct {
 	Branch  string             `json:"branch" bson:"branch"`
 	Disable bool               `json:"disable" bson:"disable"`
 
-	Name     string `json:"name" bson:"name"`
-	Location string `json:"location" bson:"location"`
-	Type     string `json:"type" bson:"type"`
-	Note     string `json:"note" bson:"note"`
-	Shifts   []int  `json:"shifts" bson:"shifts"`
+	Name     string   `json:"name" bson:"name"`
+	Location string   `json:"location" bson:"location"`
+	Type     string   `json:"type" bson:"type"`
+	Note     string   `json:"note" bson:"note"`
+	Shifts   []int    `json:"shifts" bson:"shifts"`
+	Tag      []string `json:"tag" bson:"tag"`
+	TagExtra []string `json:"tag_extra" bson:"tag_extra"`
 
 	CheckedNote    string `json:"checked_note" bson:"checked_note"`
 	HaveProblem    bool   `json:"have_problem" bson:"have_problem"`

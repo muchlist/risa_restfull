@@ -42,6 +42,7 @@ type GenUnitFilter struct {
 	IP       string
 	Disable  bool
 	Pings    bool
+	LastPing string
 }
 
 // GenUnitCaseRequest,

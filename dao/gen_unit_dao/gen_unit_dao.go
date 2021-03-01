@@ -305,6 +305,9 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 	if filterInput.IP != "" {
 		filter[keyGenIP] = filterInput.IP
 	}
+	if filterInput.LastPing != "" {
+		filter[keyGenLastPing] = filterInput.LastPing
+	}
 
 	opts := options.Find()
 

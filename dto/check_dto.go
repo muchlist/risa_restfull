@@ -18,6 +18,10 @@ type Check struct {
 	Note       string           `json:"note" bson:"note"`
 }
 
+type CheckRequest struct {
+	Shift int `json:"shift" bson:"shift"`
+}
+
 type CheckItemEmbed struct {
 	ID       string   `json:"id" bson:"id"`
 	Name     string   `json:"name" bson:"name"`
@@ -47,6 +51,17 @@ type CheckEdit struct {
 	Note     string `json:"note" bson:"note"`
 }
 
+type CheckEditRequest struct {
+	FilterIDBranchAuthor
+	IsFinish bool   `json:"is_finish" bson:"is_finish"`
+	Note     string `json:"note" bson:"note"`
+}
+
+type CheckFinishRequest struct {
+	FilterIDBranchAuthor
+	IsFinish bool `json:"is_finish" bson:"is_finish"`
+}
+
 type CheckChildUpdate struct {
 	FilterParentIDChildIDAuthor
 
@@ -59,4 +74,16 @@ type CheckChildUpdate struct {
 	CheckedNote      string
 	HaveProblem      bool
 	CompleteStatus   int
+}
+
+type CheckChildUpdateRequest struct {
+	ParentID string `json:"parent_id"`
+	ChildID  string `json:"child_id"`
+
+	IsChecked        bool   `json:"is_checked"`
+	TagSelected      string `json:"tag_selected"`
+	TagExtraSelected string `json:"tag_extra_selected"`
+	CheckedNote      string `json:"checked_note"`
+	HaveProblem      bool   `json:"have_problem"`
+	CompleteStatus   int    `json:"complete_status"`
 }

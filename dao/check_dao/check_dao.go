@@ -60,10 +60,8 @@ type CheckDaoAssumer interface {
 	InsertCheck(input dto.Check) (*string, rest_err.APIError)
 	EditCheck(input dto.CheckEdit) (*dto.Check, rest_err.APIError)
 	DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Check, rest_err.APIError)
-	//UploadImage(filterA FilterParentIDChildIDAuthor, imagePath string) (*dto.Check, rest_err.APIError)
-	//
-	//GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.Check, rest_err.APIError)
-	//FindCheck(filter dto.FilterBranchLocIPNameDisable) (dto.CheckResponseMinList, rest_err.APIError)
+	UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.Check, rest_err.APIError)
+	UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest_err.APIError)
 }
 
 func (c *checkDao) InsertCheck(input dto.Check) (*string, rest_err.APIError) {
