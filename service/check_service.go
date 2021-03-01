@@ -262,6 +262,12 @@ func (c *checkService) UpdateCheckItem(user mjwt.CustomClaim, input dto.CheckChi
 		}
 	} else {
 		// tipenya cctv, tambahkan history
+
+		// cek complete status tidak boleh 0 atau 3, set default
+		if !(input.CompleteStatus == enum.HComplete) {
+			input.CompleteStatus = enum.HProgress
+		}
+
 		_, err = c.daoH.InsertHistory(dto.History{
 			ID:             primitive.NewObjectID(),
 			CreatedAt:      timeNow,
