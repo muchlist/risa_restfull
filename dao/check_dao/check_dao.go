@@ -27,26 +27,20 @@ const (
 	keyChCreatedByID = "created_by_id"
 	keyChBranch      = "branch"
 
-	keyChShift      = "shift"
 	keyChIsFinish   = "is_finish"
 	keyChCheckItems = "check_items"
 	keyChNote       = "note"
 
-	keyCiXId        = "check_items._id"
-	keyCiXName      = "check_items.$.name"
-	keyCiXLocation  = "check_items.$.location"
-	keyCiXType      = "check_items.$.type"
-	keyCiXTag       = "check_items.$.tag"
-	keyCiXTag_extra = "check_items.$.tag_extra"
+	keyCiXId = "check_items._id"
 
-	keyCiXChecked_at         = "check_items.$.checked_at"
-	keyCiXIs_checked         = "check_items.$.is_checked"
-	keyCiXTag_selected       = "check_items.$.tag_selected"
-	keyCiXTag_extra_selected = "check_items.$.tag_extra_selected"
-	keyCiXImage_path         = "check_items.$.image_path"
-	keyCiXChecked_note       = "check_items.$.checked_note"
-	keyCiXHave_problem       = "check_items.$.have_problem"
-	keyCiXComplete_status    = "check_items.$.complete_status"
+	keyCiXCheckedAt        = "check_items.$.checked_at"
+	keyCiXIsChecked        = "check_items.$.is_checked"
+	keyCiXTagSelected      = "check_items.$.tag_selected"
+	keyCiXTagExtraSelected = "check_items.$.tag_extra_selected"
+	keyCiXImagePath        = "check_items.$.image_path"
+	keyCiXCheckedNote      = "check_items.$.checked_note"
+	keyCiXHaveProblem      = "check_items.$.have_problem"
+	keyCiXCompleteStatus   = "check_items.$.complete_status"
 )
 
 func NewCheckDao() CheckDaoAssumer {
@@ -62,6 +56,9 @@ type CheckDaoAssumer interface {
 	DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Check, rest_err.APIError)
 	UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.Check, rest_err.APIError)
 	UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest_err.APIError)
+
+	GetCheckByID(checkID primitive.ObjectID) (*dto.Check, rest_err.APIError)
+	FindCheck(branch string) (dto.CheckResponseMinList, rest_err.APIError)
 }
 
 func (c *checkDao) InsertCheck(input dto.Check) (*string, rest_err.APIError) {
@@ -179,7 +176,7 @@ func (c *checkDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, ima
 
 	update := bson.M{
 		"$set": bson.M{
-			keyCiXImage_path: imagePath,
+			keyCiXImagePath: imagePath,
 		},
 	}
 
@@ -215,12 +212,13 @@ func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest
 
 	update := bson.M{
 		"$set": bson.M{
-			keyCiXIs_checked:         input.IsChecked,
-			keyCiXChecked_note:       input.CheckedNote,
-			keyCiXHave_problem:       input.HaveProblem,
-			keyCiXComplete_status:    input.CompleteStatus,
-			keyCiXTag_selected:       input.TagSelected,
-			keyCiXTag_extra_selected: input.TagExtraSelected,
+			keyCiXIsChecked:        input.IsChecked,
+			keyCiXCheckedAt:        input.CheckedAt,
+			keyCiXCheckedNote:      input.CheckedNote,
+			keyCiXHaveProblem:      input.HaveProblem,
+			keyCiXCompleteStatus:   input.CompleteStatus,
+			keyCiXTagSelected:      input.TagSelected,
+			keyCiXTagExtraSelected: input.TagExtraSelected,
 		},
 	}
 
@@ -236,4 +234,61 @@ func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest
 	}
 
 	return &check, nil
+}
+
+func (c *checkDao) GetCheckByID(checkID primitive.ObjectID) (*dto.Check, rest_err.APIError) {
+	coll := db.Db.Collection(keyChCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	filter := bson.M{keyChID: checkID}
+
+	var check dto.Check
+	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
+
+		if err == mongo.ErrNoDocuments {
+			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Check dengan ID %s tidak ditemukan", checkID.Hex()))
+			return nil, apiErr
+		}
+
+		logger.Error("gagal mendapatkan check dari database (GetCheckByID)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan check dari database", err)
+		return nil, apiErr
+	}
+
+	return &check, nil
+}
+
+func (c *checkDao) FindCheck(branch string) (dto.CheckResponseMinList, rest_err.APIError) {
+	coll := db.Db.Collection(keyChCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	// filter
+	filter := bson.M{
+		keyChBranch: strings.ToUpper(branch),
+	}
+
+	opts := options.Find()
+	opts.SetProjection(bson.M{
+		keyChCheckItems: 0,
+	})
+	opts.SetSort(bson.D{{keyChID, -1}})
+	opts.SetLimit(100)
+
+	cursor, err := coll.Find(ctx, filter, opts)
+	if err != nil {
+		logger.Error("Gagal mendapatkan daftar check dari database (FindCheck)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.CheckResponseMinList{}, apiErr
+	}
+
+	checkList := dto.CheckResponseMinList{}
+	if err = cursor.All(ctx, &checkList); err != nil {
+		logger.Error("Gagal decode checkList cursor ke objek slice (FindCheck)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.CheckResponseMinList{}, apiErr
+	}
+
+	return checkList, nil
 }

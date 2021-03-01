@@ -20,13 +20,14 @@ type genUnitHandler struct {
 	service service.GenUnitServiceAssumer
 }
 
-//Find menampilkan list unit. Query name, category, ip
+//Find menampilkan list unit. Query name, category, ip, last_ping, pings
 func (u *genUnitHandler) Find(c *fiber.Ctx) error {
 
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	nameSearch := c.Query("name")
 	categorySearch := c.Query("category")
 	ipSearch := c.Query("ip")
+	lastPing := c.Query("last_ping")
 	var pingsRetrieve bool
 	if c.Query("pings") != "" {
 		pingsRetrieve = true
@@ -38,6 +39,7 @@ func (u *genUnitHandler) Find(c *fiber.Ctx) error {
 		Category: categorySearch,
 		IP:       ipSearch,
 		Pings:    pingsRetrieve,
+		LastPing: lastPing,
 	}
 
 	userList, apiErr := u.service.FindUnit(payload)

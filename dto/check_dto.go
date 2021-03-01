@@ -87,3 +87,16 @@ type CheckChildUpdateRequest struct {
 	HaveProblem      bool   `json:"have_problem"`
 	CompleteStatus   int    `json:"complete_status"`
 }
+
+type CheckResponseMinList []CheckResponseMin
+type CheckResponseMin struct {
+	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	CreatedAt int64              `json:"created_at" bson:"created_at"`
+	CreatedBy string             `json:"created_by" bson:"created_by"`
+	UpdatedAt int64              `json:"updated_at" bson:"updated_at"`
+	Branch    string             `json:"branch" bson:"branch"`
+
+	Shift    int    `json:"shift" bson:"shift"`
+	IsFinish bool   `json:"is_finish" bson:"is_finish"`
+	Note     string `json:"note" bson:"note"`
+}

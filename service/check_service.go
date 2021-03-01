@@ -241,33 +241,24 @@ func (c *checkService) UpdateCheckItem(user mjwt.CustomClaim, input dto.CheckChi
 	return check, nil
 }
 
-//
-//func (c *checkService) GetCheckByID(checkID string, branchIfSpecific string) (*dto.Check, rest_err.APIError) {
-//	oid, errT := primitive.ObjectIDFromHex(checkID)
-//	if errT != nil {
-//		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
-//	}
-//
-//	check, err := c.daoC.GetCheckByID(oid, branchIfSpecific)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return check, nil
-//}
-//
-//func (c *checkService) FindCheck(filter dto.FilterBranchLocIPNameDisable) (dto.CheckResponseMinList, rest_err.APIError) {
-//
-//	// cek apakah ip address valid, jika valid maka set filter.FilterName ke kosong supaya pencarian berdasarkan IP
-//	if filter.FilterIP != "" {
-//		if net.ParseIP(filter.FilterIP) == nil {
-//			return nil, rest_err.NewBadRequestError("IP Address tidak valid")
-//		}
-//		filter.FilterName = ""
-//	}
-//
-//	checkList, err := c.daoC.FindCheck(filter)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return checkList, nil
-//}
+func (c *checkService) GetCheckByID(checkID string) (*dto.Check, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(checkID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	check, err := c.daoC.GetCheckByID(oid)
+	if err != nil {
+		return nil, err
+	}
+	return check, nil
+}
+
+func (c *checkService) FindCheck(branch string) (dto.CheckResponseMinList, rest_err.APIError) {
+
+	checkList, err := c.daoC.FindCheck(branch)
+	if err != nil {
+		return nil, err
+	}
+	return checkList, nil
+}
