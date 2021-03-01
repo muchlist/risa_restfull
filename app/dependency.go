@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/muchlist/risa_restfull/dao/cctv_dao"
+	"github.com/muchlist/risa_restfull/dao/check_dao"
 	"github.com/muchlist/risa_restfull/dao/check_item_dao"
 	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
 	"github.com/muchlist/risa_restfull/dao/history_dao"
@@ -25,6 +26,7 @@ var (
 	cctvDao      = cctv_dao.NewCctvDao()
 	stockDao     = stock_dao.NewStockDao()
 	checkItemDao = check_item_dao.NewCheckItemDao()
+	checkDao     = check_dao.NewCheckDao()
 
 	//Service
 	userService      = service.NewUserService(userDao, cryptoUtils, jwt)
@@ -33,6 +35,7 @@ var (
 	cctvService      = service.NewCctvService(cctvDao, historyDao, genUnitDao)
 	stockService     = service.NewStockService(stockDao, historyDao)
 	checkItemService = service.NewCheckItemService(checkItemDao)
+	checkService     = service.NewCheckService(checkDao, checkItemDao, genUnitDao)
 
 	//Controller or Handler
 	pingHandler      = handler.NewPingHandler()
@@ -42,4 +45,5 @@ var (
 	cctvHandler      = handler.NewCctvHandler(cctvService)
 	stockHandler     = handler.NewStockHandler(stockService)
 	checkItemHandler = handler.NewCheckItemHandler(checkItemService)
+	checkHandler     = handler.NewCheckHandler(checkService)
 )

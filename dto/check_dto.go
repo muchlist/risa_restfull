@@ -43,23 +43,18 @@ type CheckItemEmbed struct {
 type CheckEdit struct {
 	FilterIDBranchAuthor
 
-	UpdatedAt   int64  `json:"updated_at" bson:"updated_at"`
-	UpdatedBy   string `json:"updated_by" bson:"updated_by"`
-	UpdatedByID string `json:"updated_by_id" bson:"updated_by_id"`
+	UpdatedAt   int64
+	UpdatedBy   string
+	UpdatedByID string
 
-	IsFinish bool   `json:"is_finish" bson:"is_finish"`
-	Note     string `json:"note" bson:"note"`
+	IsFinish bool
+	Note     string
 }
 
 type CheckEditRequest struct {
-	FilterIDBranchAuthor
-	IsFinish bool   `json:"is_finish" bson:"is_finish"`
-	Note     string `json:"note" bson:"note"`
-}
-
-type CheckFinishRequest struct {
-	FilterIDBranchAuthor
-	IsFinish bool `json:"is_finish" bson:"is_finish"`
+	FilterIDBranchAuthor `json:"-"`
+	IsFinish             bool   `json:"is_finish" bson:"is_finish"`
+	Note                 string `json:"note" bson:"note"`
 }
 
 type CheckChildUpdate struct {

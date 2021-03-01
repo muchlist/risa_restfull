@@ -57,8 +57,8 @@ type CheckDaoAssumer interface {
 	UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.Check, rest_err.APIError)
 	UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest_err.APIError)
 
-	GetCheckByID(checkID primitive.ObjectID) (*dto.Check, rest_err.APIError)
-	FindCheck(branch string) (dto.CheckResponseMinList, rest_err.APIError)
+	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.Check, rest_err.APIError)
+	FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError)
 }
 
 func (c *checkDao) InsertCheck(input dto.Check) (*string, rest_err.APIError) {
@@ -236,18 +236,22 @@ func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest
 	return &check, nil
 }
 
-func (c *checkDao) GetCheckByID(checkID primitive.ObjectID) (*dto.Check, rest_err.APIError) {
+func (c *checkDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.Check, rest_err.APIError) {
 	coll := db.Db.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{keyChID: checkID}
+	// filter condition
+	if branchIfSpecific != "" {
+		filter[keyChBranch] = strings.ToUpper(branchIfSpecific)
+	}
 
 	var check dto.Check
 	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
 
 		if err == mongo.ErrNoDocuments {
-			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Check dengan ID %s tidak ditemukan", checkID.Hex()))
+			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Check dengan ID %s tidak ditemukan. validation : id branch", checkID.Hex()))
 			return nil, apiErr
 		}
 
@@ -259,14 +263,26 @@ func (c *checkDao) GetCheckByID(checkID primitive.ObjectID) (*dto.Check, rest_er
 	return &check, nil
 }
 
-func (c *checkDao) FindCheck(branch string) (dto.CheckResponseMinList, rest_err.APIError) {
+func (c *checkDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError) {
 	coll := db.Db.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
+	if filterA.Limit == 0 {
+		filterA.Limit = 100
+	}
+
 	// filter
-	filter := bson.M{
-		keyChBranch: strings.ToUpper(branch),
+	filter := bson.M{}
+	// filter condition
+	if branch != "" {
+		filter[keyChBranch] = strings.ToUpper(branch)
+	}
+	if filterA.FilterStart != 0 {
+		filter[keyChCreatedAt] = bson.M{"$gte": filterA.FilterStart}
+	}
+	if filterA.FilterEnd != 0 {
+		filter[keyChCreatedAt] = bson.M{"$lte": filterA.FilterStart}
 	}
 
 	opts := options.Find()
@@ -274,7 +290,7 @@ func (c *checkDao) FindCheck(branch string) (dto.CheckResponseMinList, rest_err.
 		keyChCheckItems: 0,
 	})
 	opts.SetSort(bson.D{{keyChID, -1}})
-	opts.SetLimit(100)
+	opts.SetLimit(filterA.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
 	if err != nil {
