@@ -66,7 +66,7 @@ func (c *checkItemDao) InsertCheckItem(input dto.CheckItem) (*string, rest_err.A
 	input.Name = strings.ToUpper(input.Name)
 	input.Branch = strings.ToUpper(input.Branch)
 	if input.Shifts == nil {
-		input.Shifts = []string{}
+		input.Shifts = []int{}
 	}
 	if input.Tag == nil {
 		input.Tag = []string{}
@@ -95,7 +95,7 @@ func (c *checkItemDao) EditCheckItem(input dto.CheckItemEdit) (*dto.CheckItem, r
 
 	input.Name = strings.ToUpper(input.Name)
 	if input.Shifts == nil {
-		input.Shifts = []string{}
+		input.Shifts = []int{}
 	}
 	if input.Tag == nil {
 		input.Tag = []string{}

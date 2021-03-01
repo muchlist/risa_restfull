@@ -32,14 +32,14 @@ func (c CheckItemRequest) Validate() error {
 	if c.Shifts != nil {
 		shiftsAvailable := []int{1, 2, 3}
 		if !sfunc.ValueIntInSliceIsAvailable(c.Shifts, shiftsAvailable) {
-			errorList = append(errorList, fmt.Sprintf("Lokasi yang dimasukkan tidak tersedia. gunakan %s", location.GetLocationAvailable()))
+			errorList = append(errorList, fmt.Sprintf("Lokasi yang dimasukkan tidak tersedia. Gunakan %s", location.GetLocationAvailable()))
 		}
 	}
 
 	if len(errorList) != 0 {
 		errorString := ""
 		for _, v := range errorList {
-			errorString = errorString + v + "\n"
+			errorString = errorString + v + ". "
 		}
 		return errors.New(errorString)
 	}
@@ -71,14 +71,14 @@ func (c CheckItemEditRequest) Validate() error {
 	if c.Shifts != nil {
 		shiftsAvailable := []int{1, 2, 3}
 		if !sfunc.ValueIntInSliceIsAvailable(c.Shifts, shiftsAvailable) {
-			errorList = append(errorList, fmt.Sprintf("Lokasi yang dimasukkan tidak tersedia. gunakan %s", location.GetLocationAvailable()))
+			errorList = append(errorList, fmt.Sprintf("Lokasi yang dimasukkan tidak tersedia. Gunakan %s", location.GetLocationAvailable()))
 		}
 	}
 
 	if len(errorList) != 0 {
 		errorString := ""
 		for _, v := range errorList {
-			errorString = errorString + v + "\n"
+			errorString = errorString + v + ". "
 		}
 		return errors.New(errorString)
 	}
