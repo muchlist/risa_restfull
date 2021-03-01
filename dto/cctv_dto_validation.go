@@ -1,27 +1,8 @@
 package dto
 
 import (
-	"errors"
-	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/muchlist/risa_restfull/constants/hw_type"
-	"github.com/muchlist/risa_restfull/constants/location"
-	"github.com/muchlist/risa_restfull/utils/sfunc"
 )
-
-func cctvTypeValidation(cctvType string) error {
-	if !sfunc.InSlice(cctvType, hw_type.GetCctvTypeAvailable()) {
-		return errors.New(fmt.Sprintf("Tipe yang dimasukkan tidak tersedia. gunakan %s", hw_type.GetCctvTypeAvailable()))
-	}
-	return nil
-}
-
-func locationValidation(loc string) error {
-	if !sfunc.InSlice(loc, location.GetLocationAvailable()) {
-		return errors.New(fmt.Sprintf("Lokasi yang dimasukkan tidak tersedia. gunakan %s", location.GetLocationAvailable()))
-	}
-	return nil
-}
 
 func (c CctvRequest) Validate() error {
 	if err := validation.ValidateStruct(&c,

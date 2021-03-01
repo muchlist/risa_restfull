@@ -42,7 +42,7 @@ func (x *cctvHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan cctv berhasil, FilterID: %s", *insertID)}
+	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan cctv berhasil, ID: %s", *insertID)}
 	return c.JSON(res)
 }
 
@@ -156,7 +156,7 @@ func (x *cctvHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	// cek apakah FilterID cctv && branch ada
+	// cek apakah ID cctv && branch ada
 	_, apiErr := x.service.GetCctvByID(id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)

@@ -42,7 +42,7 @@ func (s *stockHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan stock berhasil, FilterID: %s", *insertID)}
+	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan stock berhasil, ID: %s", *insertID)}
 	return c.JSON(res)
 }
 
@@ -178,7 +178,7 @@ func (s *stockHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	// cek apakah FilterID stock && branch ada
+	// cek apakah ID stock && branch ada
 	_, apiErr := s.service.GetStockByID(id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)

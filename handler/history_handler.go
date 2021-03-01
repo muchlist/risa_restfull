@@ -41,7 +41,7 @@ func (h *historyHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan history berhasi, FilterID: %s", *insertID)}
+	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan history berhasi, ID: %s", *insertID)}
 	return c.JSON(res)
 }
 
@@ -167,7 +167,7 @@ func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	// cek apakah FilterID history && branch ada
+	// cek apakah ID history && branch ada
 	_, apiErr := h.service.GetHistory(id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)

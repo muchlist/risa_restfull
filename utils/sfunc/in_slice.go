@@ -15,11 +15,36 @@ func InSlice(target string, slice []string) bool {
 	return false
 }
 
+func IntInSlice(target int, slice []int) bool {
+	if len(slice) == 0 {
+		return false
+	}
+
+	for _, value := range slice {
+		if target == value {
+			return true
+		}
+	}
+
+	return false
+}
+
 // ValueInSliceIsAvailable memasukkan input request berupa slice dan
 // membandingkan isi slicenya apakah tersedia untuk digunakan
 func ValueInSliceIsAvailable(inputSlice []string, availableSlice []string) bool {
 	for _, input := range inputSlice {
 		if !InSlice(input, availableSlice) {
+			return false
+		}
+	}
+	return true
+}
+
+// ValueIntInSliceIsAvailable memasukkan input request berupa slice dan
+// membandingkan isi slicenya apakah tersedia untuk digunakan
+func ValueIntInSliceIsAvailable(inputSlice []int, availableSlice []int) bool {
+	for _, input := range inputSlice {
+		if !IntInSlice(input, availableSlice) {
 			return false
 		}
 	}

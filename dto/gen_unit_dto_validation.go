@@ -1,19 +1,8 @@
 package dto
 
 import (
-	"errors"
-	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/muchlist/risa_restfull/constants/category"
-	"github.com/muchlist/risa_restfull/utils/sfunc"
 )
-
-func categoryValidation(cat string) error {
-	if !sfunc.InSlice(cat, category.GetCategoryAvailable()) {
-		return errors.New(fmt.Sprintf("Category yang dimasukkan tidak tersedia. gunakan %s", category.GetCategoryAvailable()))
-	}
-	return nil
-}
 
 func (g GenUnitPingStateRequest) Validate() error {
 	if err := validation.ValidateStruct(&g,

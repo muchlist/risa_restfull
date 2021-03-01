@@ -1,19 +1,8 @@
 package dto
 
 import (
-	"errors"
-	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/muchlist/risa_restfull/constants/stock_category"
-	"github.com/muchlist/risa_restfull/utils/sfunc"
 )
-
-func stockCategoryValidation(stockCategory string) error {
-	if !sfunc.InSlice(stockCategory, stock_category.GetStockCategoryAvailable()) {
-		return errors.New(fmt.Sprintf("Category yang dimasukkan tidak tersedia. gunakan %s", stock_category.GetStockCategoryAvailable()))
-	}
-	return nil
-}
 
 func (h StockRequest) Validate() error {
 	if err := validation.ValidateStruct(&h,

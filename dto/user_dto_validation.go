@@ -1,32 +1,9 @@
 package dto
 
 import (
-	"errors"
-	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-	"github.com/muchlist/risa_restfull/constants/branches"
-	"github.com/muchlist/risa_restfull/constants/roles"
-	"github.com/muchlist/risa_restfull/utils/sfunc"
 )
-
-func roleValidation(rolesIn []string) error {
-	if len(rolesIn) > 0 {
-		if !sfunc.ValueInSliceIsAvailable(rolesIn, roles.GetRolesAvailable()) {
-			return errors.New(fmt.Sprintf("role yang dimasukkan tidak tersedia. gunakan %s", roles.GetRolesAvailable()))
-		}
-	}
-	return nil
-}
-
-func branchValidation(branch string) error {
-
-	if !sfunc.InSlice(branch, branches.GetBranchesAvailable()) {
-		return errors.New(fmt.Sprintf("branch yang dimasukkan tidak tersedia. gunakan %s", branches.GetBranchesAvailable()))
-	}
-
-	return nil
-}
 
 //Validate input
 func (u UserRequest) Validate() error {
