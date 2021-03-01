@@ -49,6 +49,18 @@ type FilterIDBranch struct {
 	FilterBranch string
 }
 
+type FilterIDBranchAuthor struct {
+	FilterID       primitive.ObjectID
+	FilterBranch   string
+	FilterAuthorID string
+}
+
+type FilterParentIDChildIDAuthor struct {
+	FilterParentID primitive.ObjectID
+	FilterChildID  string
+	FilterAuthorID string
+}
+
 type FilterTimeRangeLimit struct {
 	FilterStart int64
 	FilterEnd   int64
