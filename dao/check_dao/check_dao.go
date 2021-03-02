@@ -31,7 +31,7 @@ const (
 	keyChCheckItems = "check_items"
 	keyChNote       = "note"
 
-	keyCiXId = "check_items._id"
+	keyCiXId = "check_items.id"
 
 	keyCiXCheckedAt        = "check_items.$.checked_at"
 	keyCiXIsChecked        = "check_items.$.is_checked"
@@ -198,8 +198,6 @@ func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest
 	coll := db.Db.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
-
-	// Default value for slice
 
 	opts := options.FindOneAndUpdate()
 	opts.SetReturnDocument(1)

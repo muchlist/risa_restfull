@@ -84,7 +84,7 @@ func mapUrls(app *fiber.App) {
 	api.Put("/check/:id", middleware.NormalAuth(), checkHandler.Edit)
 	api.Delete("/check/:id", middleware.NormalAuth(), checkHandler.Delete)
 	api.Get("/check", middleware.NormalAuth(), checkHandler.Find)
-	api.Post("/check-update/:id/:child_id", middleware.NormalAuth(), checkHandler.UpdateCheckItem)
+	api.Post("/check-update", middleware.NormalAuth(), checkHandler.UpdateCheckItem)
 	api.Post("/check-image/:id/:child_id", middleware.NormalAuth(), checkHandler.UploadImage)
 
 }

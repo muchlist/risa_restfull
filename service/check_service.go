@@ -1,13 +1,15 @@
 package service
 
 import (
+	"errors"
+	"fmt"
+	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/check_dao"
 	"github.com/muchlist/risa_restfull/dao/check_item_dao"
 	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
-	"github.com/muchlist/risa_restfull/dao/history_dao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"github.com/muchlist/risa_restfull/utils/sfunc"
@@ -18,21 +20,21 @@ import (
 func NewCheckService(checkDao check_dao.CheckDaoAssumer,
 	checkItemDao check_item_dao.CheckItemDaoAssumer,
 	genUnitDao gen_unit_dao.GenUnitDaoAssumer,
-	historyDao history_dao.HistoryDaoAssumer,
+	histService HistoryServiceAssumer,
 ) CheckServiceAssumer {
 	return &checkService{
-		daoC:  checkDao,
-		daoCI: checkItemDao,
-		daoG:  genUnitDao,
-		daoH:  historyDao,
+		daoC:        checkDao,
+		daoCI:       checkItemDao,
+		daoG:        genUnitDao,
+		servHistory: histService,
 	}
 }
 
 type checkService struct {
-	daoC  check_dao.CheckDaoAssumer
-	daoCI check_item_dao.CheckItemDaoAssumer
-	daoG  gen_unit_dao.GenUnitDaoAssumer
-	daoH  history_dao.HistoryDaoAssumer
+	daoC        check_dao.CheckDaoAssumer
+	daoCI       check_item_dao.CheckItemDaoAssumer
+	daoG        gen_unit_dao.GenUnitDaoAssumer
+	servHistory HistoryServiceAssumer
 }
 type CheckServiceAssumer interface {
 	InsertCheck(user mjwt.CustomClaim, input dto.CheckRequest) (*string, rest_err.APIError)
@@ -156,8 +158,51 @@ func (c *checkService) EditCheck(user mjwt.CustomClaim, checkID string, input dt
 		return nil, err
 	}
 
+	//Jika isFinish true , maka masukkan semua checkItem yang bertipe cctv
+	//looping ke insert history
+	var errorList []rest_err.APIError
+	if checkEdited.IsFinish {
+		for _, checkItem := range checkEdited.CheckItems {
+			if checkItem.Type == category.Cctv {
+				// jika checkItemnya tidak di check lewati
+				if !checkItem.IsChecked {
+					continue
+				}
+				// cek complete status tidak boleh 0 atau 3, set default ke 1
+				if !(checkItem.CompleteStatus == enum.HComplete) {
+					checkItem.CompleteStatus = enum.HProgress
+				}
+				dataHistory := dto.HistoryRequest{
+					ParentID:       checkItem.ID,
+					Status:         "Checklist System",
+					Problem:        checkItem.CheckedNote,
+					ProblemResolve: "",
+					CompleteStatus: checkItem.CompleteStatus,
+					DateStart:      timeNow,
+					DateEnd:        timeNow,
+					Tag:            []string{},
+				}
+				_, err := c.servHistory.InsertHistory(user, dataHistory)
+				if err != nil {
+					errorList = append(errorList, err)
+				}
+			}
+		}
+	}
+
+	// mengkoleksi semua error hasil looping insert history
+	errMessage := ""
+	if len(errorList) != 0 {
+		for _, err := range errorList {
+			errMessage = errMessage + ". " + err.Message()
+		}
+		logger.Error(fmt.Sprintf("Check berhasil diubah namun menambahkan history cctv gagal (EditCheck isFinish) : %s", errMessage), errors.New("internal error"))
+		return nil, rest_err.NewInternalServerError("Check berhasil diubah namun menambahkan history cctv gagal", errors.New("internal error"))
+	}
+
 	return checkEdited, nil
 }
+
 func (c *checkService) DeleteCheck(user mjwt.CustomClaim, id string) rest_err.APIError {
 
 	oid, errT := primitive.ObjectIDFromHex(id)
@@ -233,11 +278,11 @@ func (c *checkService) UpdateCheckItem(user mjwt.CustomClaim, input dto.CheckChi
 
 	// Cek index dan Type childID yang diupdate
 	var updatedType string
-	var indexItems int //index digunakan untuk memepermudah mendapatkan nama Checkitem yang diupdate
-	for i, v := range check.CheckItems {
+	//var indexItems int //index digunakan untuk memepermudah mendapatkan nama Checkitem yang diupdate
+	for _, v := range check.CheckItems {
 		if v.ID == input.ChildID {
 			updatedType = v.Type
-			indexItems = i
+			//indexItems = i
 		}
 	}
 
@@ -257,36 +302,6 @@ func (c *checkService) UpdateCheckItem(user mjwt.CustomClaim, input dto.CheckChi
 				HaveProblem:    false,
 				CompleteStatus: 0,
 			})
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// tipenya cctv, tambahkan history
-
-		// cek complete status tidak boleh 0 atau 3, set default
-		if !(input.CompleteStatus == enum.HComplete) {
-			input.CompleteStatus = enum.HProgress
-		}
-
-		_, err = c.daoH.InsertHistory(dto.History{
-			ID:             primitive.NewObjectID(),
-			CreatedAt:      timeNow,
-			CreatedBy:      user.Name,
-			CreatedByID:    user.Identity,
-			UpdatedAt:      timeNow,
-			UpdatedBy:      user.Name,
-			UpdatedByID:    user.Identity,
-			Category:       category.Cctv,
-			Branch:         user.Branch,
-			ParentID:       input.ChildID,
-			ParentName:     check.CheckItems[indexItems].Name,
-			Status:         "Checklist System",
-			Problem:        input.CheckedNote,
-			ProblemResolve: "",
-			CompleteStatus: input.CompleteStatus,
-			DateStart:      timeNow,
-			DateEnd:        timeNow,
-		})
 		if err != nil {
 			return nil, err
 		}

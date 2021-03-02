@@ -35,7 +35,7 @@ var (
 	cctvService      = service.NewCctvService(cctvDao, historyDao, genUnitDao)
 	stockService     = service.NewStockService(stockDao, historyDao)
 	checkItemService = service.NewCheckItemService(checkItemDao)
-	checkService     = service.NewCheckService(checkDao, checkItemDao, genUnitDao)
+	checkService     = service.NewCheckService(checkDao, checkItemDao, genUnitDao, historyService)
 
 	//Controller or Handler
 	pingHandler      = handler.NewPingHandler()

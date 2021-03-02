@@ -44,8 +44,8 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		input.DateStart = timeNow
 	}
 
-	// jika FilterID tersedia, gunakan FilterID , jika tidak buatkan object FilterID
-	// memastikan FilterID yang diinputkan bisa diubah ke ObjectID
+	// jika ID tersedia, gunakan ID , jika tidak buatkan objectID
+	// memastikan ID yang diinputkan bisa diubah ke ObjectID
 	generatedID := primitive.NewObjectID()
 	var errT error
 	if input.ID != "" {
@@ -55,15 +55,14 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		}
 	}
 
-	// Cek apakah image tersedia untuk FilterID tersebut TODO
-	imagePath := ""
-
 	// Mengambil gen_unit
-	// Tambahkan Case jika history status bukan Complete, akan gagal jika FilterID dan Cabang tidak sesuai
-	// jika complete gunakan GetUnitByID untuk memastikan FilterID dan Cabang sesuai
+	// Tambahkan Case jika history status bukan Complete atau bukan info, akan gagal jika ID dan Cabang tidak sesuai
+	// jika complete gunakan GetUnitByID untuk memastikan ID dan Cabang sesuai
 	var parent *dto.GenUnitResponse
 	var err rest_err.APIError
-	if input.CompleteStatus != enum.HComplete {
+	historyIsComplete := input.CompleteStatus == enum.HComplete
+	historyIsInfo := input.CompleteStatus == enum.HInfo
+	if !(historyIsComplete || historyIsInfo) {
 		//DB
 		parent, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
 			UnitID:       input.ParentID,
@@ -103,7 +102,6 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		DateStart:      input.DateStart,
 		DateEnd:        input.DateEnd,
 		Tag:            input.Tag,
-		Image:          imagePath,
 	}
 
 	//DB
@@ -155,8 +153,10 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 		return nil, err
 	}
 
-	// jika complete status tidak complete maka perlu ditambahkan lagi case baru
-	if input.CompleteStatus != enum.HComplete {
+	// jika complete status tidak complete atau tidak info maka perlu ditambahkan lagi case baru
+	historyIsComplete := input.CompleteStatus == enum.HComplete
+	historyIsInfo := input.CompleteStatus == enum.HInfo
+	if !(historyIsComplete || historyIsInfo) {
 		//DB
 		_, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
 			UnitID:       historyEdited.ParentID,
