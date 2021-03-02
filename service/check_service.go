@@ -174,7 +174,7 @@ func (c *checkService) EditCheck(user mjwt.CustomClaim, checkID string, input dt
 				}
 				dataHistory := dto.HistoryRequest{
 					ParentID:       checkItem.ID,
-					Status:         "Checklist System",
+					Status:         "Checklist",
 					Problem:        checkItem.CheckedNote,
 					ProblemResolve: "",
 					CompleteStatus: checkItem.CompleteStatus,
