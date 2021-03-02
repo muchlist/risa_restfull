@@ -215,7 +215,7 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 		filter[keyHistCreatedAt] = bson.M{"$gte": filterB.FilterStart}
 	}
 	if filterB.FilterEnd != 0 {
-		filter[keyHistCreatedAt] = bson.M{"$lte": filterB.FilterStart}
+		filter[keyHistCreatedAt] = bson.M{"$lte": filterB.FilterEnd}
 	}
 
 	opts := options.Find()
