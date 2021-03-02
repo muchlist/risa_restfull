@@ -39,7 +39,7 @@ type StockChange struct {
 
 // StockChangeRequest input user
 type StockChangeRequest struct {
-	DummyID  int64  `json:"dummy_id" bson:"dummy_id"`
+	DummyID  int64  `json:"-" bson:"dummy_id"`
 	Author   string `json:"author" bson:"author"`
 	Qty      int    `json:"qty" bson:"qty"`
 	BaNumber string `json:"ba_number" bson:"ba_number"`

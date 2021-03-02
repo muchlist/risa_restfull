@@ -51,7 +51,7 @@ type ImproveDaoAssumer interface {
 	ActivateImprove(improveID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Improve, rest_err.APIError)
 
 	GetImproveByID(improveID primitive.ObjectID, branchIfSpecific string) (*dto.Improve, rest_err.APIError)
-	FindImprove(branch string, completeStatus int, filterA dto.FilterTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError)
+	FindImprove(filterA dto.FilterBranchCompleteTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError)
 }
 
 func (s *improveDao) InsertImprove(input dto.Improve) (*string, rest_err.APIError) {
@@ -236,7 +236,7 @@ func (s *improveDao) GetImproveByID(improveID primitive.ObjectID, branchIfSpecif
 	return &improve, nil
 }
 
-func (s *improveDao) FindImprove(branch string, completeStatus int, filterA dto.FilterTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError) {
+func (s *improveDao) FindImprove(filterA dto.FilterBranchCompleteTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError) {
 	coll := db.Db.Collection(keyImpCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -245,12 +245,13 @@ func (s *improveDao) FindImprove(branch string, completeStatus int, filterA dto.
 	filter := bson.M{}
 
 	// filter condition
-	if branch != "" {
-		filter[keyImpBranch] = strings.ToUpper(branch)
+	if filterA.FilterBranch != "" {
+		filter[keyImpBranch] = strings.ToUpper(filterA.FilterBranch)
 	}
-	if completeStatus != 0 {
-		filter[keyImpCompleteStatus] = completeStatus
+	if filterA.FilterCompleteStatus != 0 {
+		filter[keyImpCompleteStatus] = filterA.FilterCompleteStatus
 	}
+
 	// option range
 	if filterA.FilterStart != 0 {
 		filter[keyImpCreatedAt] = bson.M{"$gte": filterA.FilterStart}

@@ -31,11 +31,21 @@ type ImproveChange struct {
 	Time      int64  `json:"time" bson:"time"`
 }
 
+// ImproveChangeRequest input user
+type ImproveChangeRequest struct {
+	DummyID   int64  `json:"-" bson:"dummy_id"`
+	Author    string `json:"author" bson:"author"`
+	Increment int    `json:"increment" bson:"increment"`
+	Note      string `json:"note" bson:"note"`
+	Time      int64  `json:"time" bson:"time"`
+}
+
 // ImproveRequest input user
 type ImproveRequest struct {
-	Title       string `json:"title" bson:"title"`
-	Description string `json:"description" bson:"description"`
-	Goal        int    `json:"goal" bson:"goal"`
+	Title          string `json:"title" bson:"title"`
+	Description    string `json:"description" bson:"description"`
+	Goal           int    `json:"goal" bson:"goal"`
+	CompleteStatus int    `json:"complete_status"`
 }
 
 // ImproveEditRequest input user

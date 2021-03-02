@@ -67,6 +67,14 @@ type FilterTimeRangeLimit struct {
 	Limit       int64
 }
 
+type FilterBranchCompleteTimeRangeLimit struct {
+	FilterBranch         string
+	FilterCompleteStatus int
+	FilterStart          int64
+	FilterEnd            int64
+	Limit                int64
+}
+
 type FilterBranchCategory struct {
 	FilterBranch   string
 	FilterCategory string
