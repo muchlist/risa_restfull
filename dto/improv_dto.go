@@ -48,7 +48,7 @@ type ImproveRequest struct {
 
 // ImproveEditRequest input user
 type ImproveEditRequest struct {
-	FilterTimeStamp int64  `json:"filter_time_stamp"`
+	FilterTimestamp int64  `json:"filter_timestamp"`
 	Title           string `json:"title"`
 	Description     string `json:"description"`
 	Goal            int    `json:"goal"`

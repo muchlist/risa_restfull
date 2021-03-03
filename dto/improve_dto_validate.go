@@ -10,7 +10,7 @@ func (i ImproveRequest) Validate() error {
 
 func (i ImproveEditRequest) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.FilterTimeStamp, validation.Required),
+		validation.Field(&i.FilterTimestamp, validation.Required),
 		validation.Field(&i.Title, validation.Required),
 	)
 }

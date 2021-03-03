@@ -126,8 +126,9 @@ func (s *improveDao) ChangeImprove(filterA dto.FilterIDBranch, data dto.ImproveC
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyImpID:     filterA.FilterID,
-		keyImpBranch: strings.ToUpper(filterA.FilterBranch),
+		keyImpID:       filterA.FilterID,
+		keyImpBranch:   strings.ToUpper(filterA.FilterBranch),
+		keyImpIsActive: true,
 	}
 
 	update := bson.D{
@@ -139,7 +140,7 @@ func (s *improveDao) ChangeImprove(filterA dto.FilterIDBranch, data dto.ImproveC
 	var improve dto.Improve
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&improve); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Improve tidak diupdate : validasi id branch"))
+			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Improve tidak diupdate : validasi id branch active"))
 		}
 
 		logger.Error("Merubah nilai improve gagal, (ChangeImprove)", err)

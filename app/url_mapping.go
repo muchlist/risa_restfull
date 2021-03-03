@@ -14,6 +14,8 @@ func mapUrls(app *fiber.App) {
 	app.Static("/image/avatar", "./static/image/avatar")
 	app.Static("/image/history", "./static/image/history")
 	app.Static("/image/cctv", "./static/image/cctv")
+	app.Static("/image/stock", "./static/image/stock")
+	app.Static("/image/check", "./static/image/check")
 
 	api := app.Group("/api/v1")
 
@@ -90,9 +92,9 @@ func mapUrls(app *fiber.App) {
 	//IMPROVE
 	api.Post("/improve", middleware.NormalAuth(), improveHandler.Insert)
 	api.Get("/improve/:id", middleware.NormalAuth(), improveHandler.GetImprove)
-	api.Put("/improve/:id", middleware.NormalAuth(), improveHandler.Edit)
+	api.Put("/improve/:id", middleware.NormalAuth(roles.RoleApprove), improveHandler.Edit)
 	api.Delete("/improve/:id", middleware.NormalAuth(), improveHandler.Delete)
 	api.Post("/improve-change/:id", middleware.NormalAuth(), improveHandler.ChangeImprove)
 	api.Get("/improve", middleware.NormalAuth(), improveHandler.Find)
-	api.Get("/improve-avail/:id/:status", middleware.NormalAuth(), improveHandler.ActivateImprove)
+	api.Get("/improve-status/:id/:status", middleware.NormalAuth(roles.RoleApprove), improveHandler.ActivateImprove)
 }

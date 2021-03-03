@@ -82,7 +82,7 @@ func (s *improveService) EditImprove(user mjwt.CustomClaim, improveID string, in
 		FilterIDBranchTimestamp: dto.FilterIDBranchTimestamp{
 			FilterID:        oid,
 			FilterBranch:    user.Branch,
-			FilterTimestamp: input.FilterTimeStamp,
+			FilterTimestamp: input.FilterTimestamp,
 		},
 		UpdatedAt:      timeNow,
 		UpdatedBy:      user.Name,
