@@ -168,7 +168,7 @@ func (s *stockService) DeleteStock(user mjwt.CustomClaim, id string) rest_err.AP
 }
 
 // DisableStock if value true , stock will disabled
-func (s *stockService) DisableStock(stockID string, user mjwt.CustomClaim, value bool) (*dto.Stock, rest_err.APIError) {
+func (s *stockService) DisableStock(stockID string, user mjwt.CustomClaim, isDisable bool) (*dto.Stock, rest_err.APIError) {
 
 	oid, errT := primitive.ObjectIDFromHex(stockID)
 	if errT != nil {
@@ -176,7 +176,7 @@ func (s *stockService) DisableStock(stockID string, user mjwt.CustomClaim, value
 	}
 
 	// set disable enable stock
-	stock, err := s.daoS.DisableStock(oid, user, value)
+	stock, err := s.daoS.DisableStock(oid, user, isDisable)
 	if err != nil {
 		return nil, err
 	}

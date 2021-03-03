@@ -53,7 +53,7 @@ type StockDaoAssumer interface {
 	InsertStock(input dto.Stock) (*string, rest_err.APIError)
 	EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError)
 	DeleteStock(input dto.FilterIDBranchCreateGte) (*dto.Stock, rest_err.APIError)
-	DisableStock(stockID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Stock, rest_err.APIError)
+	DisableStock(stockID primitive.ObjectID, user mjwt.CustomClaim, isDisable bool) (*dto.Stock, rest_err.APIError)
 	UploadImage(stockID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Stock, rest_err.APIError)
 	ChangeQtyStock(filterA dto.FilterIDBranch, data dto.StockChange) (*dto.Stock, rest_err.APIError)
 
@@ -164,7 +164,7 @@ func (s *stockDao) DeleteStock(input dto.FilterIDBranchCreateGte) (*dto.Stock, r
 }
 
 // DisableStock if value true , stock will disabled
-func (s *stockDao) DisableStock(stockID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Stock, rest_err.APIError) {
+func (s *stockDao) DisableStock(stockID primitive.ObjectID, user mjwt.CustomClaim, isDisable bool) (*dto.Stock, rest_err.APIError) {
 	coll := db.Db.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -179,7 +179,7 @@ func (s *stockDao) DisableStock(stockID primitive.ObjectID, user mjwt.CustomClai
 
 	update := bson.M{
 		"$set": bson.M{
-			keyStoDisable:     value,
+			keyStoDisable:     isDisable,
 			keyStoUpdatedAt:   time.Now().Unix(),
 			keyStoUpdatedByID: user.Identity,
 			keyStoUpdatedBy:   user.Name,

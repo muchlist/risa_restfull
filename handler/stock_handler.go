@@ -148,12 +148,12 @@ func (s *stockHandler) DisableStock(c *fiber.Ctx) error {
 		apiErr := rest_err.NewBadRequestError(fmt.Sprintf("Status yang dimasukkan tidak tersedia. gunakan %s", statusAvailable))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
-	var statusBool bool
+	var isDisable bool
 	if status == "disable" {
-		statusBool = true
+		isDisable = true
 	}
 
-	stockList, apiErr := s.service.DisableStock(userID, *claims, statusBool)
+	stockList, apiErr := s.service.DisableStock(userID, *claims, isDisable)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}

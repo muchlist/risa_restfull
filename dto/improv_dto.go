@@ -33,8 +33,6 @@ type ImproveChange struct {
 
 // ImproveChangeRequest input user
 type ImproveChangeRequest struct {
-	DummyID   int64  `json:"-" bson:"dummy_id"`
-	Author    string `json:"author" bson:"author"`
 	Increment int    `json:"increment" bson:"increment"`
 	Note      string `json:"note" bson:"note"`
 	Time      int64  `json:"time" bson:"time"`

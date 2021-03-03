@@ -48,7 +48,7 @@ type ImproveDaoAssumer interface {
 	EditImprove(input dto.ImproveEdit) (*dto.Improve, rest_err.APIError)
 	ChangeImprove(filterA dto.FilterIDBranch, data dto.ImproveChange) (*dto.Improve, rest_err.APIError)
 	DeleteImprove(input dto.FilterIDBranchCreateGte) (*dto.Improve, rest_err.APIError)
-	ActivateImprove(improveID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Improve, rest_err.APIError)
+	ActivateImprove(improveID primitive.ObjectID, user mjwt.CustomClaim, isEnable bool) (*dto.Improve, rest_err.APIError)
 
 	GetImproveByID(improveID primitive.ObjectID, branchIfSpecific string) (*dto.Improve, rest_err.APIError)
 	FindImprove(filterA dto.FilterBranchCompleteTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError)
@@ -176,7 +176,7 @@ func (s *improveDao) DeleteImprove(input dto.FilterIDBranchCreateGte) (*dto.Impr
 	return &improve, nil
 }
 
-func (s *improveDao) ActivateImprove(improveID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Improve, rest_err.APIError) {
+func (s *improveDao) ActivateImprove(improveID primitive.ObjectID, user mjwt.CustomClaim, isEnable bool) (*dto.Improve, rest_err.APIError) {
 	coll := db.Db.Collection(keyImpCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -191,7 +191,7 @@ func (s *improveDao) ActivateImprove(improveID primitive.ObjectID, user mjwt.Cus
 
 	update := bson.M{
 		"$set": bson.M{
-			keyImpIsActive:  value,
+			keyImpIsActive:  isEnable,
 			keyImpUpdatedAt: time.Now().Unix(),
 		},
 	}
@@ -251,6 +251,9 @@ func (s *improveDao) FindImprove(filterA dto.FilterBranchCompleteTimeRangeLimit)
 	if filterA.FilterCompleteStatus != 0 {
 		filter[keyImpCompleteStatus] = filterA.FilterCompleteStatus
 	}
+	if filterA.Limit == 0 {
+		filterA.Limit = 300
+	}
 
 	// option range
 	if filterA.FilterStart != 0 {
@@ -262,7 +265,7 @@ func (s *improveDao) FindImprove(filterA dto.FilterBranchCompleteTimeRangeLimit)
 
 	opts := options.Find()
 	opts.SetSort(bson.D{{keyImpID, -1}})
-	opts.SetLimit(500)
+	opts.SetLimit(filterA.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
 	if err != nil {

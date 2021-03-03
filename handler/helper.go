@@ -51,6 +51,7 @@ func saveImage(c *fiber.Ctx, claims mjwt.CustomClaim, folder string, imageName s
 	return pathInDb, nil
 }
 
+// merubah string masukan ke int , jika error mereturn 0
 func stringToInt(queryString string) int {
 	number, err := strconv.Atoi(queryString)
 	if err != nil {

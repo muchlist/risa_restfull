@@ -23,7 +23,7 @@ type improveService struct {
 type ImproveServiceAssumer interface {
 	InsertImprove(user mjwt.CustomClaim, input dto.ImproveRequest) (*string, rest_err.APIError)
 	EditImprove(user mjwt.CustomClaim, improveID string, input dto.ImproveEditRequest) (*dto.Improve, rest_err.APIError)
-	ActivateImprove(improveID string, user mjwt.CustomClaim, value bool) (*dto.Improve, rest_err.APIError)
+	ActivateImprove(improveID string, user mjwt.CustomClaim, isEnable bool) (*dto.Improve, rest_err.APIError)
 	ChangeImprove(user mjwt.CustomClaim, improveID string, data dto.ImproveChangeRequest) (*dto.Improve, rest_err.APIError)
 	GetImproveByID(improveID string, branchIfSpecific string) (*dto.Improve, rest_err.APIError)
 	DeleteImprove(user mjwt.CustomClaim, id string) rest_err.APIError
@@ -103,7 +103,7 @@ func (s *improveService) EditImprove(user mjwt.CustomClaim, improveID string, in
 }
 
 // DisableImprove if value true , improve will disabled
-func (s *improveService) ActivateImprove(improveID string, user mjwt.CustomClaim, value bool) (*dto.Improve, rest_err.APIError) {
+func (s *improveService) ActivateImprove(improveID string, user mjwt.CustomClaim, isEnable bool) (*dto.Improve, rest_err.APIError) {
 
 	oid, errT := primitive.ObjectIDFromHex(improveID)
 	if errT != nil {
@@ -111,7 +111,7 @@ func (s *improveService) ActivateImprove(improveID string, user mjwt.CustomClaim
 	}
 
 	// set disable enable improve
-	improve, err := s.daoS.ActivateImprove(oid, user, value)
+	improve, err := s.daoS.ActivateImprove(oid, user, isEnable)
 	if err != nil {
 		return nil, err
 	}

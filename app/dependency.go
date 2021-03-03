@@ -6,6 +6,7 @@ import (
 	"github.com/muchlist/risa_restfull/dao/check_item_dao"
 	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
 	"github.com/muchlist/risa_restfull/dao/history_dao"
+	"github.com/muchlist/risa_restfull/dao/improve_dao"
 	"github.com/muchlist/risa_restfull/dao/stock_dao"
 	"github.com/muchlist/risa_restfull/dao/user_dao"
 	"github.com/muchlist/risa_restfull/handler"
@@ -27,6 +28,7 @@ var (
 	stockDao     = stock_dao.NewStockDao()
 	checkItemDao = check_item_dao.NewCheckItemDao()
 	checkDao     = check_dao.NewCheckDao()
+	improveDao   = improve_dao.NewImproveDao()
 
 	//Service
 	userService      = service.NewUserService(userDao, cryptoUtils, jwt)
@@ -36,6 +38,7 @@ var (
 	stockService     = service.NewStockService(stockDao, historyDao)
 	checkItemService = service.NewCheckItemService(checkItemDao)
 	checkService     = service.NewCheckService(checkDao, checkItemDao, genUnitDao, historyService)
+	improveService   = service.NewImproveService(improveDao)
 
 	//Controller or Handler
 	pingHandler      = handler.NewPingHandler()
@@ -46,4 +49,5 @@ var (
 	stockHandler     = handler.NewStockHandler(stockService)
 	checkItemHandler = handler.NewCheckItemHandler(checkItemService)
 	checkHandler     = handler.NewCheckHandler(checkService)
+	improveHandler   = handler.NewImproveHandler(improveService)
 )
