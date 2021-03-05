@@ -345,7 +345,7 @@ func (s *stockDao) ChangeQtyStock(filterA dto.FilterIDBranch, data dto.StockChan
 	var stock dto.Stock
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&stock); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Stock tidak diupdate : validasi qty (tidak mencukupi) id branch"))
+			return nil, rest_err.NewBadRequestError("Stock tidak diupdate : validasi qty (tidak mencukupi) id branch")
 		}
 
 		logger.Error("Merubah jumlah stock gagal, (ChangeQtyStock)", err)

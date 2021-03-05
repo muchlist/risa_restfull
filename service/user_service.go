@@ -145,6 +145,9 @@ func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse,
 	}
 
 	accessToken, err := u.jwt.GenerateToken(AccessClaims)
+	if err != nil {
+		return nil, err
+	}
 	refreshToken, err := u.jwt.GenerateToken(RefreshClaims)
 	if err != nil {
 		return nil, err

@@ -140,7 +140,7 @@ func (s *improveDao) ChangeImprove(filterA dto.FilterIDBranch, data dto.ImproveC
 	var improve dto.Improve
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&improve); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Improve tidak diupdate : validasi id branch active"))
+			return nil, rest_err.NewBadRequestError("Improve tidak diupdate : validasi id branch active")
 		}
 
 		logger.Error("Merubah nilai improve gagal, (ChangeImprove)", err)

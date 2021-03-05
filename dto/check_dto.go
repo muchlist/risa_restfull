@@ -34,7 +34,7 @@ type CheckItemEmbed struct {
 	IsChecked        bool   `json:"is_checked" bson:"is_checked"`
 	TagSelected      string `json:"tag_selected" bson:"tag_selected"`
 	TagExtraSelected string `json:"tag_extra_selected" bson:"tag_extra_selected"`
-	ImagePath        string `json:"image_path" json:"image_path"`
+	ImagePath        string `json:"image_path" bson:"image_path"`
 	CheckedNote      string `json:"checked_note" bson:"checked_note"`
 	HaveProblem      bool   `json:"have_problem" bson:"have_problem"`
 	CompleteStatus   int    `json:"complete_status" bson:"complete_status"`

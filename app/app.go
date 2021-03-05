@@ -15,6 +15,8 @@ func RunApp() {
 
 	app := fiber.New()
 	mapUrls(app)
-	log.Fatal(app.Listen(":3500"))
-
+	if err := app.Listen(":3500"); err != nil {
+		log.Print(err)
+		return
+	}
 }

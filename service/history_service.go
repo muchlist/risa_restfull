@@ -141,7 +141,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 		return nil, err
 	}
 
-	//Hapus Case pada parrent (jika complete status tidak complete maka perlu ditambahkan lagi case baru)
+	//Hapus Case pada parent
 	// DB
 	_, err = h.daoG.DeleteCase(dto.GenUnitCaseRequest{
 		UnitID:       historyEdited.ParentID,
@@ -153,7 +153,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 		return nil, err
 	}
 
-	// jika complete status tidak complete atau tidak info maka perlu ditambahkan lagi case baru
+	// jika complete_status tidak complete atau tidak info maka perlu ditambahkan lagi case baru
 	historyIsComplete := input.CompleteStatus == enum.HComplete
 	historyIsInfo := input.CompleteStatus == enum.HInfo
 	if !(historyIsComplete || historyIsInfo) {
@@ -164,6 +164,9 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 			CaseID:       historyID, // gunakan history id sebagai caseID
 			CaseNote:     fmt.Sprintf("#%s# %s : %s", enum.GetProgressString(input.CompleteStatus), input.Status, input.Problem),
 		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return historyEdited, nil

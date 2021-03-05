@@ -657,7 +657,7 @@ func TestUserService_Refresh_User_Not_Found(t *testing.T) {
 	}
 
 	m := new(user_dao.MockDao)
-	m.On("GetUserByID", mock.Anything).Return(nil, rest_err.NewNotFoundError(fmt.Sprint("User dengan Email whoswho@gmail.com tidak ditemukan")))
+	m.On("GetUserByID", mock.Anything).Return(nil, rest_err.NewNotFoundError("User dengan Email whoswho@gmail.com tidak ditemukan"))
 	j := new(mjwt.MockJwt)
 	j.On("ValidateToken", mock.Anything).Return(&jwt.Token{}, nil)
 	j.On("ReadToken", mock.Anything).Return(&mjwt.CustomClaim{
