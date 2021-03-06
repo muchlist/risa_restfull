@@ -49,63 +49,82 @@ type CheckServiceAssumer interface {
 
 func (c *checkService) InsertCheck(user mjwt.CustomClaim, input dto.CheckRequest) (*string, rest_err.APIError) {
 
-	// IMPREVEMENT gunakan goroutine untuk mengambil data dari dua dao
-	// ambil check item berdasarkan cabang yang di input
-	checkItems, err := c.daoCI.FindCheckItem(dto.FilterBranchNameDisable{
-		FilterBranch: user.Branch,
-	}, false)
-	if err != nil {
-		return nil, err
-	}
+	itemResultCheckItemChan := make(chan []dto.CheckItemEmbed)
+	itemResultCctvChan := make(chan []dto.CheckItemEmbed)
 
-	// filter check item yang memiliki shift sama dengan input dan memeliki problem
-	var checkItemsSelected []dto.CheckItemEmbed
-	for _, v := range checkItems {
-		shiftMatch := sfunc.IntInSlice(input.Shift, v.Shifts)
-		if shiftMatch || v.HaveProblem {
-			checkItemsSelected = append(checkItemsSelected, dto.CheckItemEmbed{
-				ID:             v.ID.Hex(),
-				Name:           v.Name,
-				Location:       v.Location,
-				Type:           v.Type,
-				Tag:            v.Tag, // tag
-				TagExtra:       v.TagExtra,
-				HaveProblem:    v.HaveProblem,
-				CompleteStatus: v.CompleteStatus,
-			})
+	go func() {
+		// ambil check item berdasarkan cabang yang di input
+		checkItems, err := c.daoCI.FindCheckItem(dto.FilterBranchNameDisable{
+			FilterBranch: user.Branch,
+		}, false)
+		if err != nil {
+			// if error send result 0 slice
+			itemResultCheckItemChan <- []dto.CheckItemEmbed{}
+			return
 		}
-	}
+		// filter check item yang memiliki shift sama dengan input dan memeliki problem
+		var checkItemsSelected []dto.CheckItemEmbed
+		for _, v := range checkItems {
+			shiftMatch := sfunc.IntInSlice(input.Shift, v.Shifts)
+			if shiftMatch || v.HaveProblem {
+				checkItemsSelected = append(checkItemsSelected, dto.CheckItemEmbed{
+					ID:             v.ID.Hex(),
+					Name:           v.Name,
+					Location:       v.Location,
+					Type:           v.Type,
+					Tag:            v.Tag, // tag
+					TagExtra:       v.TagExtra,
+					HaveProblem:    v.HaveProblem,
+					CompleteStatus: v.CompleteStatus,
+				})
+			}
+		}
 
-	// ambil data cctv yang harus di cek
-	cctvList, err := c.daoG.FindUnit(dto.GenUnitFilter{
-		Branch:   user.Branch,
-		Category: category.Cctv,
-		Disable:  false,
-		Pings:    true,
-		LastPing: enum.GetPingString(enum.PingDown),
-	})
-	if err != nil {
-		return nil, err
-	}
-	for _, cctv := range cctvList {
-		cctvHaveZeroCase := cctv.CasesSize == 0
-		cctvPing2IsDown := true
-		if len(cctv.PingsState) > 1 {
-			// memeriksa ping index 1 (ping kedua) karena ping pertama sudah pasti 0
-			// berdasarkan filter FindUnit
-			cctvPing2IsDown = cctv.PingsState[1].Code == 0
+		itemResultCheckItemChan <- checkItemsSelected
+	}()
+
+	go func() {
+		// ambil data cctv yang harus di cek
+		cctvList, err := c.daoG.FindUnit(dto.GenUnitFilter{
+			Branch:   user.Branch,
+			Category: category.Cctv,
+			Disable:  false,
+			Pings:    true,
+			LastPing: enum.GetPingString(enum.PingDown),
+		})
+		if err != nil {
+			// if error send result 0 slice
+			itemResultCctvChan <- []dto.CheckItemEmbed{}
+			return
 		}
-		if cctvHaveZeroCase && cctvPing2IsDown {
-			checkItemsSelected = append(checkItemsSelected, dto.CheckItemEmbed{
-				ID:          cctv.ID,
-				Name:        cctv.Name,
-				Type:        category.Cctv,
-				Tag:         []string{},
-				TagExtra:    []string{},
-				HaveProblem: true,
-			})
+
+		var checkCctvSelected []dto.CheckItemEmbed
+		for _, cctv := range cctvList {
+			cctvHaveZeroCase := cctv.CasesSize == 0
+			cctvPing2IsDown := true
+			if len(cctv.PingsState) > 1 {
+				// memeriksa ping index 1 (ping kedua) karena ping pertama sudah pasti 0
+				// berdasarkan filter FindUnit
+				cctvPing2IsDown = cctv.PingsState[1].Code == 0
+			}
+			if cctvHaveZeroCase && cctvPing2IsDown {
+				checkCctvSelected = append(checkCctvSelected, dto.CheckItemEmbed{
+					ID:          cctv.ID,
+					Name:        cctv.Name,
+					Type:        category.Cctv,
+					Tag:         []string{},
+					TagExtra:    []string{},
+					HaveProblem: true,
+				})
+			}
 		}
-	}
+		itemResultCctvChan <- checkCctvSelected
+	}()
+
+	checkItemsSelected := <-itemResultCheckItemChan
+	checkCctvSelected := <-itemResultCctvChan
+
+	checkItemsSelected = append(checkItemsSelected, checkCctvSelected...)
 
 	// Filling data
 	timeNow := time.Now().Unix()
@@ -158,6 +177,7 @@ func (c *checkService) EditCheck(user mjwt.CustomClaim, checkID string, input dt
 		return nil, err
 	}
 
+	// IMPROVEMENT : make looping insert history to use goroutine
 	//Jika isFinish true , maka masukkan semua checkItem yang bertipe cctv
 	//looping ke insert history
 	var errorList []rest_err.APIError
