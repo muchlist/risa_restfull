@@ -90,7 +90,6 @@ func (s *improveHandler) ChangeImprove(c *fiber.Ctx) error {
 
 // GetImprove menampilkan improve Detail
 func (s *improveHandler) GetImprove(c *fiber.Ctx) error {
-
 	improveID := c.Params("id")
 
 	improve, apiErr := s.service.GetImproveByID(improveID, "")
@@ -104,7 +103,6 @@ func (s *improveHandler) GetImprove(c *fiber.Ctx) error {
 // Find menampilkan list improve
 // Query [branch, c_status, start, end, limit]
 func (s *improveHandler) Find(c *fiber.Ctx) error {
-
 	branch := c.Query("branch")
 	cStatus := stringToInt(c.Query("c_status"))
 	start := stringToInt(c.Query("start"))
@@ -128,7 +126,7 @@ func (s *improveHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"improve_list": improveList})
 }
 
-//ActivateImprove mengaktifkan improve yang dibuat user selain yang memiliki hak
+// ActivateImprove mengaktifkan improve yang dibuat user selain yang memiliki hak
 // Param status [enable, disable]
 func (s *improveHandler) ActivateImprove(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)

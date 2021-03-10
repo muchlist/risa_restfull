@@ -9,7 +9,6 @@ require (
 	github.com/gofiber/fiber/v2 v2.5.0
 	github.com/joho/godotenv v1.3.0
 	github.com/klauspost/compress v1.11.7 // indirect
-	github.com/mashingan/smapping v0.1.6
 	github.com/muchlist/erru_utils_go v1.0.4
 	github.com/stretchr/testify v1.6.1
 	github.com/valyala/fasthttp v1.21.0 // indirect

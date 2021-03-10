@@ -20,9 +20,8 @@ type genUnitHandler struct {
 	service service.GenUnitServiceAssumer
 }
 
-//Find menampilkan list unit. Query name, category, ip, last_ping, pings
+// Find menampilkan list unit. Query name, category, ip, last_ping, pings
 func (u *genUnitHandler) Find(c *fiber.Ctx) error {
-
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	nameSearch := c.Query("name")
 	categorySearch := c.Query("category")
@@ -50,9 +49,8 @@ func (u *genUnitHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"units": userList})
 }
 
-//Find menampilkan list ip address. Query branch, category
+// Find menampilkan list ip address. Query branch, category
 func (u *genUnitHandler) GetIPList(c *fiber.Ctx) error {
-
 	branch := c.Query("branch")
 	category := c.Query("category")
 

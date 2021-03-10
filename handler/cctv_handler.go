@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"github.com/muchlist/risa_restfull/constants/status_available"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
@@ -48,7 +49,6 @@ func (x *cctvHandler) Insert(c *fiber.Ctx) error {
 
 // GetCctv menampilkan cctvDetail
 func (x *cctvHandler) GetCctv(c *fiber.Ctx) error {
-
 	cctvID := c.Params("id")
 
 	cctv, apiErr := x.service.GetCctvByID(cctvID, "")
@@ -62,7 +62,6 @@ func (x *cctvHandler) GetCctv(c *fiber.Ctx) error {
 // Find menampilkan list cctv
 // Query [branch, name, ip, location, disable]
 func (x *cctvHandler) Find(c *fiber.Ctx) error {
-
 	branch := c.Query("branch")
 	name := c.Query("name")
 	ip := c.Query("ip")
@@ -88,7 +87,7 @@ func (x *cctvHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"cctv_list": cctvList})
 }
 
-//DisableCctv menghilangkan cctv dari list
+// DisableCctv menghilangkan cctv dari list
 // Param status [enable, disable]
 func (x *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
@@ -97,13 +96,13 @@ func (x *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 	status := c.Params("status")
 
 	// validation
-	statusAvailable := []string{"disable", "enable"}
+	statusAvailable := []string{status_available.Disable, status_available.Enable}
 	if !sfunc.InSlice(status, statusAvailable) {
 		apiErr := rest_err.NewBadRequestError(fmt.Sprintf("Status yang dimasukkan tidak tersedia. gunakan %s", statusAvailable))
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 	var statusBool bool
-	if status == "disable" {
+	if status == status_available.Disable {
 		statusBool = true
 	}
 
@@ -151,7 +150,7 @@ func (x *cctvHandler) Edit(c *fiber.Ctx) error {
 	return c.JSON(cctvEdited)
 }
 
-//UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
+// UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
 func (x *cctvHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")

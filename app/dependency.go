@@ -16,11 +16,11 @@ import (
 )
 
 var (
-	//Utils
+	// Utils
 	cryptoUtils = crypt.NewCrypto()
 	jwt         = mjwt.NewJwt()
 
-	//Dao
+	// Dao
 	userDao      = user_dao.NewUserDao()
 	genUnitDao   = gen_unit_dao.NewGenUnitDao()
 	historyDao   = history_dao.NewHistoryDao()
@@ -30,7 +30,7 @@ var (
 	checkDao     = check_dao.NewCheckDao()
 	improveDao   = improve_dao.NewImproveDao()
 
-	//Service
+	// Service
 	userService      = service.NewUserService(userDao, cryptoUtils, jwt)
 	genUnitService   = service.NewGenUnitService(genUnitDao)
 	historyService   = service.NewHistoryService(historyDao, genUnitDao)
@@ -40,7 +40,7 @@ var (
 	checkService     = service.NewCheckService(checkDao, checkItemDao, genUnitDao, historyService)
 	improveService   = service.NewImproveService(improveDao)
 
-	//Controller or Handler
+	// Controller or Handler
 	pingHandler      = handler.NewPingHandler()
 	userHandler      = handler.NewUserHandler(userService)
 	genUnitHandler   = handler.NewGenUnitHandler(genUnitService)

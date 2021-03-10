@@ -45,7 +45,6 @@ type CctvServiceAssumer interface {
 }
 
 func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError) {
-
 	// FilterID digunakan juga oleh gen_unit_dao sehingga dibuat disini, bukan di database
 	idGenerated := primitive.NewObjectID()
 
@@ -96,7 +95,7 @@ func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (
 			Note:            input.Note,
 		}
 
-		//DB
+		// DB
 		insertedID, err := c.daoC.InsertCctv(data)
 
 		resultChan <- result{
@@ -108,7 +107,7 @@ func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (
 	insertToGenUnit := func() {
 		defer wg.Done()
 		// Menambahkan juga General Unit dengan ID yang sama
-		//DB
+		// DB
 		insertedID, err := c.daoG.InsertUnit(
 			dto.GenUnit{
 				ID:       idGenerated.Hex(),
@@ -150,7 +149,6 @@ func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (
 }
 
 func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.CctvEditRequest) (*dto.Cctv, rest_err.APIError) {
-
 	oid, errT := primitive.ObjectIDFromHex(cctvID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -187,7 +185,7 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 		Note:            input.Note,
 	}
 
-	//DB
+	// DB
 	cctvEdited, err := c.daoC.EditCctv(data)
 	if err != nil {
 		return nil, err
@@ -199,7 +197,7 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 
 	editUnit := func() {
 		defer wg.Done()
-		//DB
+		// DB
 		_, err = c.daoG.EditUnit(cctvID, dto.GenUnitEditRequest{
 			Category: category.Cctv,
 			Name:     cctvEdited.Name,
@@ -211,7 +209,7 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 
 	insertHistory := func() {
 		defer wg.Done()
-		//DB
+		// DB
 		_, err = c.daoH.InsertHistory(
 			dto.History{
 				ID:             primitive.NewObjectID(),
@@ -248,7 +246,7 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 	var errMessage string
 	for err := range errChan {
 		if err != nil {
-			errMessage = errMessage + ". "
+			errMessage += ". "
 		}
 	}
 
@@ -263,7 +261,6 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 }
 
 func (c *cctvService) DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIError {
-
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -293,7 +290,6 @@ func (c *cctvService) DeleteCctv(user mjwt.CustomClaim, id string) rest_err.APIE
 
 // DisableCctv if value true , cctv will disabled
 func (c *cctvService) DisableCctv(cctvID string, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError) {
-
 	oid, errT := primitive.ObjectIDFromHex(cctvID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -314,9 +310,8 @@ func (c *cctvService) DisableCctv(cctvID string, user mjwt.CustomClaim, value bo
 	return cctv, nil
 }
 
-//PutImage memasukkan lokasi file (path) ke dalam database cctv dengan mengecek kesesuaian branch
+// PutImage memasukkan lokasi file (path) ke dalam database cctv dengan mengecek kesesuaian branch
 func (c *cctvService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Cctv, rest_err.APIError) {
-
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -343,7 +338,6 @@ func (c *cctvService) GetCctvByID(cctvID string, branchIfSpecific string) (*dto.
 }
 
 func (c *cctvService) FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError) {
-
 	// cek apakah ip address valid, jika valid maka set filter.FilterName ke kosong supaya pencarian berdasarkan IP
 	if filter.FilterIP != "" {
 		if net.ParseIP(filter.FilterIP) == nil {

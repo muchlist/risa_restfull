@@ -38,7 +38,7 @@ type UserServiceAssumer interface {
 	ResetPassword(data dto.UserChangePasswordRequest) rest_err.APIError
 }
 
-//GetUser mendapatkan user dari database
+// GetUser mendapatkan user dari database
 func (u *userService) GetUser(userID string) (*dto.UserResponse, rest_err.APIError) {
 	user, err := u.dao.GetUserByID(userID)
 	if err != nil {
@@ -47,7 +47,7 @@ func (u *userService) GetUser(userID string) (*dto.UserResponse, rest_err.APIErr
 	return user, nil
 }
 
-//GetUserByEmail mendapatkan user berdasarkan email
+// GetUserByEmail mendapatkan user berdasarkan email
 func (u *userService) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIError) {
 	user, err := u.dao.GetUserByID(userID)
 	if err != nil {
@@ -56,7 +56,7 @@ func (u *userService) GetUserByID(userID string) (*dto.UserResponse, rest_err.AP
 	return user, nil
 }
 
-//FindUsers
+// FindUsers
 func (u *userService) FindUsers() (dto.UserResponseList, rest_err.APIError) {
 	userList, err := u.dao.FindUser()
 	if err != nil {
@@ -65,9 +65,8 @@ func (u *userService) FindUsers() (dto.UserResponseList, rest_err.APIError) {
 	return userList, nil
 }
 
-//InsertUser melakukan register user
+// InsertUser melakukan register user
 func (u *userService) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) {
-
 	// cek ketersediaan id
 	_, err := u.dao.CheckIDAvailable(user.ID)
 	if err != nil {
@@ -90,7 +89,7 @@ func (u *userService) InsertUser(user dto.UserRequest) (*string, rest_err.APIErr
 	return insertedID, nil
 }
 
-//EditUser
+// EditUser
 func (u *userService) EditUser(userID string, request dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
 	result, err := u.dao.EditUser(userID, request)
 	if err != nil {
@@ -99,7 +98,7 @@ func (u *userService) EditUser(userID string, request dto.UserEditRequest) (*dto
 	return result, nil
 }
 
-//DeleteUser
+// DeleteUser
 func (u *userService) DeleteUser(userID string) rest_err.APIError {
 	err := u.dao.DeleteUser(userID)
 	if err != nil {
@@ -109,9 +108,8 @@ func (u *userService) DeleteUser(userID string) rest_err.APIError {
 	return nil
 }
 
-//Login
+// Login
 func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError) {
-
 	user, err := u.dao.GetUserByIDWithPassword(login.ID)
 	if err != nil {
 		return nil, err
@@ -166,12 +164,10 @@ func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse,
 	}
 
 	return &userResponse, nil
-
 }
 
-//Refresh token
+// Refresh token
 func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError) {
-
 	token, apiErr := u.jwt.ValidateToken(payload.RefreshToken)
 	if apiErr != nil {
 		return nil, apiErr
@@ -192,7 +188,7 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 		return nil, apiErr
 	}
 
-	if payload.Limit == 0 || payload.Limit > 60*24*30 { //30 day
+	if payload.Limit == 0 || payload.Limit > 60*24*30 { // 30 day
 		payload.Limit = 60 * 24 * 30
 	}
 
@@ -219,9 +215,8 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 	return &userRefreshTokenResponse, nil
 }
 
-//PutAvatar memasukkan lokasi file (path) ke dalam database user
+// PutAvatar memasukkan lokasi file (path) ke dalam database user
 func (u *userService) PutAvatar(userID string, fileLocation string) (*dto.UserResponse, rest_err.APIError) {
-
 	user, err := u.dao.PutAvatar(userID, fileLocation)
 	if err != nil {
 		return nil, err
@@ -230,9 +225,8 @@ func (u *userService) PutAvatar(userID string, fileLocation string) (*dto.UserRe
 	return user, nil
 }
 
-//ChangePassword melakukan perbandingan hashpassword lama dan memasukkan hashpassword baru ke database
+// ChangePassword melakukan perbandingan hashpassword lama dan memasukkan hashpassword baru ke database
 func (u *userService) ChangePassword(data dto.UserChangePasswordRequest) rest_err.APIError {
-
 	if data.Password == data.NewPassword {
 		return rest_err.NewBadRequestError("Gagal mengganti password, password tidak boleh sama dengan sebelumnya!")
 	}
@@ -257,10 +251,9 @@ func (u *userService) ChangePassword(data dto.UserChangePasswordRequest) rest_er
 	return nil
 }
 
-//ResetPassword . inputan password berada di level handler
-//hanya memproses field newPassword, mengabaikan field password
+// ResetPassword . inputan password berada di level handler
+// hanya memproses field newPassword, mengabaikan field password
 func (u *userService) ResetPassword(data dto.UserChangePasswordRequest) rest_err.APIError {
-
 	newPasswordHash, err := u.crypto.GenerateHash(data.NewPassword)
 	if err != nil {
 		return err

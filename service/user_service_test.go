@@ -18,7 +18,6 @@ import (
 )
 
 func TestUserService_GetUserByID(t *testing.T) {
-
 	userID := "12345"
 
 	m := new(user_dao.MockDao)
@@ -57,7 +56,6 @@ func TestUserService_GetUser_NoUserFound(t *testing.T) {
 }
 
 func TestUserService_GetUserByID_Found(t *testing.T) {
-
 	userID := "12345"
 
 	m := new(user_dao.MockDao)
@@ -81,7 +79,6 @@ func TestUserService_GetUserByID_Found(t *testing.T) {
 }
 
 func TestUserService_GetUserByID_NotFound(t *testing.T) {
-
 	userID := "12345"
 
 	m := new(user_dao.MockDao)
@@ -98,7 +95,6 @@ func TestUserService_GetUserByID_NotFound(t *testing.T) {
 }
 
 func TestUserService_FindUsers(t *testing.T) {
-
 	m := new(user_dao.MockDao)
 	m.On("FindUser").Return(dto.UserResponseList{
 		dto.UserResponse{
@@ -269,7 +265,6 @@ func TestUserService_EditUser(t *testing.T) {
 }
 
 func TestUserService_EditUser_TimeStampNotmatch(t *testing.T) {
-
 	userID := "12345"
 	userInput := dto.UserEditRequest{
 		Name:            "Muchlis",
@@ -317,7 +312,6 @@ func TestUserService_DeleteUser_Failed(t *testing.T) {
 }
 
 func TestUserService_Login(t *testing.T) {
-
 	userRequest := dto.UserLoginRequest{
 		ID:       "12345",
 		Password: "Password",
@@ -388,7 +382,6 @@ func TestUserService_Login_UserNotFound(t *testing.T) {
 }
 
 func TestUserService_Login_GenerateTokenError(t *testing.T) {
-
 	userRequest := dto.UserLoginRequest{
 		ID:       "whowho@gmail.com",
 		Password: "Password",
@@ -416,7 +409,6 @@ func TestUserService_Login_GenerateTokenError(t *testing.T) {
 }
 
 func TestUserService_PutAvatar(t *testing.T) {
-
 	userID := "12345"
 	filePath := "images/whowhos@gmail.com.jpg"
 
@@ -438,7 +430,6 @@ func TestUserService_PutAvatar(t *testing.T) {
 }
 
 func TestUserService_PutAvatar_UserNotFound(t *testing.T) {
-
 	userID := "12345"
 	filePath := "images/whowhos@gmail.com.jpg"
 
@@ -510,7 +501,6 @@ func TestUserService_ChangePassword_HashNewPasswordErr(t *testing.T) {
 }
 
 func TestUserService_ChangePassword_FailPasswordSame(t *testing.T) {
-
 	data := dto.UserChangePasswordRequest{
 		ID:          "12345",
 		Password:    "Password",
@@ -525,7 +515,6 @@ func TestUserService_ChangePassword_FailPasswordSame(t *testing.T) {
 }
 
 func TestUserService_ChangePassword_OldPasswordWrong(t *testing.T) {
-
 	data := dto.UserChangePasswordRequest{
 		ID:          "12345",
 		Password:    "salahPassword",
@@ -648,7 +637,6 @@ func TestUserService_Refresh_Success(t *testing.T) {
 	assert.NotNil(t, res)
 	assert.Equal(t, "accessToken", res.AccessToken)
 	assert.Equal(t, time.Now().Add(time.Minute*time.Duration(input.Limit)).Unix(), res.Expired)
-
 }
 
 func TestUserService_Refresh_User_Not_Found(t *testing.T) {
@@ -670,7 +658,6 @@ func TestUserService_Refresh_User_Not_Found(t *testing.T) {
 	assert.Nil(t, res)
 	assert.NotNil(t, err)
 	assert.Equal(t, "User dengan Email whoswho@gmail.com tidak ditemukan", err.Message())
-
 }
 
 func TestUserService_Refresh_Token_Not_Valid(t *testing.T) {
@@ -687,7 +674,6 @@ func TestUserService_Refresh_Token_Not_Valid(t *testing.T) {
 	assert.Nil(t, res)
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusUnprocessableEntity, err.Status())
-
 }
 
 func TestUserService_Refresh_Token_Read_Error(t *testing.T) {
@@ -706,7 +692,6 @@ func TestUserService_Refresh_Token_Read_Error(t *testing.T) {
 	assert.Nil(t, res)
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusInternalServerError, err.Status())
-
 }
 
 func TestUserService_Refresh_Token_Not_Refresh_Token(t *testing.T) {
@@ -727,7 +712,6 @@ func TestUserService_Refresh_Token_Not_Refresh_Token(t *testing.T) {
 	assert.Nil(t, res)
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusUnprocessableEntity, err.Status())
-
 }
 
 func TestUserService_Refresh_Token_Generate_Token_Error(t *testing.T) {
@@ -757,5 +741,4 @@ func TestUserService_Refresh_Token_Generate_Token_Error(t *testing.T) {
 	assert.Nil(t, res)
 	assert.NotNil(t, err)
 	assert.Equal(t, http.StatusInternalServerError, err.Status())
-
 }

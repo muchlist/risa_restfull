@@ -50,7 +50,7 @@ func (c *checkItemService) InsertCheckItem(user mjwt.CustomClaim, input dto.Chec
 		Shifts:      input.Shifts,
 	}
 
-	//DB
+	// DB
 	insertedID, err := c.daoC.InsertCheckItem(data)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (c *checkItemService) EditCheckItem(user mjwt.CustomClaim, checkItemID stri
 		Shifts:      input.Shifts,
 	}
 
-	//DB
+	// DB
 	checkItemEdited, err := c.daoC.EditCheckItem(data)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,6 @@ func (c *checkItemService) EditCheckItem(user mjwt.CustomClaim, checkItemID stri
 }
 
 func (c *checkItemService) DeleteCheckItem(user mjwt.CustomClaim, id string) rest_err.APIError {
-
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -117,7 +116,6 @@ func (c *checkItemService) DeleteCheckItem(user mjwt.CustomClaim, id string) res
 
 // DisableCheckItem if value true , checkItem will disabled
 func (c *checkItemService) DisableCheckItem(checkItemID string, user mjwt.CustomClaim, value bool) (*dto.CheckItem, rest_err.APIError) {
-
 	oid, errT := primitive.ObjectIDFromHex(checkItemID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -145,7 +143,6 @@ func (c *checkItemService) GetCheckItemByID(checkItemID string, branchIfSpecific
 }
 
 func (c *checkItemService) FindCheckItem(filter dto.FilterBranchNameDisable, filterHaveProblem bool) (dto.CheckItemResponseMinList, rest_err.APIError) {
-
 	checkItemList, err := c.daoC.FindCheckItem(filter, filterHaveProblem)
 	if err != nil {
 		return nil, err

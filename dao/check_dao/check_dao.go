@@ -2,6 +2,7 @@ package check_dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -62,7 +63,7 @@ type CheckDaoAssumer interface {
 }
 
 func (c *checkDao) InsertCheck(input dto.Check) (*string, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -93,7 +94,7 @@ func (c *checkDao) InsertCheck(input dto.Check) (*string, rest_err.APIError) {
 }
 
 func (c *checkDao) EditCheck(input dto.CheckEdit) (*dto.Check, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -122,7 +123,7 @@ func (c *checkDao) EditCheck(input dto.CheckEdit) (*dto.Check, rest_err.APIError
 
 	var check dto.Check
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Check tidak diupdate : validasi id branch author isFinish")
 		}
 
@@ -135,7 +136,7 @@ func (c *checkDao) EditCheck(input dto.CheckEdit) (*dto.Check, rest_err.APIError
 }
 
 func (c *checkDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Check, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -148,7 +149,7 @@ func (c *checkDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Check, r
 	var check dto.Check
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&check)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Check tidak diupdate : validasi id branch time_reach")
 		}
 
@@ -161,7 +162,7 @@ func (c *checkDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Check, r
 }
 
 func (c *checkDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.Check, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -182,7 +183,7 @@ func (c *checkDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, ima
 
 	var check dto.Check
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, check dengan id %s -> %s tidak ditemukan", filterA.FilterParentID.Hex(), filterA.FilterChildID))
 		}
 
@@ -195,7 +196,7 @@ func (c *checkDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, ima
 }
 
 func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -222,7 +223,7 @@ func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest
 
 	var check dto.Check
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Check tidak diupdate : validasi id branch author isFinish")
 		}
 
@@ -235,7 +236,7 @@ func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest
 }
 
 func (c *checkDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.Check, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -247,8 +248,7 @@ func (c *checkDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific str
 
 	var check dto.Check
 	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
-
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Check dengan ID %s tidak ditemukan. validation : id branch", checkID.Hex()))
 			return nil, apiErr
 		}
@@ -262,7 +262,7 @@ func (c *checkDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific str
 }
 
 func (c *checkDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -287,7 +287,7 @@ func (c *checkDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (d
 	opts.SetProjection(bson.M{
 		keyChCheckItems: 0,
 	})
-	opts.SetSort(bson.D{{keyChID, -1}})
+	opts.SetSort(bson.D{{keyChID, -1}}) //nolint:govet
 	opts.SetLimit(filterA.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)

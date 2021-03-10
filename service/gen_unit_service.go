@@ -25,7 +25,6 @@ type GenUnitServiceAssumer interface {
 }
 
 func (g *genUnitService) FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError) {
-
 	// cek apakah ip address valid, jika valid maka set filter.FilterName ke kosong supaya pencarian berdasarkan FilterIP
 	if filter.IP != "" {
 		if net.ParseIP(filter.IP) == nil {

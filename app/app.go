@@ -6,9 +6,7 @@ import (
 	"log"
 )
 
-func RunApp() {
-
-	// inisiasi database
+func RunApp() { // inisiasi database
 	client, ctx, cancel := db.Init()
 	defer client.Disconnect(ctx) //nolint:errcheck
 	defer cancel()

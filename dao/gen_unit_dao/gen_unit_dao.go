@@ -2,6 +2,7 @@ package gen_unit_dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -56,7 +57,7 @@ type GenUnitDaoAssumer interface {
 }
 
 func (u *genUnitDao) InsertUnit(unit dto.GenUnit) (*string, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
+	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -79,7 +80,7 @@ func (u *genUnitDao) InsertUnit(unit dto.GenUnit) (*string, rest_err.APIError) {
 }
 
 func (u *genUnitDao) EditUnit(unitID string, unitRequest dto.GenUnitEditRequest) (*dto.GenUnitResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
+	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -103,7 +104,7 @@ func (u *genUnitDao) EditUnit(unitID string, unitRequest dto.GenUnitEditRequest)
 
 	var unit dto.GenUnitResponse
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			logger.Error("Gagal mengedit unit dari database (EditUnit)", err)
 			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID tidak valid")
 		}
@@ -117,7 +118,7 @@ func (u *genUnitDao) EditUnit(unitID string, unitRequest dto.GenUnitEditRequest)
 }
 
 func (u *genUnitDao) DeleteUnit(unitID string) rest_err.APIError {
-	coll := db.Db.Collection(keyGenUnitColl)
+	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -127,7 +128,7 @@ func (u *genUnitDao) DeleteUnit(unitID string) rest_err.APIError {
 
 	result, err := coll.DeleteOne(ctx, filter)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return rest_err.NewBadRequestError("Unit gagal dihapus, dokumen tidak ditemukan")
 		}
 
@@ -144,7 +145,7 @@ func (u *genUnitDao) DeleteUnit(unitID string) rest_err.APIError {
 }
 
 func (u *genUnitDao) DisableUnit(unitID string, value bool) (*dto.GenUnitResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
+	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -163,7 +164,7 @@ func (u *genUnitDao) DisableUnit(unitID string, value bool) (*dto.GenUnitRespons
 
 	var unit dto.GenUnitResponse
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID tidak valid")
 		}
 
@@ -176,7 +177,7 @@ func (u *genUnitDao) DisableUnit(unitID string, value bool) (*dto.GenUnitRespons
 }
 
 func (u *genUnitDao) InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
+	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -201,7 +202,7 @@ func (u *genUnitDao) InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitRes
 
 	var unit dto.GenUnitResponse
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID atau timestamp tidak valid")
 		}
 
@@ -214,7 +215,7 @@ func (u *genUnitDao) InsertCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitRes
 }
 
 func (u *genUnitDao) DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
+	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -239,7 +240,7 @@ func (u *genUnitDao) DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitRes
 
 	var unit dto.GenUnitResponse
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unit); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Unit tidak diupdate karena ID atau timestamp tidak valid")
 		}
 
@@ -252,7 +253,7 @@ func (u *genUnitDao) DeleteCase(payload dto.GenUnitCaseRequest) (*dto.GenUnitRes
 }
 
 func (u *genUnitDao) GetUnitByID(unitID string, branchIfSpecific string) (*dto.GenUnitResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
+	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -268,8 +269,7 @@ func (u *genUnitDao) GetUnitByID(unitID string, branchIfSpecific string) (*dto.G
 	}
 
 	if err := coll.FindOne(ctx, filter, opts).Decode(&unit); err != nil {
-
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Unit dengan ID %s tidak ditemukan", unitID))
 			return nil, apiErr
 		}
@@ -283,7 +283,7 @@ func (u *genUnitDao) GetUnitByID(unitID string, branchIfSpecific string) (*dto.G
 }
 
 func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
+	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -350,7 +350,7 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 }
 
 func (u *genUnitDao) GetIPList(branchIfSpecific string, category string) ([]string, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
+	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -392,7 +392,7 @@ func (u *genUnitDao) GetIPList(branchIfSpecific string, category string) ([]stri
 }
 
 func (u *genUnitDao) AppendPingState(input dto.GenUnitPingStateRequest) (int64, rest_err.APIError) {
-	coll := db.Db.Collection(keyGenUnitColl)
+	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 

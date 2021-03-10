@@ -72,7 +72,6 @@ func (h *historyHandler) Edit(c *fiber.Ctx) error {
 // Find menampilkan list history
 // Query [branch, category, c_status, start, end, limit]
 func (h *historyHandler) Find(c *fiber.Ctx) error {
-
 	branch := c.Query("branch")
 	category := c.Query("category")
 	cStatus := stringToInt(c.Query("c_status"))
@@ -102,7 +101,6 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 
 // Find menampilkan list history berdasarkan parent string
 func (h *historyHandler) FindFromParent(c *fiber.Ctx) error {
-
 	parentID := c.Params("id")
 
 	histories, apiErr := h.service.FindHistoryForParent(parentID)
@@ -116,7 +114,6 @@ func (h *historyHandler) FindFromParent(c *fiber.Ctx) error {
 // Find menampilkan list history berdasarkan user
 // Query [start, end, limit]
 func (h *historyHandler) FindFromUser(c *fiber.Ctx) error {
-
 	userID := c.Params("id")
 
 	start := stringToInt(c.Query("start"))
@@ -139,7 +136,6 @@ func (h *historyHandler) FindFromUser(c *fiber.Ctx) error {
 
 // GetHistory menampilkan historyDetail
 func (h *historyHandler) GetHistory(c *fiber.Ctx) error {
-
 	userID := c.Params("id")
 
 	history, apiErr := h.service.GetHistory(userID, "")
@@ -162,7 +158,7 @@ func (h *historyHandler) Delete(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"msg": fmt.Sprintf("history %s berhasil dihapus", id)})
 }
 
-//UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
+// UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
 func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
@@ -174,13 +170,13 @@ func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// simpan image
-	pathInDb, apiErr := saveImage(c, *claims, "history", id)
+	pathInDB, apiErr := saveImage(c, *claims, "history", id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
 	// update path image di database
-	cctvResult, apiErr := h.service.PutImage(*claims, id, pathInDb)
+	cctvResult, apiErr := h.service.PutImage(*claims, id, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}

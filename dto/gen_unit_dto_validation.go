@@ -15,9 +15,5 @@ func (g GenUnitPingStateRequest) Validate() error {
 	// validate type
 
 	// validate location
-	if err := categoryValidation(g.Category); err != nil {
-		return err
-	}
-
-	return nil
+	return categoryValidation(g.Category)
 }

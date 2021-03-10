@@ -13,7 +13,7 @@ type Case struct {
 	CaseNote string `json:"case_note" bson:"case_note"`
 }
 
-//GenUnit struct lengkap dari document all_unit di Mongodb, ID harus sama dengan ID unitDetail
+// GenUnit struct lengkap dari document all_unit di Mongodb, ID harus sama dengan ID unitDetail
 type GenUnit struct {
 	ID         string      `json:"id,omitempty" bson:"_id,omitempty"`
 	Category   string      `json:"category" bson:"category"`
@@ -63,7 +63,7 @@ type GenUnitEditRequest struct {
 	Branch   string `json:"branch" bson:"branch"`
 }
 
-//GenUnitResponseList tipe slice dari GenUnitResponse
+// GenUnitResponseList tipe slice dari GenUnitResponse
 type GenUnitResponseList []GenUnitResponse
 
 type GenUnitResponse struct {

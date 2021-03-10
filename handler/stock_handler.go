@@ -134,7 +134,7 @@ func (s *stockHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"stock_list": stockList})
 }
 
-//DisableStock menghilangkan stock dari list
+// DisableStock menghilangkan stock dari list
 // Param status [enable, disable]
 func (s *stockHandler) DisableStock(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
@@ -173,7 +173,7 @@ func (s *stockHandler) Delete(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"msg": fmt.Sprintf("stock %s berhasil dihapus", id)})
 }
 
-//UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
+// UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
 func (s *stockHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
@@ -185,13 +185,13 @@ func (s *stockHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// simpan image
-	pathInDb, apiErr := saveImage(c, *claims, "stock", id)
+	pathInDB, apiErr := saveImage(c, *claims, "stock", id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
 	// update path image di database
-	stockResult, apiErr := s.service.PutImage(*claims, id, pathInDb)
+	stockResult, apiErr := s.service.PutImage(*claims, id, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}

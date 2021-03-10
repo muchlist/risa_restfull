@@ -37,7 +37,6 @@ type HistoryServiceAssumer interface {
 }
 
 func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError) {
-
 	// Default value
 	timeNow := time.Now().Unix()
 	if input.DateStart == 0 {
@@ -63,7 +62,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	historyIsComplete := input.CompleteStatus == enum.HComplete
 	historyIsInfo := input.CompleteStatus == enum.HInfo
 	if !(historyIsComplete || historyIsInfo) {
-		//DB
+		// DB
 		parent, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
 			UnitID:       input.ParentID,
 			FilterBranch: user.Branch,
@@ -71,7 +70,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 			CaseNote:     fmt.Sprintf("#%s# %s : %s", enum.GetProgressString(input.CompleteStatus), input.Status, input.Problem),
 		})
 	} else {
-		//DB
+		// DB
 		parent, err = h.daoG.GetUnitByID(input.ParentID, user.Branch)
 	}
 	if err != nil {
@@ -104,7 +103,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		Tag:            input.Tag,
 	}
 
-	//DB
+	// DB
 	insertedID, err := h.daoH.InsertHistory(data)
 	if err != nil {
 		return nil, err
@@ -113,7 +112,6 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 }
 
 func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError) {
-
 	oid, errT := primitive.ObjectIDFromHex(historyID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -135,13 +133,13 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 		UpdatedByID:     user.Identity,
 	}
 
-	//DB
+	// DB
 	historyEdited, err := h.daoH.EditHistory(oid, data)
 	if err != nil {
 		return nil, err
 	}
 
-	//Hapus Case pada parent
+	// Hapus Case pada parent
 	// DB
 	_, err = h.daoG.DeleteCase(dto.GenUnitCaseRequest{
 		UnitID:       historyEdited.ParentID,
@@ -157,7 +155,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 	historyIsComplete := input.CompleteStatus == enum.HComplete
 	historyIsInfo := input.CompleteStatus == enum.HInfo
 	if !(historyIsComplete || historyIsInfo) {
-		//DB
+		// DB
 		_, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
 			UnitID:       historyEdited.ParentID,
 			FilterBranch: user.Branch,
@@ -173,7 +171,6 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 }
 
 func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_err.APIError {
-
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -253,9 +250,8 @@ func (h *historyService) GetHistoryCount(branchIfSpecific string, statusComplete
 	return historyCountList, nil
 }
 
-//PutImage memasukkan lokasi file (path) ke dalam database history dengan mengecek kesesuaian branch
+// PutImage memasukkan lokasi file (path) ke dalam database history dengan mengecek kesesuaian branch
 func (h *historyService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError) {
-
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")

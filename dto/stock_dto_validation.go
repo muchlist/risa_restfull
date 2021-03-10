@@ -15,11 +15,7 @@ func (h StockRequest) Validate() error {
 	}
 
 	// validate type
-	if err := stockCategoryValidation(h.StockCategory); err != nil {
-		return err
-	}
-
-	return nil
+	return stockCategoryValidation(h.StockCategory)
 }
 
 func (h StockEditRequest) Validate() error {
@@ -34,11 +30,7 @@ func (h StockEditRequest) Validate() error {
 	}
 
 	// validate type
-	if err := stockCategoryValidation(h.StockCategory); err != nil {
-		return err
-	}
-
-	return nil
+	return stockCategoryValidation(h.StockCategory)
 }
 
 func (h StockChangeRequest) Validate() error {

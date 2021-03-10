@@ -30,8 +30,8 @@ type FilterBranchNameCatDisable struct {
 }
 
 // FilterIDBranchCreateGte
-//field FilterCreateGTE digunakan untuk memberikan batas waktu, misalnya saat akan menghapus dokumen
-//maka FilterCreateGTE di isi dengan tanggal sekarang kurang sekian waktu (misalnya 1 hari)
+// field FilterCreateGTE digunakan untuk memberikan batas waktu, misalnya saat akan menghapus dokumen
+// maka FilterCreateGTE di isi dengan tanggal sekarang kurang sekian waktu (misalnya 1 hari)
 type FilterIDBranchCreateGte struct {
 	FilterID        primitive.ObjectID
 	FilterBranch    string

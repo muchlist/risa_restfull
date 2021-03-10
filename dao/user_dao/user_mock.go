@@ -13,12 +13,12 @@ type MockDao struct {
 func (m *MockDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) {
 	args := m.Called(user)
 
-	var res *string = nil
+	var res *string
 	if args.Get(0) != nil {
 		res = args.Get(0).(*string)
 	}
 
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}
@@ -28,11 +28,11 @@ func (m *MockDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 
 func (m *MockDao) GetUserByIDWithPassword(email string) (*dto.User, rest_err.APIError) {
 	args := m.Called(email)
-	var res *dto.User = nil
+	var res *dto.User
 	if args.Get(0) != nil {
 		res = args.Get(0).(*dto.User)
 	}
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}
@@ -41,7 +41,7 @@ func (m *MockDao) GetUserByIDWithPassword(email string) (*dto.User, rest_err.API
 
 func (m *MockDao) CheckIDAvailable(email string) (bool, rest_err.APIError) {
 	args := m.Called(email)
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}
@@ -50,11 +50,11 @@ func (m *MockDao) CheckIDAvailable(email string) (bool, rest_err.APIError) {
 
 func (m *MockDao) EditUser(userEmail string, userRequest dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
 	args := m.Called(userEmail, userRequest)
-	var res *dto.UserResponse = nil
+	var res *dto.UserResponse
 	if args.Get(0) != nil {
 		res = args.Get(0).(*dto.UserResponse)
 	}
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}
@@ -63,7 +63,7 @@ func (m *MockDao) EditUser(userEmail string, userRequest dto.UserEditRequest) (*
 
 func (m *MockDao) DeleteUser(userEmail string) rest_err.APIError {
 	args := m.Called(userEmail)
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(0) != nil {
 		err = args.Get(0).(rest_err.APIError)
 	}
@@ -72,11 +72,11 @@ func (m *MockDao) DeleteUser(userEmail string) rest_err.APIError {
 
 func (m *MockDao) PutAvatar(email string, avatar string) (*dto.UserResponse, rest_err.APIError) {
 	args := m.Called(email, avatar)
-	var res *dto.UserResponse = nil
+	var res *dto.UserResponse
 	if args.Get(0) != nil {
 		res = args.Get(0).(*dto.UserResponse)
 	}
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}
@@ -85,7 +85,7 @@ func (m *MockDao) PutAvatar(email string, avatar string) (*dto.UserResponse, res
 
 func (m *MockDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.APIError {
 	args := m.Called(data)
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(0) != nil {
 		err = args.Get(0).(rest_err.APIError)
 	}
@@ -95,12 +95,12 @@ func (m *MockDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.AP
 func (m *MockDao) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIError) {
 	args := m.Called(userID)
 
-	var res *dto.UserResponse = nil
+	var res *dto.UserResponse
 	if args.Get(0) != nil {
 		res = args.Get(0).(*dto.UserResponse)
 	}
 
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}
@@ -111,7 +111,7 @@ func (m *MockDao) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIErr
 func (m *MockDao) FindUser() (dto.UserResponseList, rest_err.APIError) {
 	args := m.Called()
 
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}

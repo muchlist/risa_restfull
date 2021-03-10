@@ -48,7 +48,6 @@ func (i *checkItemHandler) Insert(c *fiber.Ctx) error {
 
 // GetCheckItem menampilkan checkItemDetail
 func (i *checkItemHandler) GetCheckItem(c *fiber.Ctx) error {
-
 	checkItemID := c.Params("id")
 
 	checkItem, apiErr := i.service.GetCheckItemByID(checkItemID, "")
@@ -62,7 +61,6 @@ func (i *checkItemHandler) GetCheckItem(c *fiber.Ctx) error {
 // Find menampilkan list checkItem
 // Query [branch, name, problem, disable]
 func (i *checkItemHandler) Find(c *fiber.Ctx) error {
-
 	branch := c.Query("branch")
 	name := c.Query("name")
 	var disable bool
@@ -88,7 +86,7 @@ func (i *checkItemHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"check_item_list": checkItemList})
 }
 
-//DisableCheckItem menghilangkan checkItem dari list
+// DisableCheckItem menghilangkan checkItem dari list
 // Param status [enable, disable]
 func (i *checkItemHandler) DisableCheckItem(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)

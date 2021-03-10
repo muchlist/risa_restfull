@@ -47,7 +47,6 @@ func (x *checkHandler) Insert(c *fiber.Ctx) error {
 
 // GetCheck menampilkan checkDetail
 func (x *checkHandler) GetCheck(c *fiber.Ctx) error {
-
 	checkID := c.Params("id")
 
 	check, apiErr := x.service.GetCheckByID(checkID, "")
@@ -61,7 +60,6 @@ func (x *checkHandler) GetCheck(c *fiber.Ctx) error {
 // Find menampilkan list check
 // Query [branch, start, end, limit]
 func (x *checkHandler) Find(c *fiber.Ctx) error {
-
 	branch := c.Query("branch")
 	start := stringToInt(c.Query("start"))
 	end := stringToInt(c.Query("end"))
@@ -132,7 +130,7 @@ func (x *checkHandler) UpdateCheckItem(c *fiber.Ctx) error {
 	return c.JSON(checkUpdated)
 }
 
-//UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
+// UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
 func (x *checkHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
@@ -145,13 +143,13 @@ func (x *checkHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// simpan image
-	pathInDb, apiErr := saveImage(c, *claims, "check", id)
+	pathInDB, apiErr := saveImage(c, *claims, "check", id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
 
 	// update path image di database
-	checkResult, apiErr := x.service.PutChildImage(*claims, id, childID, pathInDb)
+	checkResult, apiErr := x.service.PutChildImage(*claims, id, childID, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}

@@ -2,6 +2,7 @@ package improve_dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -55,7 +56,7 @@ type ImproveDaoAssumer interface {
 }
 
 func (s *improveDao) InsertImprove(input dto.Improve) (*string, rest_err.APIError) {
-	coll := db.Db.Collection(keyImpCollection)
+	coll := db.DB.Collection(keyImpCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -76,7 +77,7 @@ func (s *improveDao) InsertImprove(input dto.Improve) (*string, rest_err.APIErro
 }
 
 func (s *improveDao) EditImprove(input dto.ImproveEdit) (*dto.Improve, rest_err.APIError) {
-	coll := db.Db.Collection(keyImpCollection)
+	coll := db.DB.Collection(keyImpCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -92,7 +93,7 @@ func (s *improveDao) EditImprove(input dto.ImproveEdit) (*dto.Improve, rest_err.
 	}
 
 	update := bson.D{
-		{"$set", bson.M{
+		{"$set", bson.M{ //nolint:govet
 			keyImpTitle:          input.Title,
 			keyImpUpdatedAt:      input.UpdatedAt,
 			keyImpUpdatedBy:      input.UpdatedBy,
@@ -105,7 +106,7 @@ func (s *improveDao) EditImprove(input dto.ImproveEdit) (*dto.Improve, rest_err.
 
 	var improve dto.Improve
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&improve); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Improve tidak diupdate : validasi id branch timestamp")
 		}
 
@@ -118,7 +119,7 @@ func (s *improveDao) EditImprove(input dto.ImproveEdit) (*dto.Improve, rest_err.
 }
 
 func (s *improveDao) ChangeImprove(filterA dto.FilterIDBranch, data dto.ImproveChange) (*dto.Improve, rest_err.APIError) {
-	coll := db.Db.Collection(keyImpCollection)
+	coll := db.DB.Collection(keyImpCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -132,14 +133,14 @@ func (s *improveDao) ChangeImprove(filterA dto.FilterIDBranch, data dto.ImproveC
 	}
 
 	update := bson.D{
-		{"$set", bson.M{keyImpUpdatedAt: time.Now().Unix()}},
-		{"$inc", bson.M{keyImpGoalsAchieved: data.Increment}},
-		{"$push", bson.M{keyImpImproveChanges: data}},
+		{"$set", bson.M{keyImpUpdatedAt: time.Now().Unix()}},  //nolint:govet
+		{"$inc", bson.M{keyImpGoalsAchieved: data.Increment}}, //nolint:govet
+		{"$push", bson.M{keyImpImproveChanges: data}},         //nolint:govet
 	}
 
 	var improve dto.Improve
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&improve); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Improve tidak diupdate : validasi id branch active")
 		}
 
@@ -152,7 +153,7 @@ func (s *improveDao) ChangeImprove(filterA dto.FilterIDBranch, data dto.ImproveC
 }
 
 func (s *improveDao) DeleteImprove(input dto.FilterIDBranchCreateGte) (*dto.Improve, rest_err.APIError) {
-	coll := db.Db.Collection(keyImpCollection)
+	coll := db.DB.Collection(keyImpCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -165,7 +166,7 @@ func (s *improveDao) DeleteImprove(input dto.FilterIDBranchCreateGte) (*dto.Impr
 	var improve dto.Improve
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&improve)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Improve tidak diupdate : validasi id branch time_reach")
 		}
 
@@ -178,7 +179,7 @@ func (s *improveDao) DeleteImprove(input dto.FilterIDBranchCreateGte) (*dto.Impr
 }
 
 func (s *improveDao) ActivateImprove(improveID primitive.ObjectID, user mjwt.CustomClaim, isEnable bool) (*dto.Improve, rest_err.APIError) {
-	coll := db.Db.Collection(keyImpCollection)
+	coll := db.DB.Collection(keyImpCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -199,7 +200,7 @@ func (s *improveDao) ActivateImprove(improveID primitive.ObjectID, user mjwt.Cus
 
 	var improve dto.Improve
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&improve); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Improve tidak diupdate : validasi id branch")
 		}
 
@@ -212,7 +213,7 @@ func (s *improveDao) ActivateImprove(improveID primitive.ObjectID, user mjwt.Cus
 }
 
 func (s *improveDao) GetImproveByID(improveID primitive.ObjectID, branchIfSpecific string) (*dto.Improve, rest_err.APIError) {
-	coll := db.Db.Collection(keyImpCollection)
+	coll := db.DB.Collection(keyImpCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -223,8 +224,7 @@ func (s *improveDao) GetImproveByID(improveID primitive.ObjectID, branchIfSpecif
 
 	var improve dto.Improve
 	if err := coll.FindOne(ctx, filter).Decode(&improve); err != nil {
-
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Improve dengan ID %s tidak ditemukan", improveID.Hex()))
 			return nil, apiErr
 		}
@@ -238,7 +238,7 @@ func (s *improveDao) GetImproveByID(improveID primitive.ObjectID, branchIfSpecif
 }
 
 func (s *improveDao) FindImprove(filterA dto.FilterBranchCompleteTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError) {
-	coll := db.Db.Collection(keyImpCollection)
+	coll := db.DB.Collection(keyImpCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 

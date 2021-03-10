@@ -31,7 +31,6 @@ type ImproveServiceAssumer interface {
 }
 
 func (s *improveService) InsertImprove(user mjwt.CustomClaim, input dto.ImproveRequest) (*string, rest_err.APIError) {
-
 	// Filling data
 	// Ketika membuat improve juga menambahkan increment field untuk pertama kali
 	timeNow := time.Now().Unix()
@@ -58,7 +57,7 @@ func (s *improveService) InsertImprove(user mjwt.CustomClaim, input dto.ImproveR
 		IsActive:       improveAccepted,
 	}
 
-	//DB
+	// DB
 	insertedID, err := s.daoS.InsertImprove(data)
 	if err != nil {
 		return nil, err
@@ -93,7 +92,7 @@ func (s *improveService) EditImprove(user mjwt.CustomClaim, improveID string, in
 		CompleteStatus: input.CompleteStatus,
 	}
 
-	//DB
+	// DB
 	improveEdited, err := s.daoS.EditImprove(data)
 	if err != nil {
 		return nil, err
@@ -104,7 +103,6 @@ func (s *improveService) EditImprove(user mjwt.CustomClaim, improveID string, in
 
 // DisableImprove if value true , improve will disabled
 func (s *improveService) ActivateImprove(improveID string, user mjwt.CustomClaim, isEnable bool) (*dto.Improve, rest_err.APIError) {
-
 	oid, errT := primitive.ObjectIDFromHex(improveID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -143,7 +141,7 @@ func (s *improveService) ChangeImprove(user mjwt.CustomClaim, improveID string, 
 		FilterBranch: user.Branch,
 	}
 
-	//DB
+	// DB
 	improveEdited, err := s.daoS.ChangeImprove(filter, incDec)
 	if err != nil {
 		return nil, err
@@ -153,7 +151,6 @@ func (s *improveService) ChangeImprove(user mjwt.CustomClaim, improveID string, 
 }
 
 func (s *improveService) DeleteImprove(user mjwt.CustomClaim, id string) rest_err.APIError {
-
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -187,7 +184,6 @@ func (s *improveService) GetImproveByID(improveID string, branchIfSpecific strin
 }
 
 func (s *improveService) FindImprove(filter dto.FilterBranchCompleteTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError) {
-
 	improveList, err := s.daoS.FindImprove(filter)
 	if err != nil {
 		return nil, err

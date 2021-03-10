@@ -2,6 +2,7 @@ package check_item_dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -58,7 +59,7 @@ type CheckItemDaoAssumer interface {
 }
 
 func (c *checkItemDao) InsertCheckItem(input dto.CheckItem) (*string, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -89,7 +90,7 @@ func (c *checkItemDao) InsertCheckItem(input dto.CheckItem) (*string, rest_err.A
 }
 
 func (c *checkItemDao) EditCheckItem(input dto.CheckItemEdit) (*dto.CheckItem, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -134,7 +135,7 @@ func (c *checkItemDao) EditCheckItem(input dto.CheckItemEdit) (*dto.CheckItem, r
 
 	var checkItem dto.CheckItem
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&checkItem); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("CheckItem tidak diupdate : validasi id branch timestamp")
 		}
 
@@ -147,7 +148,7 @@ func (c *checkItemDao) EditCheckItem(input dto.CheckItemEdit) (*dto.CheckItem, r
 }
 
 func (c *checkItemDao) EditCheckItemValue(input dto.CheckItemEditBySys) (*dto.CheckItem, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -169,7 +170,7 @@ func (c *checkItemDao) EditCheckItemValue(input dto.CheckItemEditBySys) (*dto.Ch
 
 	var checkItem dto.CheckItem
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&checkItem); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("CheckItem tidak diupdate : validasi id branch timestamp")
 		}
 
@@ -182,7 +183,7 @@ func (c *checkItemDao) EditCheckItemValue(input dto.CheckItemEditBySys) (*dto.Ch
 }
 
 func (c *checkItemDao) DeleteCheckItem(input dto.FilterIDBranch) (*dto.CheckItem, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -194,7 +195,7 @@ func (c *checkItemDao) DeleteCheckItem(input dto.FilterIDBranch) (*dto.CheckItem
 	var checkItem dto.CheckItem
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&checkItem)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("CheckItem tidak diupdate : validasi id branch")
 		}
 
@@ -208,7 +209,7 @@ func (c *checkItemDao) DeleteCheckItem(input dto.FilterIDBranch) (*dto.CheckItem
 
 // DisableCheckItem if value true , checkItem will disabled
 func (c *checkItemDao) DisableCheckItem(checkItemID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.CheckItem, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -231,7 +232,7 @@ func (c *checkItemDao) DisableCheckItem(checkItemID primitive.ObjectID, user mjw
 
 	var checkItem dto.CheckItem
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&checkItem); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("CheckItem tidak diupdate : validasi id branch")
 		}
 
@@ -244,7 +245,7 @@ func (c *checkItemDao) DisableCheckItem(checkItemID primitive.ObjectID, user mjw
 }
 
 func (c *checkItemDao) GetCheckItemByID(checkItemID primitive.ObjectID, branchIfSpecific string) (*dto.CheckItem, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -255,8 +256,7 @@ func (c *checkItemDao) GetCheckItemByID(checkItemID primitive.ObjectID, branchIf
 
 	var checkItem dto.CheckItem
 	if err := coll.FindOne(ctx, filter).Decode(&checkItem); err != nil {
-
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("CheckItem dengan ID %s tidak ditemukan", checkItemID.Hex()))
 			return nil, apiErr
 		}
@@ -270,7 +270,7 @@ func (c *checkItemDao) GetCheckItemByID(checkItemID primitive.ObjectID, branchIf
 }
 
 func (c *checkItemDao) FindCheckItem(filterA dto.FilterBranchNameDisable, filterHaveProblem bool) (dto.CheckItemResponseMinList, rest_err.APIError) {
-	coll := db.Db.Collection(keyChCollection)
+	coll := db.DB.Collection(keyChCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 

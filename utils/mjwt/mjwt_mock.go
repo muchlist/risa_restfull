@@ -12,7 +12,7 @@ type MockJwt struct {
 
 func (m *MockJwt) GenerateToken(claims CustomClaim) (string, rest_err.APIError) {
 	args := m.Called(claims)
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}
@@ -22,12 +22,12 @@ func (m *MockJwt) GenerateToken(claims CustomClaim) (string, rest_err.APIError) 
 
 func (m *MockJwt) ValidateToken(tokenString string) (*jwt.Token, rest_err.APIError) {
 	args := m.Called(tokenString)
-	var res *jwt.Token = nil
+	var res *jwt.Token
 	if args.Get(0) != nil {
 		res = args.Get(0).(*jwt.Token)
 	}
 
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}
@@ -37,12 +37,12 @@ func (m *MockJwt) ValidateToken(tokenString string) (*jwt.Token, rest_err.APIErr
 
 func (m *MockJwt) ReadToken(token *jwt.Token) (*CustomClaim, rest_err.APIError) {
 	args := m.Called(token)
-	var res *CustomClaim = nil
+	var res *CustomClaim
 	if args.Get(0) != nil {
 		res = args.Get(0).(*CustomClaim)
 	}
 
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}

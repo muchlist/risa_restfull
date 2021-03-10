@@ -36,10 +36,10 @@ func saveImage(c *fiber.Ctx, claims mjwt.CustomClaim, folder string, imageName s
 	}
 
 	// rename image
-	//path := filepath.Join("static", "image", folder, imageName + fileExtension)
-	//pathInDb := filepath.Join("image", folder, imageName + fileExtension)
+	// path := filepath.Join("static", "image", folder, imageName + fileExtension)
+	// pathInDB := filepath.Join("image", folder, imageName + fileExtension)
 	path := fmt.Sprintf("static/image/%s/%s", folder, imageName+fileExtension)
-	pathInDb := fmt.Sprintf("image/%s/%s", folder, imageName+fileExtension)
+	pathInDB := fmt.Sprintf("image/%s/%s", folder, imageName+fileExtension)
 
 	err = c.SaveFile(file, path)
 	if err != nil {
@@ -48,7 +48,7 @@ func saveImage(c *fiber.Ctx, claims mjwt.CustomClaim, folder string, imageName s
 		return "", apiErr
 	}
 
-	return pathInDb, nil
+	return pathInDB, nil
 }
 
 // merubah string masukan ke int , jika error mereturn 0

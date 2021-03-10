@@ -19,11 +19,7 @@ func (c CctvRequest) Validate() error {
 	}
 
 	// validate location
-	if err := locationValidation(c.Location); err != nil {
-		return err
-	}
-
-	return nil
+	return locationValidation(c.Location)
 }
 
 func (c CctvEditRequest) Validate() error {
@@ -42,9 +38,5 @@ func (c CctvEditRequest) Validate() error {
 	}
 
 	// validate location
-	if err := locationValidation(c.Location); err != nil {
-		return err
-	}
-
-	return nil
+	return locationValidation(c.Location)
 }

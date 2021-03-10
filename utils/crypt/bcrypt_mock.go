@@ -11,7 +11,7 @@ type MockBcrypt struct {
 
 func (m *MockBcrypt) GenerateHash(password string) (string, rest_err.APIError) {
 	args := m.Called(password)
-	var err rest_err.APIError = nil
+	var err rest_err.APIError
 	if args.Get(1) != nil {
 		err = args.Get(1).(rest_err.APIError)
 	}

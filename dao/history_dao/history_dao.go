@@ -2,6 +2,7 @@ package history_dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -60,7 +61,7 @@ type HistoryDaoAssumer interface {
 }
 
 func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIError) {
-	coll := db.Db.Collection(keyHistColl)
+	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -83,7 +84,7 @@ func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIErro
 }
 
 func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit) (*dto.HistoryResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyHistColl)
+	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -117,7 +118,7 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 
 	var history dto.HistoryResponse
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&history); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("History tidak diupdate : validasi id branch timestamp status_complete")
 		}
 
@@ -130,7 +131,7 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 }
 
 func (h *historyDao) DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.HistoryResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyHistColl)
+	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -143,7 +144,7 @@ func (h *historyDao) DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.Hist
 	var history dto.HistoryResponse
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&history)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("History tidak diupdate : validasi id branch time_reach")
 		}
 
@@ -156,7 +157,7 @@ func (h *historyDao) DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.Hist
 }
 
 func (h *historyDao) GetHistoryByID(historyID primitive.ObjectID, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyHistColl)
+	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -169,8 +170,7 @@ func (h *historyDao) GetHistoryByID(historyID primitive.ObjectID, branchIfSpecif
 	}
 	var history dto.HistoryResponse
 	if err := coll.FindOne(ctx, filter).Decode(&history); err != nil {
-
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("History dengan ID %s tidak ditemukan", historyID.Hex()))
 			return nil, apiErr
 		}
@@ -184,7 +184,7 @@ func (h *historyDao) GetHistoryByID(historyID primitive.ObjectID, branchIfSpecif
 }
 
 func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
-	coll := db.Db.Collection(keyHistColl)
+	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -219,7 +219,7 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyHistUpdatedAt, -1}})
+	opts.SetSort(bson.D{{keyHistUpdatedAt, -1}}) //nolint:govet
 	opts.SetLimit(filterB.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
@@ -241,7 +241,7 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 }
 
 func (h *historyDao) FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError) {
-	coll := db.Db.Collection(keyHistColl)
+	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -250,7 +250,7 @@ func (h *historyDao) FindHistoryForParent(parentID string) (dto.HistoryResponseM
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyHistID, -1}})
+	opts.SetSort(bson.D{{keyHistID, -1}}) //nolint:govet
 	sortCursor, err := coll.Find(ctx, filter, opts)
 
 	if err != nil {
@@ -270,7 +270,7 @@ func (h *historyDao) FindHistoryForParent(parentID string) (dto.HistoryResponseM
 }
 
 func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
-	coll := db.Db.Collection(keyHistColl)
+	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -296,7 +296,7 @@ func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeR
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyHistID, -1}})
+	opts.SetSort(bson.D{{keyHistID, -1}}) //nolint:govet
 	opts.SetLimit(filterOpt.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
@@ -317,9 +317,9 @@ func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeR
 	return histories, nil
 }
 
-//get_histories_in_progress_count
+// get_histories_in_progress_count
 func (h *historyDao) GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError) {
-	coll := db.Db.Collection(keyHistColl)
+	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -335,18 +335,18 @@ func (h *historyDao) GetHistoryCount(branchIfSpecific string, statusComplete int
 	}
 
 	matchStage := bson.D{
-		{"$match", filter},
+		{"$match", filter}, //nolint:govet
 	}
 	groupStage := bson.D{
-		{"$group", bson.D{
-			{"_id", "$branch"},
-			{"count", bson.M{"$sum": 1}},
+		{"$group", bson.D{ //nolint:govet
+			{"_id", "$branch"},           //nolint:govet
+			{"count", bson.M{"$sum": 1}}, //nolint:govet
 		}},
 	}
 	sortStage := bson.D{
-		{"$sort", bson.D{
-			{"count", -1},
-			{"_id", -1},
+		{"$sort", bson.D{ //nolint:govet
+			{"count", -1}, //nolint:govet
+			{"_id", -1},   //nolint:govet
 		}},
 	}
 
@@ -371,7 +371,7 @@ func (h *historyDao) GetHistoryCount(branchIfSpecific string, statusComplete int
 // UploadImage tidak digunakan saat pembuatan history dengan langsung
 // menyertakan image, hanya untuk keperluan update pada dokumen yang sudah ada
 func (h *historyDao) UploadImage(historyID primitive.ObjectID, imagePath string, filterBranch string) (*dto.HistoryResponse, rest_err.APIError) {
-	coll := db.Db.Collection(keyHistColl)
+	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -390,7 +390,7 @@ func (h *historyDao) UploadImage(historyID primitive.ObjectID, imagePath string,
 
 	var history dto.HistoryResponse
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&history); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, history dengan id %s tidak ditemukan", historyID.Hex()))
 		}
 

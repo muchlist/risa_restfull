@@ -2,6 +2,7 @@ package stock_dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -62,7 +63,7 @@ type StockDaoAssumer interface {
 }
 
 func (s *stockDao) InsertStock(input dto.Stock) (*string, rest_err.APIError) {
-	coll := db.Db.Collection(keyStoCollection)
+	coll := db.DB.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -91,7 +92,7 @@ func (s *stockDao) InsertStock(input dto.Stock) (*string, rest_err.APIError) {
 }
 
 func (s *stockDao) EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError) {
-	coll := db.Db.Collection(keyStoCollection)
+	coll := db.DB.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -110,7 +111,7 @@ func (s *stockDao) EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError
 	}
 
 	update := bson.D{
-		{"$set", bson.M{
+		{"$set", bson.M{ //nolint:govet
 			keyStoName:        input.Name,
 			keyStoUpdatedAt:   input.UpdatedAt,
 			keyStoUpdatedBy:   input.UpdatedBy,
@@ -125,7 +126,7 @@ func (s *stockDao) EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError
 
 	var stock dto.Stock
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&stock); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Stock tidak diupdate : validasi id branch timestamp")
 		}
 
@@ -138,7 +139,7 @@ func (s *stockDao) EditStock(input dto.StockEdit) (*dto.Stock, rest_err.APIError
 }
 
 func (s *stockDao) DeleteStock(input dto.FilterIDBranchCreateGte) (*dto.Stock, rest_err.APIError) {
-	coll := db.Db.Collection(keyStoCollection)
+	coll := db.DB.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -151,7 +152,7 @@ func (s *stockDao) DeleteStock(input dto.FilterIDBranchCreateGte) (*dto.Stock, r
 	var stock dto.Stock
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&stock)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Stock tidak diupdate : validasi id branch time_reach")
 		}
 
@@ -165,7 +166,7 @@ func (s *stockDao) DeleteStock(input dto.FilterIDBranchCreateGte) (*dto.Stock, r
 
 // DisableStock if value true , stock will disabled
 func (s *stockDao) DisableStock(stockID primitive.ObjectID, user mjwt.CustomClaim, isDisable bool) (*dto.Stock, rest_err.APIError) {
-	coll := db.Db.Collection(keyStoCollection)
+	coll := db.DB.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -188,7 +189,7 @@ func (s *stockDao) DisableStock(stockID primitive.ObjectID, user mjwt.CustomClai
 
 	var stock dto.Stock
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&stock); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Stock tidak diupdate : validasi id branch")
 		}
 
@@ -201,7 +202,7 @@ func (s *stockDao) DisableStock(stockID primitive.ObjectID, user mjwt.CustomClai
 }
 
 func (s *stockDao) UploadImage(stockID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Stock, rest_err.APIError) {
-	coll := db.Db.Collection(keyStoCollection)
+	coll := db.DB.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -220,7 +221,7 @@ func (s *stockDao) UploadImage(stockID primitive.ObjectID, imagePath string, fil
 
 	var stock dto.Stock
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&stock); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, stock dengan id %s tidak ditemukan", stockID.Hex()))
 		}
 
@@ -233,7 +234,7 @@ func (s *stockDao) UploadImage(stockID primitive.ObjectID, imagePath string, fil
 }
 
 func (s *stockDao) GetStockByID(stockID primitive.ObjectID, branchIfSpecific string) (*dto.Stock, rest_err.APIError) {
-	coll := db.Db.Collection(keyStoCollection)
+	coll := db.DB.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -244,8 +245,7 @@ func (s *stockDao) GetStockByID(stockID primitive.ObjectID, branchIfSpecific str
 
 	var stock dto.Stock
 	if err := coll.FindOne(ctx, filter).Decode(&stock); err != nil {
-
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Stock dengan ID %s tidak ditemukan", stockID.Hex()))
 			return nil, apiErr
 		}
@@ -259,7 +259,7 @@ func (s *stockDao) GetStockByID(stockID primitive.ObjectID, branchIfSpecific str
 }
 
 func (s *stockDao) FindStock(filterA dto.FilterBranchNameCatDisable) (dto.StockResponseMinList, rest_err.APIError) {
-	coll := db.Db.Collection(keyStoCollection)
+	coll := db.DB.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -285,7 +285,7 @@ func (s *stockDao) FindStock(filterA dto.FilterBranchNameCatDisable) (dto.StockR
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyStoCategory, -1}})
+	opts.SetSort(bson.D{{keyStoCategory, -1}}) //nolint:govet
 	opts.SetLimit(500)
 
 	cursor, err := coll.Find(ctx, filter, opts)
@@ -306,7 +306,7 @@ func (s *stockDao) FindStock(filterA dto.FilterBranchNameCatDisable) (dto.StockR
 }
 
 func (s *stockDao) ChangeQtyStock(filterA dto.FilterIDBranch, data dto.StockChange) (*dto.Stock, rest_err.APIError) {
-	coll := db.Db.Collection(keyStoCollection)
+	coll := db.DB.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
@@ -329,22 +329,22 @@ func (s *stockDao) ChangeQtyStock(filterA dto.FilterIDBranch, data dto.StockChan
 	if data.Qty < 0 {
 		// Minus , lakukan decrement
 		update = bson.D{
-			{"$set", bson.M{keyStoUpdatedAt: time.Now().Unix()}},
-			{"$inc", bson.M{keyStoQty: data.Qty}},
-			{"$push", bson.M{keyStoDecrement: data}},
+			{"$set", bson.M{keyStoUpdatedAt: time.Now().Unix()}}, //nolint:govet
+			{"$inc", bson.M{keyStoQty: data.Qty}},                //nolint:govet
+			{"$push", bson.M{keyStoDecrement: data}},             //nolint:govet
 		}
 	} else {
 		// Increment
 		update = bson.D{
-			{"$set", bson.M{keyStoUpdatedAt: time.Now().Unix()}},
-			{"$inc", bson.M{keyStoQty: data.Qty}},
-			{"$push", bson.M{keyStoIncrement: data}},
+			{"$set", bson.M{keyStoUpdatedAt: time.Now().Unix()}}, //nolint:govet
+			{"$inc", bson.M{keyStoQty: data.Qty}},                //nolint:govet
+			{"$push", bson.M{keyStoIncrement: data}},             //nolint:govet
 		}
 	}
 
 	var stock dto.Stock
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&stock); err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Stock tidak diupdate : validasi qty (tidak mencukupi) id branch")
 		}
 

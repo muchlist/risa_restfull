@@ -39,7 +39,6 @@ type StockServiceAssumer interface {
 }
 
 func (s *stockService) InsertStock(user mjwt.CustomClaim, input dto.StockRequest) (*string, rest_err.APIError) {
-
 	// Filling data
 	// Ketika membuat stock juga menambahkan increment field untuk pertama kali
 	timeNow := time.Now().Unix()
@@ -76,13 +75,13 @@ func (s *stockService) InsertStock(user mjwt.CustomClaim, input dto.StockRequest
 		Note:          input.Note,
 	}
 
-	//DB
+	// DB
 	insertedID, err := s.daoS.InsertStock(data)
 	if err != nil {
 		return nil, err
 	}
 
-	//DB
+	// DB
 	_, err = s.daoH.InsertHistory(dto.History{
 		CreatedAt:      timeNow,
 		CreatedBy:      user.Name,
@@ -137,7 +136,7 @@ func (s *stockService) EditStock(user mjwt.CustomClaim, stockID string, input dt
 		Note:            input.Note,
 	}
 
-	//DB
+	// DB
 	stockEdited, err := s.daoS.EditStock(data)
 	if err != nil {
 		return nil, err
@@ -147,7 +146,6 @@ func (s *stockService) EditStock(user mjwt.CustomClaim, stockID string, input dt
 }
 
 func (s *stockService) DeleteStock(user mjwt.CustomClaim, id string) rest_err.APIError {
-
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -169,7 +167,6 @@ func (s *stockService) DeleteStock(user mjwt.CustomClaim, id string) rest_err.AP
 
 // DisableStock if value true , stock will disabled
 func (s *stockService) DisableStock(stockID string, user mjwt.CustomClaim, isDisable bool) (*dto.Stock, rest_err.APIError) {
-
 	oid, errT := primitive.ObjectIDFromHex(stockID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -184,9 +181,8 @@ func (s *stockService) DisableStock(stockID string, user mjwt.CustomClaim, isDis
 	return stock, nil
 }
 
-//PutImage memasukkan lokasi file (path) ke dalam database stock dengan mengecek kesesuaian branch
+// PutImage memasukkan lokasi file (path) ke dalam database stock dengan mengecek kesesuaian branch
 func (s *stockService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Stock, rest_err.APIError) {
-
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -223,7 +219,7 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 		FilterBranch: user.Branch,
 	}
 
-	//DB
+	// DB
 	stockEdited, err := s.daoS.ChangeQtyStock(filter, incDec)
 	if err != nil {
 		return nil, err
@@ -270,10 +266,9 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 				stockEdited.Unit,
 			)
 		}
-
 	}
 
-	//DB
+	// DB
 	_, err = s.daoH.InsertHistory(history)
 	if err != nil {
 		logger.Error("Berhasil membuat stock namun gagal membuat history (ChangeQtyStock)", err)
@@ -282,8 +277,8 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 	}
 
 	// IMPROVEMENT
-	//jika stockEdited qty lebih kurang atau semadengan threshold
-	//send notification to firebase
+	// jika stockEdited qty lebih kurang atau semadengan threshold
+	// send notification to firebase
 
 	return stockEdited, nil
 }
@@ -293,7 +288,6 @@ func (s *stockService) GetStockByID(stockID string, branchIfSpecific string) (*d
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
-
 	stock, err := s.daoS.GetStockByID(oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
@@ -302,7 +296,6 @@ func (s *stockService) GetStockByID(stockID string, branchIfSpecific string) (*d
 }
 
 func (s *stockService) FindStock(filter dto.FilterBranchNameCatDisable) (dto.StockResponseMinList, rest_err.APIError) {
-
 	stockList, err := s.daoS.FindStock(filter)
 	if err != nil {
 		return nil, err
@@ -311,7 +304,6 @@ func (s *stockService) FindStock(filter dto.FilterBranchNameCatDisable) (dto.Sto
 }
 
 func (s *stockService) FindNeedReStock(branch string) (dto.StockResponseMinList, rest_err.APIError) {
-
 	stockList, err := s.daoS.FindStock(dto.FilterBranchNameCatDisable{
 		FilterBranch: branch,
 	})

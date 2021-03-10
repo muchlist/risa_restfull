@@ -20,7 +20,7 @@ type userHandler struct {
 	service service.UserServiceAssumer
 }
 
-//Get menampilkan user berdasarkan ID (bukan email)
+// Get menampilkan user berdasarkan ID (bukan email)
 func (u *userHandler) Get(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
 
@@ -32,7 +32,7 @@ func (u *userHandler) Get(c *fiber.Ctx) error {
 	return c.JSON(user)
 }
 
-//GetProfile mengembalikan user yang sedang login
+// GetProfile mengembalikan user yang sedang login
 func (u *userHandler) GetProfile(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
@@ -44,9 +44,8 @@ func (u *userHandler) GetProfile(c *fiber.Ctx) error {
 	return c.JSON(user)
 }
 
-//Register menambahkan user
+// Register menambahkan user
 func (u *userHandler) Register(c *fiber.Ctx) error {
-
 	var user dto.UserRequest
 	if err := c.BodyParser(&user); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
@@ -67,9 +66,8 @@ func (u *userHandler) Register(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
-//Find menampilkan list user
+// Find menampilkan list user
 func (u *userHandler) Find(c *fiber.Ctx) error {
-
 	userList, apiErr := u.service.FindUsers()
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
@@ -78,9 +76,8 @@ func (u *userHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"users": userList})
 }
 
-//Edit mengedit user oleh admin
+// Edit mengedit user oleh admin
 func (u *userHandler) Edit(c *fiber.Ctx) error {
-
 	userID := c.Params("user_id")
 	//if err := validation.Validate(userID,
 	//	is.Email,
@@ -108,9 +105,8 @@ func (u *userHandler) Edit(c *fiber.Ctx) error {
 	return c.JSON(userEdited)
 }
 
-//Delete menghapus user, idealnya melalui middleware is_admin
+// Delete menghapus user, idealnya melalui middleware is_admin
 func (u *userHandler) Delete(c *fiber.Ctx) error {
-
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	userIDParams := c.Params("user_id")
 
@@ -127,9 +123,8 @@ func (u *userHandler) Delete(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"msg": fmt.Sprintf("user %s berhasil dihapus", userIDParams)})
 }
 
-//ChangePassword mengganti password pada user sendiri
+// ChangePassword mengganti password pada user sendiri
 func (u *userHandler) ChangePassword(c *fiber.Ctx) error {
-
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	var user dto.UserChangePasswordRequest
@@ -154,9 +149,8 @@ func (u *userHandler) ChangePassword(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"msg": "Password berhasil diubah!"})
 }
 
-//ResetPassword mengganti password oleh admin pada user tertentu
+// ResetPassword mengganti password oleh admin pada user tertentu
 func (u *userHandler) ResetPassword(c *fiber.Ctx) error {
-
 	userID := c.Params("user_id")
 
 	data := dto.UserChangePasswordRequest{
@@ -172,9 +166,8 @@ func (u *userHandler) ResetPassword(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"msg": fmt.Sprintf("Password user %s berhasil di reset!", c.Params("user_id"))})
 }
 
-//Login login
+// Login login
 func (u *userHandler) Login(c *fiber.Ctx) error {
-
 	var login dto.UserLoginRequest
 	if err := c.BodyParser(&login); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
@@ -196,9 +189,8 @@ func (u *userHandler) Login(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-//RefreshToken
+// RefreshToken
 func (u *userHandler) RefreshToken(c *fiber.Ctx) error {
-
 	var payload dto.UserRefreshTokenRequest
 	if err := c.BodyParser(&payload); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
@@ -220,10 +212,9 @@ func (u *userHandler) RefreshToken(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-//UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
-//sesuai authorisasi aktif. File disimpan di folder static/images dengan nama file == jwt.identity alias username
+// UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
+// sesuai authorisasi aktif. File disimpan di folder static/images dengan nama file == jwt.identity alias username
 func (u *userHandler) UploadImage(c *fiber.Ctx) error {
-
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	pathInDb, apiErr := saveImage(c, *claims, "avatar", claims.Identity)

@@ -17,15 +17,14 @@ const (
 )
 
 var (
-	// Db objek sebagai database objek
-	Db       *mongo.Database
+	// DB objek sebagai database objek
+	DB       *mongo.Database
 	mongoURL = "mongodb://localhost:27017"
 )
 
 // Init menginisiasi database
 // responsenya digunakan untuk memutus koneksi apabila main program dihentikan
 func Init() (*mongo.Client, context.Context, context.CancelFunc) {
-
 	if os.Getenv(mongoURLGetKey) != "" {
 		mongoURL = os.Getenv(mongoURLGetKey)
 	}
@@ -45,7 +44,7 @@ func Init() (*mongo.Client, context.Context, context.CancelFunc) {
 	}
 
 	logger.Info("database berhasil terkoneksi")
-	Db = Client.Database(databaseName)
+	DB = Client.Database(databaseName)
 
 	return Client, ctx, cancel
 }

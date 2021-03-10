@@ -5,7 +5,7 @@ import (
 	"github.com/muchlist/risa_restfull/constants/enum"
 )
 
-//Validate input
+// Validate input
 func (h HistoryRequest) Validate() error {
 	return validation.ValidateStruct(&h,
 		validation.Field(&h.ParentID, validation.Required),

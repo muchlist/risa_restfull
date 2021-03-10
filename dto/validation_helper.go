@@ -36,7 +36,6 @@ func roleValidation(rolesIn []string) error {
 }
 
 func branchValidation(branch string) error {
-
 	if !sfunc.InSlice(branch, branches.GetBranchesAvailable()) {
 		return fmt.Errorf("branch yang dimasukkan tidak tersedia. gunakan %s", branches.GetBranchesAvailable())
 	}

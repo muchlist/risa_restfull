@@ -19,10 +19,10 @@ func mapUrls(app *fiber.App) {
 
 	api := app.Group("/api/v1")
 
-	//PING
+	// PING
 	api.Get("/ping", pingHandler.Ping)
 
-	//USER
+	// USER
 	api.Post("/login", userHandler.Login)
 	api.Post("/refresh", userHandler.RefreshToken)
 	api.Get("/users", middleware.NormalAuth(), userHandler.Find)
@@ -30,7 +30,7 @@ func mapUrls(app *fiber.App) {
 	api.Post("/avatar", middleware.NormalAuth(), userHandler.UploadImage)
 	api.Post("/change-password", middleware.FreshAuth(), userHandler.ChangePassword)
 
-	//USER ADMIN
+	// USER ADMIN
 	apiAuthAdmin := app.Group("/api/v1/admin")
 	apiAuthAdmin.Use(middleware.NormalAuth(roles.RoleAdmin))
 	apiAuthAdmin.Post("/users", userHandler.Register)
@@ -38,12 +38,12 @@ func mapUrls(app *fiber.App) {
 	apiAuthAdmin.Delete("/users/:user_id", userHandler.Delete)
 	apiAuthAdmin.Get("/users/:user_id/reset-password", userHandler.ResetPassword)
 
-	//Unit GENERAL
+	// Unit GENERAL
 	api.Get("/general", middleware.NormalAuth(), genUnitHandler.Find)
 	api.Get("/general-ip", genUnitHandler.GetIPList)
 	api.Post("/general-ip-state", genUnitHandler.UpdatePingState)
 
-	//History
+	// History
 	api.Get("/histories", middleware.NormalAuth(), historyHandler.Find)
 	api.Get("/histories/:id", middleware.NormalAuth(), historyHandler.GetHistory)
 	api.Delete("/histories/:id", middleware.NormalAuth(), historyHandler.Delete)
@@ -53,7 +53,7 @@ func mapUrls(app *fiber.App) {
 	api.Put("/histories/:id", middleware.NormalAuth(), historyHandler.Edit)
 	api.Post("/history-image/:id", middleware.NormalAuth(), historyHandler.UploadImage) // IMPROVEMENT post image when build history
 
-	//CCTV
+	// CCTV
 	api.Post("/cctv", middleware.NormalAuth(), cctvHandler.Insert)
 	api.Get("/cctv/:id", middleware.NormalAuth(), cctvHandler.GetCctv)
 	api.Put("/cctv/:id", middleware.NormalAuth(), cctvHandler.Edit)
@@ -62,7 +62,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/cctv-avail/:id/:status", middleware.NormalAuth(), cctvHandler.DisableCctv)
 	api.Post("/cctv-image/:id", middleware.NormalAuth(), cctvHandler.UploadImage)
 
-	//STOCK
+	// STOCK
 	api.Post("/stock", middleware.NormalAuth(), stockHandler.Insert)
 	api.Get("/stock/:id", middleware.NormalAuth(), stockHandler.GetStock)
 	api.Put("/stock/:id", middleware.NormalAuth(), stockHandler.Edit)
@@ -72,7 +72,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/stock-avail/:id/:status", middleware.NormalAuth(), stockHandler.DisableStock)
 	api.Post("/stock-image/:id", middleware.NormalAuth(), stockHandler.UploadImage)
 
-	//CHECK ITEM
+	// CHECK ITEM
 	api.Post("/check-item", middleware.NormalAuth(), checkItemHandler.Insert)
 	api.Get("/check-item/:id", middleware.NormalAuth(), checkItemHandler.GetCheckItem)
 	api.Put("/check-item/:id", middleware.NormalAuth(), checkItemHandler.Edit)
@@ -80,7 +80,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/check-item", middleware.NormalAuth(), checkItemHandler.Find)
 	api.Get("/check-item-avail/:id/:status", middleware.NormalAuth(), checkItemHandler.DisableCheckItem)
 
-	//CHECK
+	// CHECK
 	api.Post("/check", middleware.NormalAuth(), checkHandler.Insert)
 	api.Get("/check/:id", middleware.NormalAuth(), checkHandler.GetCheck)
 	api.Put("/check/:id", middleware.NormalAuth(), checkHandler.Edit)
@@ -89,7 +89,7 @@ func mapUrls(app *fiber.App) {
 	api.Post("/check-update", middleware.NormalAuth(), checkHandler.UpdateCheckItem)
 	api.Post("/check-image/:id/:child_id", middleware.NormalAuth(), checkHandler.UploadImage)
 
-	//IMPROVE
+	// IMPROVE
 	api.Post("/improve", middleware.NormalAuth(), improveHandler.Insert)
 	api.Get("/improve/:id", middleware.NormalAuth(), improveHandler.GetImprove)
 	api.Put("/improve/:id", middleware.NormalAuth(roles.RoleApprove), improveHandler.Edit)
