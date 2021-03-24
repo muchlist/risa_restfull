@@ -43,10 +43,10 @@ func (u *genUnitHandler) Find(c *fiber.Ctx) error {
 
 	userList, apiErr := u.service.FindUnit(payload)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"units": userList})
+	return c.JSON(fiber.Map{"error": nil, "data": userList})
 }
 
 // Find menampilkan list ip address. Query branch, category
@@ -56,10 +56,10 @@ func (u *genUnitHandler) GetIPList(c *fiber.Ctx) error {
 
 	ipList, apiErr := u.service.GetIPList(branch, category)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"ip_list": ipList})
+	return c.JSON(fiber.Map{"error": nil, "data": ipList})
 }
 
 func (u genUnitHandler) UpdatePingState(c *fiber.Ctx) error {
@@ -67,20 +67,20 @@ func (u genUnitHandler) UpdatePingState(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", c.IP(), err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", c.IP(), err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	count, apiErr := u.service.AppendPingState(req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("%d ip diupdate", count)}
-	return c.JSON(res)
+	res := fmt.Sprintf("%d ip diupdate", count)
+	return c.JSON(fiber.Map{"error": nil, "data": res})
 }

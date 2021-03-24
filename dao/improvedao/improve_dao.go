@@ -1,4 +1,4 @@
-package improve_dao
+package improvedao
 
 import (
 	"context"

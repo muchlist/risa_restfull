@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/enum"
-	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
-	"github.com/muchlist/risa_restfull/dao/history_dao"
+	"github.com/muchlist/risa_restfull/dao/genunitdao"
+	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
-func NewHistoryService(histDao history_dao.HistoryDaoAssumer, genDao gen_unit_dao.GenUnitDaoAssumer) HistoryServiceAssumer {
+func NewHistoryService(histDao historydao.HistoryDaoAssumer, genDao genunitdao.GenUnitDaoAssumer) HistoryServiceAssumer {
 	return &historyService{
 		daoH: histDao,
 		daoG: genDao,
@@ -20,8 +20,8 @@ func NewHistoryService(histDao history_dao.HistoryDaoAssumer, genDao gen_unit_da
 }
 
 type historyService struct {
-	daoH history_dao.HistoryDaoAssumer
-	daoG gen_unit_dao.GenUnitDaoAssumer
+	daoH historydao.HistoryDaoAssumer
+	daoG genunitdao.GenUnitDaoAssumer
 }
 type HistoryServiceAssumer interface {
 	InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError)

@@ -1,4 +1,4 @@
-package stock_dao
+package stockdao
 
 import (
 	"context"

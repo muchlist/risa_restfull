@@ -6,16 +6,16 @@ import (
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/enum"
-	"github.com/muchlist/risa_restfull/dao/history_dao"
-	"github.com/muchlist/risa_restfull/dao/stock_dao"
+	"github.com/muchlist/risa_restfull/dao/historydao"
+	"github.com/muchlist/risa_restfull/dao/stockdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
-func NewStockService(stockDao stock_dao.StockDaoAssumer,
-	histDao history_dao.HistoryDaoAssumer) StockServiceAssumer {
+func NewStockService(stockDao stockdao.StockDaoAssumer,
+	histDao historydao.HistoryDaoAssumer) StockServiceAssumer {
 	return &stockService{
 		daoS: stockDao,
 		daoH: histDao,
@@ -23,8 +23,8 @@ func NewStockService(stockDao stock_dao.StockDaoAssumer,
 }
 
 type stockService struct {
-	daoS stock_dao.StockDaoAssumer
-	daoH history_dao.HistoryDaoAssumer
+	daoS stockdao.StockDaoAssumer
+	daoH historydao.HistoryDaoAssumer
 }
 type StockServiceAssumer interface {
 	InsertStock(user mjwt.CustomClaim, input dto.StockRequest) (*string, rest_err.APIError)

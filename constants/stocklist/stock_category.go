@@ -1,4 +1,4 @@
-package stock_category
+package stocklist
 
 const (
 	Computer     = "KOMPUTER"

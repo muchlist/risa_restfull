@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/muchlist/risa_restfull/constants/branches"
 	"github.com/muchlist/risa_restfull/constants/category"
-	"github.com/muchlist/risa_restfull/constants/check_type"
-	"github.com/muchlist/risa_restfull/constants/hw_type"
+	"github.com/muchlist/risa_restfull/constants/checktype"
+	"github.com/muchlist/risa_restfull/constants/hwlist"
 	"github.com/muchlist/risa_restfull/constants/location"
 	"github.com/muchlist/risa_restfull/constants/roles"
-	"github.com/muchlist/risa_restfull/constants/stock_category"
+	"github.com/muchlist/risa_restfull/constants/stocklist"
 	"github.com/muchlist/risa_restfull/utils/sfunc"
 )
 
@@ -44,22 +44,22 @@ func branchValidation(branch string) error {
 }
 
 func stockCategoryValidation(stockCategory string) error {
-	if !sfunc.InSlice(stockCategory, stock_category.GetStockCategoryAvailable()) {
-		return fmt.Errorf("category yang dimasukkan tidak tersedia. gunakan %s", stock_category.GetStockCategoryAvailable())
+	if !sfunc.InSlice(stockCategory, stocklist.GetStockCategoryAvailable()) {
+		return fmt.Errorf("category yang dimasukkan tidak tersedia. gunakan %s", stocklist.GetStockCategoryAvailable())
 	}
 	return nil
 }
 
 func checkTypeValidation(checkType string) error {
-	if !sfunc.InSlice(checkType, check_type.GetCheckTypeAvailable()) {
-		return fmt.Errorf("tipe yang dimasukkan tidak tersedia. gunakan %s", check_type.GetCheckTypeAvailable())
+	if !sfunc.InSlice(checkType, checktype.GetCheckTypeAvailable()) {
+		return fmt.Errorf("tipe yang dimasukkan tidak tersedia. gunakan %s", checktype.GetCheckTypeAvailable())
 	}
 	return nil
 }
 
 func cctvTypeValidation(cctvType string) error {
-	if !sfunc.InSlice(cctvType, hw_type.GetCctvTypeAvailable()) {
-		return fmt.Errorf("tipe yang dimasukkan tidak tersedia. gunakan %s", hw_type.GetCctvTypeAvailable())
+	if !sfunc.InSlice(cctvType, hwlist.GetCctvTypeAvailable()) {
+		return fmt.Errorf("tipe yang dimasukkan tidak tersedia. gunakan %s", hwlist.GetCctvTypeAvailable())
 	}
 	return nil
 }

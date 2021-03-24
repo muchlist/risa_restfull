@@ -2,21 +2,21 @@ package service
 
 import (
 	"github.com/muchlist/erru_utils_go/rest_err"
-	"github.com/muchlist/risa_restfull/dao/check_item_dao"
+	"github.com/muchlist/risa_restfull/dao/checkitemdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
-func NewCheckItemService(checkItemDao check_item_dao.CheckItemDaoAssumer) CheckItemServiceAssumer {
+func NewCheckItemService(checkItemDao checkitemdao.CheckItemDaoAssumer) CheckItemServiceAssumer {
 	return &checkItemService{
 		daoC: checkItemDao,
 	}
 }
 
 type checkItemService struct {
-	daoC check_item_dao.CheckItemDaoAssumer
+	daoC checkitemdao.CheckItemDaoAssumer
 }
 type CheckItemServiceAssumer interface {
 	InsertCheckItem(user mjwt.CustomClaim, input dto.CheckItemRequest) (*string, rest_err.APIError)

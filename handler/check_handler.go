@@ -27,22 +27,22 @@ func (x *checkHandler) Insert(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	insertID, apiErr := x.service.InsertCheck(*claims, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan check berhasil, ID: %s", *insertID)}
-	return c.JSON(res)
+	res := fmt.Sprintf("Menambahkan check berhasil, ID: %s", *insertID)
+	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
 
 // GetCheck menampilkan checkDetail
@@ -51,10 +51,10 @@ func (x *checkHandler) GetCheck(c *fiber.Ctx) error {
 
 	check, apiErr := x.service.GetCheckByID(checkID, "")
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(check)
+	return c.JSON(fiber.Map{"error": nil, "data": check})
 }
 
 // Find menampilkan list check
@@ -71,10 +71,10 @@ func (x *checkHandler) Find(c *fiber.Ctx) error {
 		Limit:       int64(limit),
 	})
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"check_list": checkList})
+	return c.JSON(fiber.Map{"error": nil, "data": checkList})
 }
 
 func (x *checkHandler) Delete(c *fiber.Ctx) error {
@@ -83,10 +83,10 @@ func (x *checkHandler) Delete(c *fiber.Ctx) error {
 
 	apiErr := x.service.DeleteCheck(*claims, id)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"msg": fmt.Sprintf("check %s berhasil dihapus", id)})
+	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("check %s berhasil dihapus", id)})
 }
 
 func (x *checkHandler) Edit(c *fiber.Ctx) error {
@@ -97,14 +97,14 @@ func (x *checkHandler) Edit(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	checkEdited, apiErr := x.service.EditCheck(*claims, checkID, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
-	return c.JSON(checkEdited)
+	return c.JSON(fiber.Map{"error": nil, "data": checkEdited})
 }
 
 func (x *checkHandler) UpdateCheckItem(c *fiber.Ctx) error {
@@ -114,20 +114,20 @@ func (x *checkHandler) UpdateCheckItem(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	checkUpdated, apiErr := x.service.UpdateCheckItem(*claims, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
-	return c.JSON(checkUpdated)
+	return c.JSON(fiber.Map{"error": nil, "data": checkUpdated})
 }
 
 // UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
@@ -139,20 +139,20 @@ func (x *checkHandler) UploadImage(c *fiber.Ctx) error {
 	// cek apakah ID check && branch ada
 	_, apiErr := x.service.GetCheckByID(id, claims.Branch)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	// simpan image
 	pathInDB, apiErr := saveImage(c, *claims, "check", id)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	// update path image di database
 	checkResult, apiErr := x.service.PutChildImage(*claims, id, childID, pathInDB)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(checkResult)
+	return c.JSON(fiber.Map{"error": nil, "data": checkResult})
 }

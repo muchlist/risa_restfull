@@ -1,4 +1,4 @@
-package hw_type
+package hwlist
 
 const (
 	cctvFixed = "Fixed"

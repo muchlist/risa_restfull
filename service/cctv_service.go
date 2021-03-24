@@ -7,9 +7,9 @@ import (
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/enum"
-	"github.com/muchlist/risa_restfull/dao/cctv_dao"
-	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
-	"github.com/muchlist/risa_restfull/dao/history_dao"
+	"github.com/muchlist/risa_restfull/dao/cctvdao"
+	"github.com/muchlist/risa_restfull/dao/genunitdao"
+	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,9 +18,9 @@ import (
 	"time"
 )
 
-func NewCctvService(cctvDao cctv_dao.CctvDaoAssumer,
-	histDao history_dao.HistoryDaoAssumer,
-	genDao gen_unit_dao.GenUnitDaoAssumer) CctvServiceAssumer {
+func NewCctvService(cctvDao cctvdao.CctvDaoAssumer,
+	histDao historydao.HistoryDaoAssumer,
+	genDao genunitdao.GenUnitDaoAssumer) CctvServiceAssumer {
 	return &cctvService{
 		daoC: cctvDao,
 		daoH: histDao,
@@ -29,9 +29,9 @@ func NewCctvService(cctvDao cctv_dao.CctvDaoAssumer,
 }
 
 type cctvService struct {
-	daoC cctv_dao.CctvDaoAssumer
-	daoH history_dao.HistoryDaoAssumer
-	daoG gen_unit_dao.GenUnitDaoAssumer
+	daoC cctvdao.CctvDaoAssumer
+	daoH historydao.HistoryDaoAssumer
+	daoG genunitdao.GenUnitDaoAssumer
 }
 type CctvServiceAssumer interface {
 	InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError)

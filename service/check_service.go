@@ -7,9 +7,9 @@ import (
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/enum"
-	"github.com/muchlist/risa_restfull/dao/check_dao"
-	"github.com/muchlist/risa_restfull/dao/check_item_dao"
-	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
+	"github.com/muchlist/risa_restfull/dao/checkdao"
+	"github.com/muchlist/risa_restfull/dao/checkitemdao"
+	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"github.com/muchlist/risa_restfull/utils/sfunc"
@@ -17,9 +17,9 @@ import (
 	"time"
 )
 
-func NewCheckService(checkDao check_dao.CheckDaoAssumer,
-	checkItemDao check_item_dao.CheckItemDaoAssumer,
-	genUnitDao gen_unit_dao.GenUnitDaoAssumer,
+func NewCheckService(checkDao checkdao.CheckDaoAssumer,
+	checkItemDao checkitemdao.CheckItemDaoAssumer,
+	genUnitDao genunitdao.GenUnitDaoAssumer,
 	histService HistoryServiceAssumer,
 ) CheckServiceAssumer {
 	return &checkService{
@@ -31,9 +31,9 @@ func NewCheckService(checkDao check_dao.CheckDaoAssumer,
 }
 
 type checkService struct {
-	daoC        check_dao.CheckDaoAssumer
-	daoCI       check_item_dao.CheckItemDaoAssumer
-	daoG        gen_unit_dao.GenUnitDaoAssumer
+	daoC        checkdao.CheckDaoAssumer
+	daoCI       checkitemdao.CheckItemDaoAssumer
+	daoG        genunitdao.GenUnitDaoAssumer
 	servHistory HistoryServiceAssumer
 }
 type CheckServiceAssumer interface {

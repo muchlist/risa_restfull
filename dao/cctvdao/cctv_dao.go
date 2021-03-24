@@ -1,4 +1,4 @@
-package cctv_dao
+package cctvdao
 
 import (
 	"context"

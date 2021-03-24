@@ -1,4 +1,4 @@
-package gen_unit_dao
+package genunitdao
 
 import (
 	"context"

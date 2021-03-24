@@ -5,7 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
-	"github.com/muchlist/risa_restfull/constants/status_available"
+	"github.com/muchlist/risa_restfull/constants/statuses"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
@@ -29,22 +29,23 @@ func (x *cctvHandler) Insert(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	insertID, apiErr := x.service.InsertCctv(*claims, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan cctv berhasil, ID: %s", *insertID)}
-	return c.JSON(res)
+	res := fmt.Sprintf("Menambahkan cctv berhasil, ID: %s", *insertID)
+	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
 
 // GetCctv menampilkan cctvDetail
@@ -53,10 +54,10 @@ func (x *cctvHandler) GetCctv(c *fiber.Ctx) error {
 
 	cctv, apiErr := x.service.GetCctvByID(cctvID, "")
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(cctv)
+	return c.JSON(fiber.Map{"error": nil, "data": cctv})
 }
 
 // Find menampilkan list cctv
@@ -81,10 +82,10 @@ func (x *cctvHandler) Find(c *fiber.Ctx) error {
 
 	cctvList, apiErr := x.service.FindCctv(filterA)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"cctv_list": cctvList})
+	return c.JSON(fiber.Map{"error": nil, "data": cctvList})
 }
 
 // DisableCctv menghilangkan cctv dari list
@@ -96,22 +97,22 @@ func (x *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 	status := c.Params("status")
 
 	// validation
-	statusAvailable := []string{status_available.Disable, status_available.Enable}
+	statusAvailable := []string{statuses.Disable, statuses.Enable}
 	if !sfunc.InSlice(status, statusAvailable) {
 		apiErr := rest_err.NewBadRequestError(fmt.Sprintf("Status yang dimasukkan tidak tersedia. gunakan %s", statusAvailable))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 	var statusBool bool
-	if status == status_available.Disable {
+	if status == statuses.Disable {
 		statusBool = true
 	}
 
 	cctvList, apiErr := x.service.DisableCctv(userID, *claims, statusBool)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"cctv_list": cctvList})
+	return c.JSON(fiber.Map{"error": nil, "data": cctvList})
 }
 
 func (x *cctvHandler) Delete(c *fiber.Ctx) error {
@@ -120,10 +121,10 @@ func (x *cctvHandler) Delete(c *fiber.Ctx) error {
 
 	apiErr := x.service.DeleteCctv(*claims, id)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"msg": fmt.Sprintf("cctv %s berhasil dihapus", id)})
+	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("cctv %s berhasil dihapus", id)})
 }
 
 func (x *cctvHandler) Edit(c *fiber.Ctx) error {
@@ -134,20 +135,20 @@ func (x *cctvHandler) Edit(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	cctvEdited, apiErr := x.service.EditCctv(*claims, cctvID, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
-	return c.JSON(cctvEdited)
+	return c.JSON(fiber.Map{"error": nil, "data": cctvEdited})
 }
 
 // UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
@@ -158,20 +159,20 @@ func (x *cctvHandler) UploadImage(c *fiber.Ctx) error {
 	// cek apakah ID cctv && branch ada
 	_, apiErr := x.service.GetCctvByID(id, claims.Branch)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	// simpan image
 	pathInDb, apiErr := saveImage(c, *claims, "cctv", id)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	// update path image di database
 	cctvResult, apiErr := x.service.PutImage(*claims, id, pathInDb)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(cctvResult)
+	return c.JSON(fiber.Map{"error": nil, "data": cctvResult})
 }

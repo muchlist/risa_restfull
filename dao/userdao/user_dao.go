@@ -1,4 +1,4 @@
-package user_dao
+package userdao
 
 import (
 	"errors"

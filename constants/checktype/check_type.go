@@ -1,4 +1,4 @@
-package check_type
+package checktype
 
 const (
 	Ups    = "UPS"

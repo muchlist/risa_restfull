@@ -28,22 +28,22 @@ func (i *checkItemHandler) Insert(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	insertID, apiErr := i.service.InsertCheckItem(*claims, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan checkItem berhasil, ID: %s", *insertID)}
-	return c.JSON(res)
+	res := fmt.Sprintf("Menambahkan checkItem berhasil, ID: %s", *insertID)
+	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
 
 // GetCheckItem menampilkan checkItemDetail
@@ -52,10 +52,10 @@ func (i *checkItemHandler) GetCheckItem(c *fiber.Ctx) error {
 
 	checkItem, apiErr := i.service.GetCheckItemByID(checkItemID, "")
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(checkItem)
+	return c.JSON(fiber.Map{"error": nil, "data": checkItem})
 }
 
 // Find menampilkan list checkItem
@@ -80,10 +80,10 @@ func (i *checkItemHandler) Find(c *fiber.Ctx) error {
 
 	checkItemList, apiErr := i.service.FindCheckItem(filterA, haveProblem)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"check_item_list": checkItemList})
+	return c.JSON(fiber.Map{"error": nil, "data": checkItemList})
 }
 
 // DisableCheckItem menghilangkan checkItem dari list
@@ -98,7 +98,7 @@ func (i *checkItemHandler) DisableCheckItem(c *fiber.Ctx) error {
 	statusAvailable := []string{"disable", "enable"}
 	if !sfunc.InSlice(status, statusAvailable) {
 		apiErr := rest_err.NewBadRequestError(fmt.Sprintf("Status yang dimasukkan tidak tersedia. gunakan %s", statusAvailable))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 	var statusBool bool
 	if status == "disable" {
@@ -107,10 +107,10 @@ func (i *checkItemHandler) DisableCheckItem(c *fiber.Ctx) error {
 
 	checkItemList, apiErr := i.service.DisableCheckItem(userID, *claims, statusBool)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"checkItem_list": checkItemList})
+	return c.JSON(fiber.Map{"error": nil, "data": checkItemList})
 }
 
 func (i *checkItemHandler) Delete(c *fiber.Ctx) error {
@@ -119,10 +119,10 @@ func (i *checkItemHandler) Delete(c *fiber.Ctx) error {
 
 	apiErr := i.service.DeleteCheckItem(*claims, id)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"msg": fmt.Sprintf("checkItem %s berhasil dihapus", id)})
+	return c.JSON(fiber.Map{"error": apiErr, "data": fmt.Sprintf("checkItem %s berhasil dihapus", id)})
 }
 
 func (i *checkItemHandler) Edit(c *fiber.Ctx) error {
@@ -133,18 +133,18 @@ func (i *checkItemHandler) Edit(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	checkItemEdited, apiErr := i.service.EditCheckItem(*claims, checkItemID, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
-	return c.JSON(checkItemEdited)
+	return c.JSON(fiber.Map{"error": nil, "data": checkItemEdited})
 }

@@ -2,20 +2,20 @@ package service
 
 import (
 	"github.com/muchlist/erru_utils_go/rest_err"
-	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
+	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"net"
 )
 
-func NewGenUnitService(dao gen_unit_dao.GenUnitDaoAssumer) GenUnitServiceAssumer {
+func NewGenUnitService(dao genunitdao.GenUnitDaoAssumer) GenUnitServiceAssumer {
 	return &genUnitService{
 		dao: dao,
 	}
 }
 
 type genUnitService struct {
-	dao gen_unit_dao.GenUnitDaoAssumer
+	dao genunitdao.GenUnitDaoAssumer
 }
 
 type GenUnitServiceAssumer interface {

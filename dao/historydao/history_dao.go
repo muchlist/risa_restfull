@@ -1,4 +1,4 @@
-package history_dao
+package historydao
 
 import (
 	"context"

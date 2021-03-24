@@ -1,4 +1,4 @@
-package check_dao
+package checkdao
 
 import (
 	"context"

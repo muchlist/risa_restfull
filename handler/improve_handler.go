@@ -28,22 +28,22 @@ func (s *improveHandler) Insert(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	insertID, apiErr := s.service.InsertImprove(*claims, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan improvement berhasil, ID: %s", *insertID)}
-	return c.JSON(res)
+	res := fmt.Sprintf("Menambahkan improvement berhasil, ID: %s", *insertID)
+	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
 
 func (s *improveHandler) Edit(c *fiber.Ctx) error {
@@ -54,20 +54,20 @@ func (s *improveHandler) Edit(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	improveEdited, apiErr := s.service.EditImprove(*claims, improveID, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
-	return c.JSON(improveEdited)
+	return c.JSON(fiber.Map{"error": nil, "data": improveEdited})
 }
 
 func (s *improveHandler) ChangeImprove(c *fiber.Ctx) error {
@@ -78,14 +78,14 @@ func (s *improveHandler) ChangeImprove(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	improveEdited, apiErr := s.service.ChangeImprove(*claims, improveID, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
-	return c.JSON(improveEdited)
+	return c.JSON(fiber.Map{"error": nil, "data": improveEdited})
 }
 
 // GetImprove menampilkan improve Detail
@@ -94,10 +94,10 @@ func (s *improveHandler) GetImprove(c *fiber.Ctx) error {
 
 	improve, apiErr := s.service.GetImproveByID(improveID, "")
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(improve)
+	return c.JSON(fiber.Map{"error": nil, "data": improve})
 }
 
 // Find menampilkan list improve
@@ -120,10 +120,10 @@ func (s *improveHandler) Find(c *fiber.Ctx) error {
 
 	improveList, apiErr := s.service.FindImprove(filter)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"improve_list": improveList})
+	return c.JSON(fiber.Map{"error": nil, "data": improveList})
 }
 
 // ActivateImprove mengaktifkan improve yang dibuat user selain yang memiliki hak
@@ -139,7 +139,7 @@ func (s *improveHandler) ActivateImprove(c *fiber.Ctx) error {
 	statusAvailable := []string{"disable", "enable"}
 	if !sfunc.InSlice(status, statusAvailable) {
 		apiErr := rest_err.NewBadRequestError(fmt.Sprintf("Status yang dimasukkan tidak tersedia. gunakan %s", statusAvailable))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 	var isEnable bool
 	if status == "enable" {
@@ -148,10 +148,10 @@ func (s *improveHandler) ActivateImprove(c *fiber.Ctx) error {
 
 	improveList, apiErr := s.service.ActivateImprove(userID, *claims, isEnable)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"improve_list": improveList})
+	return c.JSON(fiber.Map{"error": nil, "data": improveList})
 }
 
 func (s *improveHandler) Delete(c *fiber.Ctx) error {
@@ -160,8 +160,8 @@ func (s *improveHandler) Delete(c *fiber.Ctx) error {
 
 	apiErr := s.service.DeleteImprove(*claims, id)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"msg": fmt.Sprintf("improve %s berhasil dihapus", id)})
+	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("improve %s berhasil dihapus", id)})
 }

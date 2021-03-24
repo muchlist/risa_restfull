@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/roles"
-	"github.com/muchlist/risa_restfull/dao/improve_dao"
+	"github.com/muchlist/risa_restfull/dao/improvedao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"github.com/muchlist/risa_restfull/utils/sfunc"
@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-func NewImproveService(improveDao improve_dao.ImproveDaoAssumer) ImproveServiceAssumer {
+func NewImproveService(improveDao improvedao.ImproveDaoAssumer) ImproveServiceAssumer {
 	return &improveService{
 		daoS: improveDao,
 	}
 }
 
 type improveService struct {
-	daoS improve_dao.ImproveDaoAssumer
+	daoS improvedao.ImproveDaoAssumer
 }
 type ImproveServiceAssumer interface {
 	InsertImprove(user mjwt.CustomClaim, input dto.ImproveRequest) (*string, rest_err.APIError)

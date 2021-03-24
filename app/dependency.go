@@ -1,14 +1,14 @@
 package app
 
 import (
-	"github.com/muchlist/risa_restfull/dao/cctv_dao"
-	"github.com/muchlist/risa_restfull/dao/check_dao"
-	"github.com/muchlist/risa_restfull/dao/check_item_dao"
-	"github.com/muchlist/risa_restfull/dao/gen_unit_dao"
-	"github.com/muchlist/risa_restfull/dao/history_dao"
-	"github.com/muchlist/risa_restfull/dao/improve_dao"
-	"github.com/muchlist/risa_restfull/dao/stock_dao"
-	"github.com/muchlist/risa_restfull/dao/user_dao"
+	"github.com/muchlist/risa_restfull/dao/cctvdao"
+	"github.com/muchlist/risa_restfull/dao/checkdao"
+	"github.com/muchlist/risa_restfull/dao/checkitemdao"
+	"github.com/muchlist/risa_restfull/dao/genunitdao"
+	"github.com/muchlist/risa_restfull/dao/historydao"
+	"github.com/muchlist/risa_restfull/dao/improvedao"
+	"github.com/muchlist/risa_restfull/dao/stockdao"
+	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/handler"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/crypt"
@@ -21,14 +21,14 @@ var (
 	jwt         = mjwt.NewJwt()
 
 	// Dao
-	userDao      = user_dao.NewUserDao()
-	genUnitDao   = gen_unit_dao.NewGenUnitDao()
-	historyDao   = history_dao.NewHistoryDao()
-	cctvDao      = cctv_dao.NewCctvDao()
-	stockDao     = stock_dao.NewStockDao()
-	checkItemDao = check_item_dao.NewCheckItemDao()
-	checkDao     = check_dao.NewCheckDao()
-	improveDao   = improve_dao.NewImproveDao()
+	userDao      = userdao.NewUserDao()
+	genUnitDao   = genunitdao.NewGenUnitDao()
+	historyDao   = historydao.NewHistoryDao()
+	cctvDao      = cctvdao.NewCctvDao()
+	stockDao     = stockdao.NewStockDao()
+	checkItemDao = checkitemdao.NewCheckItemDao()
+	checkDao     = checkdao.NewCheckDao()
+	improveDao   = improvedao.NewImproveDao()
 
 	// Service
 	userService      = service.NewUserService(userDao, cryptoUtils, jwt)

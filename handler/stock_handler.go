@@ -28,22 +28,22 @@ func (s *stockHandler) Insert(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	insertID, apiErr := s.service.InsertStock(*claims, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	res := fiber.Map{"msg": fmt.Sprintf("Menambahkan stock berhasil, ID: %s", *insertID)}
-	return c.JSON(res)
+	res := fmt.Sprintf("Menambahkan stock berhasil, ID: %s", *insertID)
+	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
 
 func (s *stockHandler) Edit(c *fiber.Ctx) error {
@@ -54,20 +54,20 @@ func (s *stockHandler) Edit(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	stockEdited, apiErr := s.service.EditStock(*claims, stockID, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
-	return c.JSON(stockEdited)
+	return c.JSON(fiber.Map{"error": nil, "data": stockEdited})
 }
 
 func (s *stockHandler) ChangeQty(c *fiber.Ctx) error {
@@ -78,20 +78,20 @@ func (s *stockHandler) ChangeQty(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	stockEdited, apiErr := s.service.ChangeQtyStock(*claims, stockID, req)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
-	return c.JSON(stockEdited)
+	return c.JSON(fiber.Map{"error": nil, "data": stockEdited})
 }
 
 // GetStock menampilkan stock Detail
@@ -101,10 +101,10 @@ func (s *stockHandler) GetStock(c *fiber.Ctx) error {
 
 	stock, apiErr := s.service.GetStockByID(stockID, "")
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(stock)
+	return c.JSON(fiber.Map{"error": nil, "data": stock})
 }
 
 // Find menampilkan list stock
@@ -128,10 +128,10 @@ func (s *stockHandler) Find(c *fiber.Ctx) error {
 
 	stockList, apiErr := s.service.FindStock(filterA)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"stock_list": stockList})
+	return c.JSON(fiber.Map{"error": nil, "data": stockList})
 }
 
 // DisableStock menghilangkan stock dari list
@@ -146,7 +146,7 @@ func (s *stockHandler) DisableStock(c *fiber.Ctx) error {
 	statusAvailable := []string{"disable", "enable"}
 	if !sfunc.InSlice(status, statusAvailable) {
 		apiErr := rest_err.NewBadRequestError(fmt.Sprintf("Status yang dimasukkan tidak tersedia. gunakan %s", statusAvailable))
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 	var isDisable bool
 	if status == "disable" {
@@ -155,10 +155,10 @@ func (s *stockHandler) DisableStock(c *fiber.Ctx) error {
 
 	stockList, apiErr := s.service.DisableStock(userID, *claims, isDisable)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"stock_list": stockList})
+	return c.JSON(fiber.Map{"error": nil, "data": stockList})
 }
 
 func (s *stockHandler) Delete(c *fiber.Ctx) error {
@@ -167,10 +167,10 @@ func (s *stockHandler) Delete(c *fiber.Ctx) error {
 
 	apiErr := s.service.DeleteStock(*claims, id)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"msg": fmt.Sprintf("stock %s berhasil dihapus", id)})
+	return c.JSON(fiber.Map{"error": apiErr, "data": fmt.Sprintf("stock %s berhasil dihapus", id)})
 }
 
 // UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
@@ -181,20 +181,20 @@ func (s *stockHandler) UploadImage(c *fiber.Ctx) error {
 	// cek apakah ID stock && branch ada
 	_, apiErr := s.service.GetStockByID(id, claims.Branch)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	// simpan image
 	pathInDB, apiErr := saveImage(c, *claims, "stock", id)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	// update path image di database
 	stockResult, apiErr := s.service.PutImage(*claims, id, pathInDB)
 	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(apiErr)
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(stockResult)
+	return c.JSON(fiber.Map{"error": nil, "data": stockResult})
 }

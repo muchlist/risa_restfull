@@ -1,4 +1,4 @@
-package check_item_dao
+package checkitemdao
 
 import (
 	"context"
