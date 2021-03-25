@@ -23,7 +23,7 @@ func NormalAuth(rolesReq ...string) fiber.Handler {
 		authHeader := c.Get(headerKey)
 		claims, err := authMustHaveRoleValidator(authHeader, false, rolesReq)
 		if err != nil {
-			return c.Status(err.Status()).JSON(err)
+			return c.Status(err.Status()).JSON(fiber.Map{"error": err, "data": nil})
 		}
 		c.Locals(mjwt.CLAIMS, claims)
 		return c.Next()
@@ -35,7 +35,7 @@ func FreshAuth(rolesReq ...string) fiber.Handler {
 		authHeader := c.Get(headerKey)
 		claims, err := authMustHaveRoleValidator(authHeader, true, rolesReq)
 		if err != nil {
-			return c.Status(err.Status()).JSON(err)
+			return c.Status(err.Status()).JSON(fiber.Map{"error": err, "data": nil})
 		}
 
 		c.Locals(mjwt.CLAIMS, claims)

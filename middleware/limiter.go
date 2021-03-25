@@ -19,7 +19,10 @@ func LimitRequest() fiber.Handler {
 		Expiration: 1 * time.Minute,
 		LimitReached: func(c *fiber.Ctx) error {
 			logger.Info(fmt.Sprintf("u : %s | limiter | terlalu banyak request", c.IP()))
-			return c.Status(http.StatusTooManyRequests).JSON(rest_err.NewAPIError("terlalu banyak request", http.StatusTooManyRequests, "rate_limiter", []interface{}{"too many requests in a given amount of time"}))
+			return c.Status(http.StatusTooManyRequests).JSON(fiber.Map{
+				"error": rest_err.NewAPIError("terlalu banyak request", http.StatusTooManyRequests, "rate_limiter", []interface{}{"too many requests in a given amount of time"}),
+				"data":  nil,
+			})
 		},
 	})
 }
