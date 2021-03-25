@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/muchlist/risa_restfull/constants/roles"
 	"github.com/muchlist/risa_restfull/middleware"
@@ -9,6 +10,10 @@ import (
 
 func mapUrls(app *fiber.App) {
 	app.Use(logger.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowHeaders: "Content-Type, Accept, Authorization",
+	}))
 	app.Use(middleware.LimitRequest())
 
 	app.Static("/image/avatar", "./static/image/avatar")

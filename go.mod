@@ -6,7 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/gofiber/fiber/v2 v2.5.0
+	github.com/gofiber/fiber/v2 v2.6.0
 	github.com/joho/godotenv v1.3.0
 	github.com/klauspost/compress v1.11.7 // indirect
 	github.com/muchlist/erru_utils_go v1.0.4
