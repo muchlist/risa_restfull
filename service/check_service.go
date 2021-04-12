@@ -74,6 +74,7 @@ func (c *checkService) InsertCheck(user mjwt.CustomClaim, input dto.CheckRequest
 					Tag:            v.Tag, // tag
 					TagExtra:       v.TagExtra,
 					HaveProblem:    v.HaveProblem,
+					CheckedNote:    v.CheckedNote,
 					CompleteStatus: v.CompleteStatus,
 				})
 			}
