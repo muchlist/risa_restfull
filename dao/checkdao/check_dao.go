@@ -207,6 +207,7 @@ func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest
 		keyChID:          input.FilterParentID,
 		keyCiXId:         input.FilterChildID,
 		keyChCreatedByID: input.FilterAuthorID,
+		keyChIsFinish:    false,
 	}
 
 	update := bson.M{

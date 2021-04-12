@@ -313,9 +313,9 @@ func (c *checkService) UpdateCheckItem(user mjwt.CustomClaim, input dto.CheckChi
 			dto.CheckItemEditBySys{
 				FilterID:       childOid,
 				UpdatedAt:      0,
-				CheckedNote:    "",
-				HaveProblem:    false,
-				CompleteStatus: 0,
+				CheckedNote:    input.CheckedNote,
+				HaveProblem:    input.HaveProblem,
+				CompleteStatus: input.CompleteStatus,
 			})
 		if err != nil {
 			return nil, err
