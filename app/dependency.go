@@ -42,6 +42,7 @@ var (
 
 	// Controller or Handler
 	pingHandler      = handler.NewPingHandler()
+	optionHandler    = handler.NewOptionHandler()
 	userHandler      = handler.NewUserHandler(userService)
 	genUnitHandler   = handler.NewGenUnitHandler(genUnitService)
 	historyHandler   = handler.NewHistoryHandler(historyService)

@@ -102,4 +102,8 @@ func mapUrls(app *fiber.App) {
 	api.Post("/improve-change/:id", middleware.NormalAuth(), improveHandler.ChangeImprove)
 	api.Get("/improve", middleware.NormalAuth(), improveHandler.Find)
 	api.Get("/improve-status/:id/:status", middleware.NormalAuth(roles.RoleApprove), improveHandler.ActivateImprove)
+
+	// Option
+	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)
+	api.Get("/opt-branch", optionHandler.OptBranch)
 }

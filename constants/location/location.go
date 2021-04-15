@@ -69,10 +69,12 @@ func GetLocationAvailableFrom(branch string) []string {
 			Kotabaru,
 			Lainnya,
 		}
-	default: // Batulicin
+	case branches.Batulicin:
 		return []string{
 			Batulicin,
 			Lainnya,
 		}
+	default:
+		return []string{}
 	}
 }
