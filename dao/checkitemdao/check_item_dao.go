@@ -161,7 +161,6 @@ func (c *checkItemDao) EditCheckItemValue(input dto.CheckItemEditBySys) (*dto.Ch
 
 	update := bson.M{
 		"$set": bson.M{
-			keyChUpdatedAt:      input.UpdatedAt,
 			keyChCheckedNote:    input.CheckedNote,
 			keyChHaveProblem:    input.HaveProblem,
 			keyChCompleteStatus: input.CompleteStatus,
