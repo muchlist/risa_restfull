@@ -50,7 +50,6 @@ func (c CheckItemRequest) Validate() error {
 func (c CheckItemEditRequest) Validate() error {
 	var errorList []string
 	if err := validation.ValidateStruct(&c,
-		validation.Field(&c.FilterTimestamp, validation.Required),
 		validation.Field(&c.Name, validation.Required),
 		validation.Field(&c.Location, validation.Required),
 		validation.Field(&c.Type, validation.Required),
