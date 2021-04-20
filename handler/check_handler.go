@@ -8,6 +8,7 @@ import (
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"time"
 )
 
 func NewCheckHandler(checkService service.CheckServiceAssumer) *checkHandler {
@@ -142,8 +143,10 @@ func (x *checkHandler) UploadImage(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
+	randomName := fmt.Sprintf("%s%s%v", id, childID, time.Now().Unix())
+
 	// simpan image
-	pathInDB, apiErr := saveImage(c, *claims, "check", id)
+	pathInDB, apiErr := saveImage(c, *claims, "check", randomName)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
