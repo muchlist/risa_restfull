@@ -2,7 +2,7 @@ package checktype
 
 const (
 	Outstanding = "OUTSTANDING"
-	Koneksi     = "KONEKSI"
+	Jaringan    = "JARINGAN"
 	Gate        = "GATE"
 	Aplikasi    = "APLIKASI"
 	Ups         = "UPS"
@@ -12,5 +12,5 @@ const (
 )
 
 func GetCheckTypeAvailable() []string {
-	return []string{Outstanding, Koneksi, Gate, Aplikasi, Ups, Server, Improvement, Lainnya}
+	return []string{Outstanding, Jaringan, Gate, Aplikasi, Ups, Server, Improvement, Lainnya}
 }
