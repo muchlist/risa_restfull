@@ -5,6 +5,7 @@ import (
 	"github.com/muchlist/risa_restfull/constants/branches"
 	"github.com/muchlist/risa_restfull/constants/checktype"
 	"github.com/muchlist/risa_restfull/constants/location"
+	"github.com/muchlist/risa_restfull/constants/stocklist"
 	"strings"
 )
 
@@ -29,6 +30,15 @@ func (o *optionHandler) OptCreateCheckItem(c *fiber.Ctx) error {
 	options := fiber.Map{
 		"location": optLocation,
 		"type":     optType,
+	}
+	return c.JSON(options)
+}
+
+// OptCreateStock mengembalikan stock category
+func (o *optionHandler) OptCreateStock(c *fiber.Ctx) error {
+	stockCategory := stocklist.GetStockCategoryAvailable()
+	options := fiber.Map{
+		"category": stockCategory,
 	}
 	return c.JSON(options)
 }

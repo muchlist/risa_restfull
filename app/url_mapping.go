@@ -105,5 +105,6 @@ func mapUrls(app *fiber.App) {
 
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)
+	api.Get("/opt-stock", optionHandler.OptCreateStock)
 	api.Get("/opt-branch", optionHandler.OptBranch)
 }
