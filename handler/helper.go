@@ -97,7 +97,7 @@ func generateThumbnail(path string, fileName string, fileExtension, folder strin
 	}
 
 	// resize to width 200 using Lanczos resampling
-	m := resize.Thumbnail(200, 200, img, resize.NearestNeighbor)
+	m := resize.Thumbnail(300, 300, img, resize.Lanczos3)
 
 	thumbnailPath := fmt.Sprintf("static/image/%s/%s", folder, "thumb_"+fileName+fileExtension)
 	out, err := os.Create(thumbnailPath)
