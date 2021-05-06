@@ -10,6 +10,7 @@ import (
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"github.com/muchlist/risa_restfull/utils/sfunc"
+	"time"
 )
 
 func NewCctvHandler(cctvService service.CctvServiceAssumer) *cctvHandler {
@@ -162,8 +163,9 @@ func (x *cctvHandler) UploadImage(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
+	randomName := fmt.Sprintf("%s%v", id, time.Now().Unix())
 	// simpan image
-	pathInDb, apiErr := saveImage(c, *claims, "cctv", id)
+	pathInDb, apiErr := saveImage(c, *claims, "cctv", randomName, false)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

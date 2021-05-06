@@ -146,7 +146,7 @@ func (x *checkHandler) UploadImage(c *fiber.Ctx) error {
 	randomName := fmt.Sprintf("%s%s%v", id, childID, time.Now().Unix())
 
 	// simpan image
-	pathInDB, apiErr := saveImage(c, *claims, "check", randomName)
+	pathInDB, apiErr := saveImage(c, *claims, "check", randomName, true)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

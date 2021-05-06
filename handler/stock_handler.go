@@ -9,6 +9,7 @@ import (
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"github.com/muchlist/risa_restfull/utils/sfunc"
+	"time"
 )
 
 func NewStockHandler(stockService service.StockServiceAssumer) *stockHandler {
@@ -184,8 +185,9 @@ func (s *stockHandler) UploadImage(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
+	randomName := fmt.Sprintf("%s%v", id, time.Now().Unix())
 	// simpan image
-	pathInDB, apiErr := saveImage(c, *claims, "stock", id)
+	pathInDB, apiErr := saveImage(c, *claims, "stock", randomName, true)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

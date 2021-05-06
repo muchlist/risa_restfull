@@ -8,6 +8,7 @@ import (
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"time"
 )
 
 func NewUserHandler(userService service.UserServiceAssumer) *userHandler {
@@ -217,7 +218,8 @@ func (u *userHandler) RefreshToken(c *fiber.Ctx) error {
 func (u *userHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	pathInDB, apiErr := saveImage(c, *claims, "avatar", claims.Identity)
+	randomName := fmt.Sprintf("%s%v", claims.Identity, time.Now().Unix())
+	pathInDB, apiErr := saveImage(c, *claims, "avatar", randomName, false)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

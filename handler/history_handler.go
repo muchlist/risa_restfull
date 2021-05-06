@@ -8,6 +8,7 @@ import (
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"time"
 )
 
 func NewHistoryHandler(histService service.HistoryServiceAssumer) *historyHandler {
@@ -169,17 +170,18 @@ func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
+	randomName := fmt.Sprintf("%s%v", id, time.Now().Unix())
 	// simpan image
-	pathInDB, apiErr := saveImage(c, *claims, "history", id)
+	pathInDB, apiErr := saveImage(c, *claims, "history", randomName, true)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	// update path image di database
-	cctvResult, apiErr := h.service.PutImage(*claims, id, pathInDB)
+	historyResult, apiErr := h.service.PutImage(*claims, id, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"error": nil, "data": cctvResult})
+	return c.JSON(fiber.Map{"error": nil, "data": historyResult})
 }
