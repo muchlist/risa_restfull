@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/muchlist/risa_restfull/constants/branches"
 	"github.com/muchlist/risa_restfull/constants/checktype"
+	"github.com/muchlist/risa_restfull/constants/hwlist"
 	"github.com/muchlist/risa_restfull/constants/location"
 	"github.com/muchlist/risa_restfull/constants/stocklist"
 	"strings"
@@ -39,6 +40,25 @@ func (o *optionHandler) OptCreateStock(c *fiber.Ctx) error {
 	stockCategory := stocklist.GetStockCategoryAvailable()
 	options := fiber.Map{
 		"category": stockCategory,
+	}
+	return c.JSON(options)
+}
+
+// OptCreateCctv mengembalikan cctv type dan lokasi tersedia
+func (o *optionHandler) OptCreateCctv(c *fiber.Ctx) error {
+	branch := c.Query("branch")
+	var optLocation []string
+
+	if branch != "" {
+		optLocation = location.GetLocationAvailableFrom(strings.ToUpper(branch))
+	} else {
+		optLocation = location.GetLocationAvailable()
+	}
+
+	cctvType := hwlist.GetCctvTypeAvailable()
+	options := fiber.Map{
+		"location": optLocation,
+		"type":     cctvType,
 	}
 	return c.JSON(options)
 }

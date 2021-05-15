@@ -15,7 +15,7 @@ func LimitRequest() fiber.Handler {
 		Next: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"
 		},
-		Max:        60,
+		Max:        120,
 		Expiration: 1 * time.Minute,
 		LimitReached: func(c *fiber.Ctx) error {
 			logger.Info(fmt.Sprintf("u : %s | limiter | terlalu banyak request", c.IP()))
