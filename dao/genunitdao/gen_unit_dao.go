@@ -282,6 +282,7 @@ func (u *genUnitDao) GetUnitByID(unitID string, branchIfSpecific string) (*dto.G
 	return &unit, nil
 }
 
+// FindUnit wajib menyertakan branch
 func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError) {
 	coll := db.DB.Collection(keyGenUnitColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
@@ -317,7 +318,7 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 	}
 
 	opts.SetSort(bson.D{{keyGenName, 1}})
-	opts.SetLimit(200)
+	opts.SetLimit(300)
 	cursor, err := coll.Find(ctx, filter, opts)
 
 	if err != nil {

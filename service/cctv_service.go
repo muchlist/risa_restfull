@@ -41,7 +41,7 @@ type CctvServiceAssumer interface {
 	PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Cctv, rest_err.APIError)
 
 	GetCctvByID(cctvID string, branchIfSpecific string) (*dto.Cctv, rest_err.APIError)
-	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
+	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, dto.GenUnitResponseList, rest_err.APIError)
 }
 
 func (c *cctvService) InsertCctv(user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError) {
@@ -330,25 +330,147 @@ func (c *cctvService) GetCctvByID(cctvID string, branchIfSpecific string) (*dto.
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	cctv, err := c.daoC.GetCctvByID(oid, branchIfSpecific)
-	if err != nil {
-		return nil, err
+	// kembalian dari golang channel
+	type resultCctv struct {
+		data *dto.Cctv
+		err  rest_err.APIError
 	}
-	return cctv, nil
+
+	type resultGeneral struct {
+		data *dto.GenUnitResponse
+		err  rest_err.APIError
+	}
+
+	resultCctvChan := make(chan resultCctv)
+	resultGeneralChan := make(chan resultGeneral)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		// DB
+		cctv, err := c.daoC.GetCctvByID(oid, branchIfSpecific)
+		resultCctvChan <- resultCctv{
+			data: cctv,
+			err:  err,
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		// DB
+		cctv, err := c.daoG.GetUnitByID(cctvID, branchIfSpecific)
+		resultGeneralChan <- resultGeneral{
+			data: cctv,
+			err:  err,
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(resultCctvChan)
+		close(resultGeneralChan)
+	}()
+
+	cctvDetail := <-resultCctvChan
+	if cctvDetail.err != nil {
+		return nil, cctvDetail.err
+	}
+
+	cctvExtraData := <-resultGeneralChan
+	if cctvExtraData.err != nil {
+		return nil, cctvExtraData.err
+	}
+
+	cctvData := cctvDetail.data
+	cctvData.Extra.Cases = cctvExtraData.data.Cases
+	cctvData.Extra.LastPing = cctvExtraData.data.LastPing
+	cctvData.Extra.CasesSize = cctvExtraData.data.CasesSize
+	cctvData.Extra.PingsState = cctvExtraData.data.PingsState
+
+	return cctvData, nil
 }
 
-func (c *cctvService) FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError) {
+func (c *cctvService) FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, dto.GenUnitResponseList, rest_err.APIError) {
 	// cek apakah ip address valid, jika valid maka set filter.FilterName ke kosong supaya pencarian berdasarkan IP
 	if filter.FilterIP != "" {
 		if net.ParseIP(filter.FilterIP) == nil {
-			return nil, rest_err.NewBadRequestError("IP Address tidak valid")
+			return nil, nil, rest_err.NewBadRequestError("IP Address tidak valid")
 		}
 		filter.FilterName = ""
 	}
 
-	cctvList, err := c.daoC.FindCctv(filter)
-	if err != nil {
-		return nil, err
+	// wrap golang channel
+	type resultCctv struct {
+		data dto.CctvResponseMinList
+		err  rest_err.APIError
 	}
-	return cctvList, nil
+
+	// wrap golang channel
+	type resultGeneral struct {
+		data dto.GenUnitResponseList
+		err  rest_err.APIError
+	}
+
+	cctvListChan := make(chan resultCctv)
+	generalListChan := make(chan resultGeneral)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		cctvList, err := c.daoC.FindCctv(filter)
+		cctvListChan <- resultCctv{
+			data: cctvList,
+			err:  err,
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		// jika ada query pencarian, informasi ini tidak akan dimuat
+		if filter.FilterIP != "" || filter.FilterName != "" {
+			generalListChan <- resultGeneral{
+				data: dto.GenUnitResponseList{},
+				err:  nil,
+			}
+			return
+		}
+
+		generalList, err := c.daoG.FindUnit(dto.GenUnitFilter{
+			Branch:   filter.FilterBranch,
+			Category: category.Cctv,
+			Pings:    true,
+			Name:     "",
+		})
+		generalListChan <- resultGeneral{
+			data: generalList,
+			err:  err,
+		}
+	}()
+
+	cctvList := <-cctvListChan
+	if cctvList.err != nil {
+		return nil, nil, cctvList.err
+	}
+
+	generalList := <-generalListChan
+	if generalList.err != nil {
+		return nil, nil, generalList.err
+	}
+
+	filterGeneralList(&generalList.data)
+	return cctvList.data, generalList.data, nil
+}
+
+// hanya mereturn unit yang memiliki case atau sedang down.
+func filterGeneralList(data *dto.GenUnitResponseList) {
+	temp := dto.GenUnitResponseList{}
+	for _, gen := range *data {
+		if gen.CasesSize > 0 || gen.LastPing == "DOWN" {
+			temp = append(temp, gen)
+		}
+	}
+	*data = temp
 }

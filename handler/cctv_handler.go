@@ -73,6 +73,10 @@ func (x *cctvHandler) Find(c *fiber.Ctx) error {
 		disable = true
 	}
 
+	if branch == "" {
+		branch = c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim).Branch
+	}
+
 	filterA := dto.FilterBranchLocIPNameDisable{
 		FilterBranch:   branch,
 		FilterLocation: location,
@@ -81,12 +85,15 @@ func (x *cctvHandler) Find(c *fiber.Ctx) error {
 		FilterDisable:  disable,
 	}
 
-	cctvList, apiErr := x.service.FindCctv(filterA)
+	cctvList, generalList, apiErr := x.service.FindCctv(filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"error": nil, "data": cctvList})
+	return c.JSON(fiber.Map{"error": nil, "data": fiber.Map{
+		"cctv_list":  cctvList,
+		"extra_list": generalList,
+	}})
 }
 
 // DisableCctv menghilangkan cctv dari list
