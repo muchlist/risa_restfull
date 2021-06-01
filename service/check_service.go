@@ -49,7 +49,7 @@ type CheckServiceAssumer interface {
 
 func (c *checkService) InsertCheck(user mjwt.CustomClaim, input dto.CheckRequest) (*string, rest_err.APIError) {
 	itemResultCheckItemChan := make(chan []dto.CheckItemEmbed)
-	itemResultCctvChan := make(chan []dto.CheckItemEmbed)
+	//itemResultCctvChan := make(chan []dto.CheckItemEmbed)
 
 	go func() {
 		// ambil check item berdasarkan cabang yang di input
@@ -83,48 +83,48 @@ func (c *checkService) InsertCheck(user mjwt.CustomClaim, input dto.CheckRequest
 		itemResultCheckItemChan <- checkItemsSelected
 	}()
 
-	go func() {
-		// ambil data cctv yang harus di cek
-		cctvList, err := c.daoG.FindUnit(dto.GenUnitFilter{
-			Branch:   user.Branch,
-			Category: category.Cctv,
-			Disable:  false,
-			Pings:    true,
-			LastPing: enum.GetPingString(enum.PingDown),
-		})
-		if err != nil {
-			// if error, send result 0 slice
-			itemResultCctvChan <- []dto.CheckItemEmbed{}
-			return
-		}
-
-		var checkCctvSelected []dto.CheckItemEmbed
-		for _, cctv := range cctvList {
-			cctvHaveZeroCase := cctv.CasesSize == 0
-			cctvPing2IsDown := true
-			if len(cctv.PingsState) > 1 {
-				// memeriksa ping index 1 (ping kedua) karena ping pertama sudah pasti 0
-				// berdasarkan filter FindUnit
-				cctvPing2IsDown = cctv.PingsState[1].Code == 0
-			}
-			if cctvHaveZeroCase && cctvPing2IsDown {
-				checkCctvSelected = append(checkCctvSelected, dto.CheckItemEmbed{
-					ID:          cctv.ID,
-					Name:        cctv.Name,
-					Type:        category.Cctv,
-					Tag:         []string{},
-					TagExtra:    []string{},
-					HaveProblem: true,
-				})
-			}
-		}
-		itemResultCctvChan <- checkCctvSelected
-	}()
+	//go func() {
+	//	// ambil data cctv yang harus di cek
+	//	cctvList, err := c.daoG.FindUnit(dto.GenUnitFilter{
+	//		Branch:   user.Branch,
+	//		Category: category.Cctv,
+	//		Disable:  false,
+	//		Pings:    true,
+	//		LastPing: enum.GetPingString(enum.PingDown),
+	//	})
+	//	if err != nil {
+	//		// if error, send result 0 slice
+	//		itemResultCctvChan <- []dto.CheckItemEmbed{}
+	//		return
+	//	}
+	//
+	//	var checkCctvSelected []dto.CheckItemEmbed
+	//	for _, cctv := range cctvList {
+	//		cctvHaveZeroCase := cctv.CasesSize == 0
+	//		cctvPing2IsDown := true
+	//		if len(cctv.PingsState) > 1 {
+	//			// memeriksa ping index 1 (ping kedua) karena ping pertama sudah pasti 0
+	//			// berdasarkan filter FindUnit
+	//			cctvPing2IsDown = cctv.PingsState[1].Code == 0
+	//		}
+	//		if cctvHaveZeroCase && cctvPing2IsDown {
+	//			checkCctvSelected = append(checkCctvSelected, dto.CheckItemEmbed{
+	//				ID:          cctv.ID,
+	//				Name:        cctv.Name,
+	//				Type:        category.Cctv,
+	//				Tag:         []string{},
+	//				TagExtra:    []string{},
+	//				HaveProblem: true,
+	//			})
+	//		}
+	//	}
+	//	itemResultCctvChan <- checkCctvSelected
+	//}()
 
 	checkItemsSelected := <-itemResultCheckItemChan
-	checkCctvSelected := <-itemResultCctvChan
+	//checkCctvSelected := <-itemResultCctvChan
 
-	checkItemsSelected = append(checkItemsSelected, checkCctvSelected...)
+	//checkItemsSelected = append(checkItemsSelected, checkCctvSelected...)
 
 	// Filling data
 	timeNow := time.Now().Unix()
