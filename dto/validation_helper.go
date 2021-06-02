@@ -63,3 +63,17 @@ func cctvTypeValidation(cctvType string) error {
 	}
 	return nil
 }
+
+func computerTypeValidation(computerType string) error {
+	if !sfunc.InSlice(computerType, hwlist.GetComputerTypeAvailable()) {
+		return fmt.Errorf("tipe yang dimasukkan tidak tersedia. gunakan %s", hwlist.GetComputerTypeAvailable())
+	}
+	return nil
+}
+
+func divisionValidation(division string) error {
+	if !sfunc.InSlice(division, location.GetDivisionAvailable()) {
+		return fmt.Errorf("divisi yang dimasukkan tidak tersedia. gunakan %s", location.GetDivisionAvailable())
+	}
+	return nil
+}
