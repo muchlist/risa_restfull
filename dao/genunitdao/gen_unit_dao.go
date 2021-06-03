@@ -317,7 +317,7 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 		opts.SetProjection(bson.M{keyGenPingState: 0})
 	}
 
-	opts.SetSort(bson.D{{keyGenName, 1}})
+	opts.SetSort(bson.D{{keyGenName, 1}}) //nolint:govet
 	opts.SetLimit(300)
 	cursor, err := coll.Find(ctx, filter, opts)
 
@@ -366,8 +366,8 @@ func (u *genUnitDao) GetIPList(branchIfSpecific string, category string) ([]stri
 	}
 
 	opts := options.Find()
-	opts.SetProjection(bson.D{{keyGenIP, 1}})
-	opts.SetSort(bson.D{{keyGenName, 1}})
+	opts.SetProjection(bson.D{{keyGenIP, 1}}) //nolint:govet
+	opts.SetSort(bson.D{{keyGenName, 1}})     //nolint:govet
 	opts.SetLimit(200)
 	sortCursor, err := coll.Find(ctx, filter, opts)
 
