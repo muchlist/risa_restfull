@@ -1,4 +1,4 @@
-package pcdao
+package computerdao
 
 import (
 	"context"
@@ -51,14 +51,14 @@ const (
 	keyPCNote            = "note"
 )
 
-func NewPcDao() PcDaoAssumer {
-	return &pcDao{}
+func NewComputerDao() ComputerDaoAssumer {
+	return &computerDao{}
 }
 
-type pcDao struct {
+type computerDao struct {
 }
 
-type PcDaoAssumer interface {
+type ComputerDaoAssumer interface {
 	InsertPc(input dto.Computer) (*string, rest_err.APIError)
 	EditPc(input dto.ComputerEdit) (*dto.Computer, rest_err.APIError)
 	DeletePc(input dto.FilterIDBranchCreateGte) (*dto.Computer, rest_err.APIError)
@@ -69,7 +69,7 @@ type PcDaoAssumer interface {
 	FindPc(filter dto.FilterComputer) (dto.ComputerResponseMinList, rest_err.APIError)
 }
 
-func (c *pcDao) InsertPc(input dto.Computer) (*string, rest_err.APIError) {
+func (c *computerDao) InsertPc(input dto.Computer) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -95,7 +95,7 @@ func (c *pcDao) InsertPc(input dto.Computer) (*string, rest_err.APIError) {
 	return &insertID, nil
 }
 
-func (c *pcDao) EditPc(input dto.ComputerEdit) (*dto.Computer, rest_err.APIError) {
+func (c *computerDao) EditPc(input dto.ComputerEdit) (*dto.Computer, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -159,7 +159,7 @@ func (c *pcDao) EditPc(input dto.ComputerEdit) (*dto.Computer, rest_err.APIError
 	return &pc, nil
 }
 
-func (c *pcDao) DeletePc(input dto.FilterIDBranchCreateGte) (*dto.Computer, rest_err.APIError) {
+func (c *computerDao) DeletePc(input dto.FilterIDBranchCreateGte) (*dto.Computer, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -186,7 +186,7 @@ func (c *pcDao) DeletePc(input dto.FilterIDBranchCreateGte) (*dto.Computer, rest
 }
 
 // DisablePc if value true , pc will disabled
-func (c *pcDao) DisablePc(pcID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Computer, rest_err.APIError) {
+func (c *computerDao) DisablePc(pcID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Computer, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -222,7 +222,7 @@ func (c *pcDao) DisablePc(pcID primitive.ObjectID, user mjwt.CustomClaim, value 
 	return &pc, nil
 }
 
-func (c *pcDao) UploadImage(pcID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Computer, rest_err.APIError) {
+func (c *computerDao) UploadImage(pcID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Computer, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -254,7 +254,7 @@ func (c *pcDao) UploadImage(pcID primitive.ObjectID, imagePath string, filterBra
 	return &pc, nil
 }
 
-func (c *pcDao) GetPcByID(pcID primitive.ObjectID, branchIfSpecific string) (*dto.Computer, rest_err.APIError) {
+func (c *computerDao) GetPcByID(pcID primitive.ObjectID, branchIfSpecific string) (*dto.Computer, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -279,7 +279,7 @@ func (c *pcDao) GetPcByID(pcID primitive.ObjectID, branchIfSpecific string) (*dt
 	return &pc, nil
 }
 
-func (c *pcDao) FindPc(filterA dto.FilterComputer) (dto.ComputerResponseMinList, rest_err.APIError) {
+func (c *computerDao) FindPc(filterA dto.FilterComputer) (dto.ComputerResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()

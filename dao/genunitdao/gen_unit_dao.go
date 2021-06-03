@@ -318,7 +318,7 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 	}
 
 	opts.SetSort(bson.D{{keyGenName, 1}}) //nolint:govet
-	opts.SetLimit(300)
+	opts.SetLimit(500)
 	cursor, err := coll.Find(ctx, filter, opts)
 
 	if err != nil {
