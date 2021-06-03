@@ -79,3 +79,23 @@ type FilterBranchCategory struct {
 	FilterBranch   string
 	FilterCategory string
 }
+
+type FilterComputer struct {
+	FilterBranch         string
+	FilterLocation       string
+	FilterDivision       string
+	FilterIP             string
+	FilterName           string
+	FilterDisable        bool
+	FilterSeatManagement int // -1 all , 0 false, 1 true
+}
+
+type FilterOther struct {
+	FilterBranch      string
+	FilterSubCategory string
+	FilterLocation    string
+	FilterDivision    string
+	FilterIP          string
+	FilterName        string
+	FilterDisable     bool
+}

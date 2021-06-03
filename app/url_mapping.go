@@ -63,9 +63,18 @@ func mapUrls(app *fiber.App) {
 	api.Get("/cctv/:id", middleware.NormalAuth(), cctvHandler.GetCctv)
 	api.Put("/cctv/:id", middleware.NormalAuth(), cctvHandler.Edit)
 	api.Delete("/cctv/:id", middleware.NormalAuth(), cctvHandler.Delete)
-	api.Get("/cctv", middleware.NormalAuth(), cctvHandler.Find) // IMPROVEMENT join table with gen_unit
+	api.Get("/cctv", middleware.NormalAuth(), cctvHandler.Find)
 	api.Get("/cctv-avail/:id/:status", middleware.NormalAuth(), cctvHandler.DisableCctv)
 	api.Post("/cctv-image/:id", middleware.NormalAuth(), cctvHandler.UploadImage)
+
+	// COMPUTER
+	api.Post("/computer", middleware.NormalAuth(), computerHandler.Insert)
+	api.Get("/computer/:id", middleware.NormalAuth(), computerHandler.GetComputer)
+	api.Put("/computer/:id", middleware.NormalAuth(), computerHandler.Edit)
+	api.Delete("/computer/:id", middleware.NormalAuth(), computerHandler.Delete)
+	api.Get("/computer", middleware.NormalAuth(), computerHandler.Find)
+	api.Get("/computer-avail/:id/:status", middleware.NormalAuth(), computerHandler.DisableComputer)
+	api.Post("/computer-image/:id", middleware.NormalAuth(), computerHandler.UploadImage)
 
 	// STOCK
 	api.Post("/stock", middleware.NormalAuth(), stockHandler.Insert)
@@ -107,5 +116,6 @@ func mapUrls(app *fiber.App) {
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)
 	api.Get("/opt-stock", optionHandler.OptCreateStock)
 	api.Get("/opt-cctv", optionHandler.OptCreateCctv)
+	api.Get("/opt-computer", optionHandler.OptCreateComputer)
 	api.Get("/opt-branch", optionHandler.OptBranch)
 }

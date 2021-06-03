@@ -154,7 +154,7 @@ func (c *cctvDao) DeleteCctv(input dto.FilterIDBranchCreateGte) (*dto.Cctv, rest
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&cctv)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError("Cctv tidak diupdate : validasi id branch time_reach")
+			return nil, rest_err.NewBadRequestError("Cctv tidak dihapus : validasi id branch time_reach")
 		}
 
 		logger.Error("Gagal menghapus cctv dari database (DeleteCctv)", err)

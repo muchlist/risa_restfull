@@ -63,6 +63,35 @@ func (o *optionHandler) OptCreateCctv(c *fiber.Ctx) error {
 	return c.JSON(options)
 }
 
+// OptCreateCctv mengembalikan cctv type dan lokasi tersedia
+func (o *optionHandler) OptCreateComputer(c *fiber.Ctx) error {
+	branch := c.Query("branch")
+	var optLocation []string
+
+	if branch != "" {
+		optLocation = location.GetLocationAvailableFrom(strings.ToUpper(branch))
+	} else {
+		optLocation = location.GetLocationAvailable()
+	}
+	division := location.GetDivisionAvailable()
+	computerType := hwlist.GetComputerTypeAvailable()
+	os := hwlist.GetPCOSAvailable()
+	processor := hwlist.GetPCProcessor()
+	hardisk := hwlist.GetPCHDD()
+	ram := hwlist.GetPCRam()
+
+	options := fiber.Map{
+		"location":  optLocation,
+		"division":  division,
+		"type":      computerType,
+		"os":        os,
+		"processor": processor,
+		"hardisk":   hardisk,
+		"ram":       ram,
+	}
+	return c.JSON(options)
+}
+
 // OptBranch mengembalikan branch yang tersedia
 func (o *optionHandler) OptBranch(c *fiber.Ctx) error {
 	optBranch := branches.GetBranchesAvailable()
