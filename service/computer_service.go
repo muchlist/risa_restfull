@@ -87,12 +87,21 @@ func (c *computerService) InsertComputer(user mjwt.CustomClaim, input dto.Comput
 			Location:        input.Location,
 			LocationLat:     input.LocationLat,
 			LocationLon:     input.LocationLon,
-			Date:            input.Date,
-			Tag:             input.Tag,
-			Image:           "", // image empty saat inisialisasi
-			Brand:           input.Brand,
-			Type:            input.Type,
-			Note:            input.Note,
+
+			Hostname:       input.Hostname,
+			Division:       input.Division,
+			SeatManagement: input.SeatManagement,
+			OS:             input.OS,
+			Processor:      input.Processor,
+			Ram:            input.Ram,
+			Hardisk:        input.Hardisk,
+
+			Date:  input.Date,
+			Tag:   input.Tag,
+			Image: "", // image empty saat inisialisasi
+			Brand: input.Brand,
+			Type:  input.Type,
+			Note:  input.Note,
 		}
 
 		// DB
