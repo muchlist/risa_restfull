@@ -89,3 +89,13 @@ type FilterComputer struct {
 	FilterDisable        bool
 	FilterSeatManagement int // -1 all , 0 false, 1 true
 }
+
+type FilterOther struct {
+	FilterBranch      string
+	FilterSubCategory string
+	FilterLocation    string
+	FilterDivision    string
+	FilterIP          string
+	FilterName        string
+	FilterDisable     bool
+}

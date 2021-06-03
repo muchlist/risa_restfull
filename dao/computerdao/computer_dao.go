@@ -174,7 +174,7 @@ func (c *computerDao) DeletePc(input dto.FilterIDBranchCreateGte) (*dto.Computer
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&pc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError("Pc tidak diupdate : validasi id branch time_reach")
+			return nil, rest_err.NewBadRequestError("Pc tidak dihapus : validasi id branch time_reach")
 		}
 
 		logger.Error("Gagal menghapus pc dari database (DeletePc)", err)
