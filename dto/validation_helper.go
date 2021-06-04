@@ -26,6 +26,13 @@ func categoryValidation(cat string) error {
 	return nil
 }
 
+func subCategoryValidation(cat string) error {
+	if !sfunc.InSlice(cat, category.GetSubCategoryAvailable()) {
+		return fmt.Errorf("category yang dimasukkan tidak tersedia. gunakan %s", category.GetSubCategoryAvailable())
+	}
+	return nil
+}
+
 func roleValidation(rolesIn []string) error {
 	if len(rolesIn) > 0 {
 		if !sfunc.ValueInSliceIsAvailable(rolesIn, roles.GetRolesAvailable()) {

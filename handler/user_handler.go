@@ -22,10 +22,10 @@ type userHandler struct {
 }
 
 // Get menampilkan user berdasarkan ID (bukan email)
-func (u *userHandler) Get(c *fiber.Ctx) error {
+func (usr *userHandler) Get(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
 
-	user, apiErr := u.service.GetUser(userID)
+	user, apiErr := usr.service.GetUser(userID)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -34,10 +34,10 @@ func (u *userHandler) Get(c *fiber.Ctx) error {
 }
 
 // GetProfile mengembalikan user yang sedang login
-func (u *userHandler) GetProfile(c *fiber.Ctx) error {
+func (usr *userHandler) GetProfile(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	user, apiErr := u.service.GetUserByID(claims.Identity)
+	user, apiErr := usr.service.GetUserByID(claims.Identity)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -46,7 +46,7 @@ func (u *userHandler) GetProfile(c *fiber.Ctx) error {
 }
 
 // Register menambahkan user
-func (u *userHandler) Register(c *fiber.Ctx) error {
+func (usr *userHandler) Register(c *fiber.Ctx) error {
 	var user dto.UserRequest
 	if err := c.BodyParser(&user); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
@@ -58,7 +58,7 @@ func (u *userHandler) Register(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := u.service.InsertUser(user)
+	insertID, apiErr := usr.service.InsertUser(user)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -68,8 +68,8 @@ func (u *userHandler) Register(c *fiber.Ctx) error {
 }
 
 // Find menampilkan list user
-func (u *userHandler) Find(c *fiber.Ctx) error {
-	userList, apiErr := u.service.FindUsers()
+func (usr *userHandler) Find(c *fiber.Ctx) error {
+	userList, apiErr := usr.service.FindUsers()
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -78,7 +78,7 @@ func (u *userHandler) Find(c *fiber.Ctx) error {
 }
 
 // Edit mengedit user oleh admin
-func (u *userHandler) Edit(c *fiber.Ctx) error {
+func (usr *userHandler) Edit(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
 	//if err := validation.Validate(userID,
 	//	is.Email,
@@ -98,7 +98,7 @@ func (u *userHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	userEdited, apiErr := u.service.EditUser(userID, user)
+	userEdited, apiErr := usr.service.EditUser(userID, user)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -107,7 +107,7 @@ func (u *userHandler) Edit(c *fiber.Ctx) error {
 }
 
 // Delete menghapus user, idealnya melalui middleware is_admin
-func (u *userHandler) Delete(c *fiber.Ctx) error {
+func (usr *userHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	userIDParams := c.Params("user_id")
 
@@ -116,7 +116,7 @@ func (u *userHandler) Delete(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	apiErr := u.service.DeleteUser(userIDParams)
+	apiErr := usr.service.DeleteUser(userIDParams)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -125,7 +125,7 @@ func (u *userHandler) Delete(c *fiber.Ctx) error {
 }
 
 // ChangePassword mengganti password pada user sendiri
-func (u *userHandler) ChangePassword(c *fiber.Ctx) error {
+func (usr *userHandler) ChangePassword(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	var user dto.UserChangePasswordRequest
@@ -142,7 +142,7 @@ func (u *userHandler) ChangePassword(c *fiber.Ctx) error {
 	//mengganti user id dengan user aktif
 	user.ID = claims.Identity
 
-	apiErr := u.service.ChangePassword(user)
+	apiErr := usr.service.ChangePassword(user)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
@@ -151,7 +151,7 @@ func (u *userHandler) ChangePassword(c *fiber.Ctx) error {
 }
 
 // ResetPassword mengganti password oleh admin pada user tertentu
-func (u *userHandler) ResetPassword(c *fiber.Ctx) error {
+func (usr *userHandler) ResetPassword(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
 
 	data := dto.UserChangePasswordRequest{
@@ -159,7 +159,7 @@ func (u *userHandler) ResetPassword(c *fiber.Ctx) error {
 		NewPassword: "Password",
 	}
 
-	apiErr := u.service.ResetPassword(data)
+	apiErr := usr.service.ResetPassword(data)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -168,21 +168,21 @@ func (u *userHandler) ResetPassword(c *fiber.Ctx) error {
 }
 
 // Login login
-func (u *userHandler) Login(c *fiber.Ctx) error {
+func (usr *userHandler) Login(c *fiber.Ctx) error {
 	var login dto.UserLoginRequest
 	if err := c.BodyParser(&login); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
-		logger.Info(fmt.Sprintf("u: - | parse | %s", err.Error()))
+		logger.Info(fmt.Sprintf("usr: - | parse | %s", err.Error()))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := login.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
-		logger.Info(fmt.Sprintf("u: - | validate | %s", err.Error()))
+		logger.Info(fmt.Sprintf("usr: - | validate | %s", err.Error()))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	response, apiErr := u.service.Login(login)
+	response, apiErr := usr.service.Login(login)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -191,21 +191,21 @@ func (u *userHandler) Login(c *fiber.Ctx) error {
 }
 
 // RefreshToken
-func (u *userHandler) RefreshToken(c *fiber.Ctx) error {
+func (usr *userHandler) RefreshToken(c *fiber.Ctx) error {
 	var payload dto.UserRefreshTokenRequest
 	if err := c.BodyParser(&payload); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
-		logger.Info(fmt.Sprintf("u: - | parse | %s", err.Error()))
+		logger.Info(fmt.Sprintf("usr: - | parse | %s", err.Error()))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := payload.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
-		logger.Info(fmt.Sprintf("u: - | parse | %s", err.Error()))
+		logger.Info(fmt.Sprintf("usr: - | parse | %s", err.Error()))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	response, apiErr := u.service.Refresh(payload)
+	response, apiErr := usr.service.Refresh(payload)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -215,7 +215,7 @@ func (u *userHandler) RefreshToken(c *fiber.Ctx) error {
 
 // UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
 // sesuai authorisasi aktif. File disimpan di folder static/images dengan nama file == jwt.identity alias username
-func (u *userHandler) UploadImage(c *fiber.Ctx) error {
+func (usr *userHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	randomName := fmt.Sprintf("%s%v", claims.Identity, time.Now().Unix())
@@ -224,7 +224,7 @@ func (u *userHandler) UploadImage(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	usersResult, apiErr := u.service.PutAvatar(claims.Identity, pathInDB)
+	usersResult, apiErr := usr.service.PutAvatar(claims.Identity, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

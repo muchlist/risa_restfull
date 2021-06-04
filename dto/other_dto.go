@@ -55,9 +55,10 @@ type OtherRequest struct {
 }
 
 type OtherEdit struct {
-	ID              primitive.ObjectID
-	FilterBranch    string
-	FilterTimestamp int64
+	ID                primitive.ObjectID
+	FilterBranch      string
+	FilterSubCategory string
+	FilterTimestamp   int64
 
 	UpdatedAt   int64
 	UpdatedBy   string
@@ -66,7 +67,6 @@ type OtherEdit struct {
 	Name            string
 	Detail          string
 	Division        string
-	SubCategory     string
 	IP              string
 	InventoryNumber string
 	Location        string
@@ -82,12 +82,12 @@ type OtherEdit struct {
 
 // OtherEditRequest user input
 type OtherEditRequest struct {
-	FilterTimestamp int64 `json:"filter_timestamp"`
+	FilterTimestamp   int64  `json:"filter_timestamp"`
+	FilterSubCategory string `json:"filter_sub_category" bson:"filter_sub_category"`
 
-	Name        string `json:"name" bson:"name"`
-	Detail      string `json:"detail" bson:"detail"`
-	Division    string `json:"division" bson:"division"`
-	SubCategory string `json:"sub_category" bson:"sub_category"`
+	Name     string `json:"name" bson:"name"`
+	Detail   string `json:"detail" bson:"detail"`
+	Division string `json:"division" bson:"division"`
 
 	IP              string   `json:"ip" bson:"ip"`
 	InventoryNumber string   `json:"inventory_number" bson:"inventory_number"`

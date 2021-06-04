@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/statuses"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
@@ -13,20 +14,20 @@ import (
 	"time"
 )
 
-func NewComputerHandler(computerService service.ComputerServiceAssumer) *computerHandler {
-	return &computerHandler{
-		service: computerService,
+func NewOtherHandler(otherService service.OtherServiceAssumer) *otherHandler {
+	return &otherHandler{
+		service: otherService,
 	}
 }
 
-type computerHandler struct {
-	service service.ComputerServiceAssumer
+type otherHandler struct {
+	service service.OtherServiceAssumer
 }
 
-func (pc *computerHandler) Insert(c *fiber.Ctx) error {
+func (ot *otherHandler) Insert(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	var req dto.ComputerRequest
+	var req dto.OtherRequest
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
@@ -40,35 +41,43 @@ func (pc *computerHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := pc.service.InsertComputer(*claims, req)
+	insertID, apiErr := ot.service.InsertOther(*claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	res := fmt.Sprintf("Menambahkan computer berhasil, ID: %s", *insertID)
+	res := fmt.Sprintf("Menambahkan %s berhasil, ID: %s", req.SubCategory, *insertID)
 	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
 
-// GetComputer menampilkan computerDetail
-func (pc *computerHandler) GetComputer(c *fiber.Ctx) error {
-	computerID := c.Params("id")
+// GetOther menampilkan otherDetail
+func (ot *otherHandler) GetOther(c *fiber.Ctx) error {
+	otherID := c.Params("id")
 
-	computer, apiErr := pc.service.GetComputerByID(computerID, "")
+	other, apiErr := ot.service.GetOtherByID(otherID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"error": nil, "data": computer})
+	return c.JSON(fiber.Map{"error": nil, "data": other})
 }
 
-// Find menampilkan list computer
+// Find menampilkan list other
+// Param [cat]
 // Query [branch, name, ip, location, disable, division, seat]
-func (pc *computerHandler) Find(c *fiber.Ctx) error {
+func (ot *otherHandler) Find(c *fiber.Ctx) error {
+	cat := c.Params("cat")
 	branch := c.Query("branch")
 	division := c.Query("division")
 	name := c.Query("name")
 	ip := c.Query("ip")
 	location := c.Query("location")
+
+	// cat validation
+	if apiErr := subCategoryValidation(cat); apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
 	var disable bool
 	if c.Query("disable") != "" {
 		disable = true
@@ -78,42 +87,40 @@ func (pc *computerHandler) Find(c *fiber.Ctx) error {
 		branch = c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim).Branch
 	}
 
-	seatManagement := -1
-	if c.Query("seat") == "1" {
-		seatManagement = 1
-	}
-	if c.Query("seat") == "0" {
-		seatManagement = 0
-	}
-
-	filterA := dto.FilterComputer{
-		FilterBranch:         branch,
-		FilterLocation:       location,
-		FilterDivision:       division,
-		FilterIP:             ip,
-		FilterName:           name,
-		FilterDisable:        disable,
-		FilterSeatManagement: seatManagement,
+	filterA := dto.FilterOther{
+		FilterBranch:      branch,
+		FilterSubCategory: cat,
+		FilterLocation:    location,
+		FilterDivision:    division,
+		FilterIP:          ip,
+		FilterName:        name,
+		FilterDisable:     disable,
 	}
 
-	computerList, generalList, apiErr := pc.service.FindComputer(filterA)
+	otherList, generalList, apiErr := ot.service.FindOther(filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	return c.JSON(fiber.Map{"error": nil, "data": fiber.Map{
-		"computer_list": computerList,
-		"extra_list":    generalList,
+		"other_list": otherList,
+		"extra_list": generalList,
 	}})
 }
 
-// DisableComputer menghilangkan computer dari list
-// Param status [enable, disable]
-func (pc *computerHandler) DisableComputer(c *fiber.Ctx) error {
+// DisableOther menghilangkan other dari list
+// Param status [enable, disable] cat
+func (ot *otherHandler) DisableOther(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	userID := c.Params("id")
+	cat := c.Params("cat")
 	status := c.Params("status")
+
+	// cat validation
+	if apiErr := subCategoryValidation(cat); apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
 
 	// validation
 	statusAvailable := []string{statuses.Disable, statuses.Enable}
@@ -126,31 +133,37 @@ func (pc *computerHandler) DisableComputer(c *fiber.Ctx) error {
 		statusBool = true
 	}
 
-	computerList, apiErr := pc.service.DisableComputer(userID, *claims, statusBool)
+	otherList, apiErr := ot.service.DisableOther(userID, *claims, cat, statusBool)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"error": nil, "data": computerList})
+	return c.JSON(fiber.Map{"error": nil, "data": otherList})
 }
 
-func (pc *computerHandler) Delete(c *fiber.Ctx) error {
+func (ot *otherHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
+	cat := c.Params("cat")
 
-	apiErr := pc.service.DeleteComputer(*claims, id)
+	// cat validation
+	if apiErr := subCategoryValidation(cat); apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	apiErr := ot.service.DeleteOther(*claims, cat, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("computer %s berhasil dihapus", id)})
+	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("data %s berhasil dihapus", id)})
 }
 
-func (pc *computerHandler) Edit(c *fiber.Ctx) error {
+func (ot *otherHandler) Edit(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
-	computerID := c.Params("id")
+	otherID := c.Params("id")
 
-	var req dto.ComputerEditRequest
+	var req dto.OtherEditRequest
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
@@ -163,36 +176,47 @@ func (pc *computerHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	computerEdited, apiErr := pc.service.EditComputer(*claims, computerID, req)
+	otherEdited, apiErr := ot.service.EditOther(*claims, otherID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
-	return c.JSON(fiber.Map{"error": nil, "data": computerEdited})
+	return c.JSON(fiber.Map{"error": nil, "data": otherEdited})
 }
 
 // UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
-func (pc *computerHandler) UploadImage(c *fiber.Ctx) error {
+func (ot *otherHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	// cek apakah ID computer && branch ada
-	_, apiErr := pc.service.GetComputerByID(id, claims.Branch)
+	// cek apakah ID other && branch ada
+	_, apiErr := ot.service.GetOtherByID(id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	randomName := fmt.Sprintf("%s%v", id, time.Now().Unix())
 	// simpan image
-	pathInDb, apiErr := saveImage(c, *claims, "computer", randomName, false)
+	pathInDb, apiErr := saveImage(c, *claims, "other", randomName, false)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	// update path image di database
-	computerResult, apiErr := pc.service.PutImage(*claims, id, pathInDb)
+	otherResult, apiErr := ot.service.PutImage(*claims, id, pathInDb)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"error": nil, "data": computerResult})
+	return c.JSON(fiber.Map{"error": nil, "data": otherResult})
+}
+
+func subCategoryValidation(cat string) rest_err.APIError {
+	if cat == "" {
+		return rest_err.NewBadRequestError(fmt.Sprintf("param category wajib disertakan. gunakan %s", category.GetSubCategoryAvailable()))
+	}
+
+	if !sfunc.InSlice(cat, category.GetSubCategoryAvailable()) {
+		return rest_err.NewBadRequestError(fmt.Sprintf("category yang dimasukkan tidak tersedia. gunakan %s", category.GetSubCategoryAvailable()))
+	}
+	return nil
 }

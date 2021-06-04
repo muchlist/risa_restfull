@@ -21,7 +21,7 @@ type checkHandler struct {
 	service service.CheckServiceAssumer
 }
 
-func (x *checkHandler) Insert(c *fiber.Ctx) error {
+func (ch *checkHandler) Insert(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	var req dto.CheckRequest
@@ -37,7 +37,7 @@ func (x *checkHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := x.service.InsertCheck(*claims, req)
+	insertID, apiErr := ch.service.InsertCheck(*claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -47,10 +47,10 @@ func (x *checkHandler) Insert(c *fiber.Ctx) error {
 }
 
 // GetCheck menampilkan checkDetail
-func (x *checkHandler) GetCheck(c *fiber.Ctx) error {
+func (ch *checkHandler) GetCheck(c *fiber.Ctx) error {
 	checkID := c.Params("id")
 
-	check, apiErr := x.service.GetCheckByID(checkID, "")
+	check, apiErr := ch.service.GetCheckByID(checkID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -60,13 +60,13 @@ func (x *checkHandler) GetCheck(c *fiber.Ctx) error {
 
 // Find menampilkan list check
 // Query [branch, start, end, limit]
-func (x *checkHandler) Find(c *fiber.Ctx) error {
+func (ch *checkHandler) Find(c *fiber.Ctx) error {
 	branch := c.Query("branch")
 	start := stringToInt(c.Query("start"))
 	end := stringToInt(c.Query("end"))
 	limit := stringToInt(c.Query("limit"))
 
-	checkList, apiErr := x.service.FindCheck(branch, dto.FilterTimeRangeLimit{
+	checkList, apiErr := ch.service.FindCheck(branch, dto.FilterTimeRangeLimit{
 		FilterStart: int64(start),
 		FilterEnd:   int64(end),
 		Limit:       int64(limit),
@@ -78,11 +78,11 @@ func (x *checkHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": checkList})
 }
 
-func (x *checkHandler) Delete(c *fiber.Ctx) error {
+func (ch *checkHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := x.service.DeleteCheck(*claims, id)
+	apiErr := ch.service.DeleteCheck(*claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -90,7 +90,7 @@ func (x *checkHandler) Delete(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("check %s berhasil dihapus", id)})
 }
 
-func (x *checkHandler) Edit(c *fiber.Ctx) error {
+func (ch *checkHandler) Edit(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	checkID := c.Params("id")
 
@@ -101,14 +101,14 @@ func (x *checkHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkEdited, apiErr := x.service.EditCheck(*claims, checkID, req)
+	checkEdited, apiErr := ch.service.EditCheck(*claims, checkID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 	return c.JSON(fiber.Map{"error": nil, "data": checkEdited})
 }
 
-func (x *checkHandler) UpdateCheckItem(c *fiber.Ctx) error {
+func (ch *checkHandler) UpdateCheckItem(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	var req dto.CheckChildUpdateRequest
@@ -124,7 +124,7 @@ func (x *checkHandler) UpdateCheckItem(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkUpdated, apiErr := x.service.UpdateCheckItem(*claims, req)
+	checkUpdated, apiErr := ch.service.UpdateCheckItem(*claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -132,13 +132,13 @@ func (x *checkHandler) UpdateCheckItem(c *fiber.Ctx) error {
 }
 
 // UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
-func (x *checkHandler) UploadImage(c *fiber.Ctx) error {
+func (ch *checkHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 	childID := c.Params("child_id")
 
 	// cek apakah ID check && branch ada
-	_, apiErr := x.service.GetCheckByID(id, claims.Branch)
+	_, apiErr := ch.service.GetCheckByID(id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -152,7 +152,7 @@ func (x *checkHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// update path image di database
-	checkResult, apiErr := x.service.PutChildImage(*claims, id, childID, pathInDB)
+	checkResult, apiErr := ch.service.PutChildImage(*claims, id, childID, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

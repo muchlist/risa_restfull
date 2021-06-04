@@ -21,7 +21,7 @@ type checkItemHandler struct {
 	service service.CheckItemServiceAssumer
 }
 
-func (i *checkItemHandler) Insert(c *fiber.Ctx) error {
+func (ci *checkItemHandler) Insert(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	var req dto.CheckItemRequest
@@ -37,7 +37,7 @@ func (i *checkItemHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := i.service.InsertCheckItem(*claims, req)
+	insertID, apiErr := ci.service.InsertCheckItem(*claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -47,10 +47,10 @@ func (i *checkItemHandler) Insert(c *fiber.Ctx) error {
 }
 
 // GetCheckItem menampilkan checkItemDetail
-func (i *checkItemHandler) GetCheckItem(c *fiber.Ctx) error {
+func (ci *checkItemHandler) GetCheckItem(c *fiber.Ctx) error {
 	checkItemID := c.Params("id")
 
-	checkItem, apiErr := i.service.GetCheckItemByID(checkItemID, "")
+	checkItem, apiErr := ci.service.GetCheckItemByID(checkItemID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -60,7 +60,7 @@ func (i *checkItemHandler) GetCheckItem(c *fiber.Ctx) error {
 
 // Find menampilkan list checkItem
 // Query [branch, name, problem, disable]
-func (i *checkItemHandler) Find(c *fiber.Ctx) error {
+func (ci *checkItemHandler) Find(c *fiber.Ctx) error {
 	branch := c.Query("branch")
 	name := c.Query("name")
 	var disable bool
@@ -78,7 +78,7 @@ func (i *checkItemHandler) Find(c *fiber.Ctx) error {
 		FilterDisable: disable,
 	}
 
-	checkItemList, apiErr := i.service.FindCheckItem(filterA, haveProblem)
+	checkItemList, apiErr := ci.service.FindCheckItem(filterA, haveProblem)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -88,7 +88,7 @@ func (i *checkItemHandler) Find(c *fiber.Ctx) error {
 
 // DisableCheckItem menghilangkan checkItem dari list
 // Param status [enable, disable]
-func (i *checkItemHandler) DisableCheckItem(c *fiber.Ctx) error {
+func (ci *checkItemHandler) DisableCheckItem(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	userID := c.Params("id")
@@ -105,7 +105,7 @@ func (i *checkItemHandler) DisableCheckItem(c *fiber.Ctx) error {
 		statusBool = true
 	}
 
-	checkItemList, apiErr := i.service.DisableCheckItem(userID, *claims, statusBool)
+	checkItemList, apiErr := ci.service.DisableCheckItem(userID, *claims, statusBool)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -113,11 +113,11 @@ func (i *checkItemHandler) DisableCheckItem(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": checkItemList})
 }
 
-func (i *checkItemHandler) Delete(c *fiber.Ctx) error {
+func (ci *checkItemHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := i.service.DeleteCheckItem(*claims, id)
+	apiErr := ci.service.DeleteCheckItem(*claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -125,7 +125,7 @@ func (i *checkItemHandler) Delete(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": apiErr, "data": fmt.Sprintf("checkItem %s berhasil dihapus", id)})
 }
 
-func (i *checkItemHandler) Edit(c *fiber.Ctx) error {
+func (ci *checkItemHandler) Edit(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	checkItemID := c.Params("id")
 
@@ -142,7 +142,7 @@ func (i *checkItemHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkItemEdited, apiErr := i.service.EditCheckItem(*claims, checkItemID, req)
+	checkItemEdited, apiErr := ci.service.EditCheckItem(*claims, checkItemID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

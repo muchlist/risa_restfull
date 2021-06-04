@@ -76,6 +76,15 @@ func mapUrls(app *fiber.App) {
 	api.Get("/computer-avail/:id/:status", middleware.NormalAuth(), computerHandler.DisableComputer)
 	api.Post("/computer-image/:id", middleware.NormalAuth(), computerHandler.UploadImage)
 
+	// OTHER
+	api.Post("/other", middleware.NormalAuth(), otherHandler.Insert)
+	api.Get("/other/:id", middleware.NormalAuth(), otherHandler.GetOther)
+	api.Put("/other/:id", middleware.NormalAuth(), otherHandler.Edit)
+	api.Delete("/other/:cat/:id", middleware.NormalAuth(), otherHandler.Delete)
+	api.Get("/others/:cat", middleware.NormalAuth(), otherHandler.Find)
+	api.Get("/other-avail/:cat/:id/:status", middleware.NormalAuth(), otherHandler.DisableOther)
+	api.Post("/other-image/:id", middleware.NormalAuth(), otherHandler.UploadImage)
+
 	// STOCK
 	api.Post("/stock", middleware.NormalAuth(), stockHandler.Insert)
 	api.Get("/stock/:id", middleware.NormalAuth(), stockHandler.GetStock)

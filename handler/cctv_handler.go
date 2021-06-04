@@ -23,7 +23,7 @@ type cctvHandler struct {
 	service service.CctvServiceAssumer
 }
 
-func (x *cctvHandler) Insert(c *fiber.Ctx) error {
+func (ctv *cctvHandler) Insert(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	var req dto.CctvRequest
@@ -40,7 +40,7 @@ func (x *cctvHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := x.service.InsertCctv(*claims, req)
+	insertID, apiErr := ctv.service.InsertCctv(*claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -50,10 +50,10 @@ func (x *cctvHandler) Insert(c *fiber.Ctx) error {
 }
 
 // GetCctv menampilkan cctvDetail
-func (x *cctvHandler) GetCctv(c *fiber.Ctx) error {
+func (ctv *cctvHandler) GetCctv(c *fiber.Ctx) error {
 	cctvID := c.Params("id")
 
-	cctv, apiErr := x.service.GetCctvByID(cctvID, "")
+	cctv, apiErr := ctv.service.GetCctvByID(cctvID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -63,7 +63,7 @@ func (x *cctvHandler) GetCctv(c *fiber.Ctx) error {
 
 // Find menampilkan list cctv
 // Query [branch, name, ip, location, disable]
-func (x *cctvHandler) Find(c *fiber.Ctx) error {
+func (ctv *cctvHandler) Find(c *fiber.Ctx) error {
 	branch := c.Query("branch")
 	name := c.Query("name")
 	ip := c.Query("ip")
@@ -85,7 +85,7 @@ func (x *cctvHandler) Find(c *fiber.Ctx) error {
 		FilterDisable:  disable,
 	}
 
-	cctvList, generalList, apiErr := x.service.FindCctv(filterA)
+	cctvList, generalList, apiErr := ctv.service.FindCctv(filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -98,7 +98,7 @@ func (x *cctvHandler) Find(c *fiber.Ctx) error {
 
 // DisableCctv menghilangkan cctv dari list
 // Param status [enable, disable]
-func (x *cctvHandler) DisableCctv(c *fiber.Ctx) error {
+func (ctv *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
 	userID := c.Params("id")
@@ -115,7 +115,7 @@ func (x *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 		statusBool = true
 	}
 
-	cctvList, apiErr := x.service.DisableCctv(userID, *claims, statusBool)
+	cctvList, apiErr := ctv.service.DisableCctv(userID, *claims, statusBool)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -123,11 +123,11 @@ func (x *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": cctvList})
 }
 
-func (x *cctvHandler) Delete(c *fiber.Ctx) error {
+func (ctv *cctvHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := x.service.DeleteCctv(*claims, id)
+	apiErr := ctv.service.DeleteCctv(*claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -135,7 +135,7 @@ func (x *cctvHandler) Delete(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("cctv %s berhasil dihapus", id)})
 }
 
-func (x *cctvHandler) Edit(c *fiber.Ctx) error {
+func (ctv *cctvHandler) Edit(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	cctvID := c.Params("id")
 
@@ -152,7 +152,7 @@ func (x *cctvHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	cctvEdited, apiErr := x.service.EditCctv(*claims, cctvID, req)
+	cctvEdited, apiErr := ctv.service.EditCctv(*claims, cctvID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -160,12 +160,12 @@ func (x *cctvHandler) Edit(c *fiber.Ctx) error {
 }
 
 // UploadImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
-func (x *cctvHandler) UploadImage(c *fiber.Ctx) error {
+func (ctv *cctvHandler) UploadImage(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
 	// cek apakah ID cctv && branch ada
-	_, apiErr := x.service.GetCctvByID(id, claims.Branch)
+	_, apiErr := ctv.service.GetCctvByID(id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -178,7 +178,7 @@ func (x *cctvHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// update path image di database
-	cctvResult, apiErr := x.service.PutImage(*claims, id, pathInDb)
+	cctvResult, apiErr := ctv.service.PutImage(*claims, id, pathInDb)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

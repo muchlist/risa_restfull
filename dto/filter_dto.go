@@ -38,6 +38,16 @@ type FilterIDBranchCreateGte struct {
 	FilterCreateGTE int64
 }
 
+// FilterIDBranchCategoryCreateGte
+// field FilterCreateGTE digunakan untuk memberikan batas waktu, misalnya saat akan menghapus dokumen
+// maka FilterCreateGTE di isi dengan tanggal sekarang kurang sekian waktu (misalnya 1 hari)
+type FilterIDBranchCategoryCreateGte struct {
+	FilterID          primitive.ObjectID
+	FilterBranch      string
+	FilterSubCategory string
+	FilterCreateGTE   int64
+}
+
 type FilterIDBranchTimestamp struct {
 	FilterID        primitive.ObjectID
 	FilterBranch    string

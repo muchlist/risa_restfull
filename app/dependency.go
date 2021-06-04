@@ -8,6 +8,7 @@ import (
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/improvedao"
+	"github.com/muchlist/risa_restfull/dao/otherdao"
 	"github.com/muchlist/risa_restfull/dao/stockdao"
 	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/handler"
@@ -31,6 +32,7 @@ var (
 	checkDao     = checkdao.NewCheckDao()
 	improveDao   = improvedao.NewImproveDao()
 	computerDao  = computerdao.NewComputerDao()
+	otherDao     = otherdao.NewOtherDao()
 
 	// Service
 	userService      = service.NewUserService(userDao, cryptoUtils, jwt)
@@ -42,6 +44,7 @@ var (
 	checkService     = service.NewCheckService(checkDao, checkItemDao, genUnitDao, historyService)
 	improveService   = service.NewImproveService(improveDao)
 	computerService  = service.NewComputerService(computerDao, historyDao, genUnitDao)
+	otherService     = service.NewOtherService(otherDao, historyDao, genUnitDao)
 
 	// Controller or Handler
 	pingHandler      = handler.NewPingHandler()
@@ -55,4 +58,5 @@ var (
 	checkHandler     = handler.NewCheckHandler(checkService)
 	improveHandler   = handler.NewImproveHandler(improveService)
 	computerHandler  = handler.NewComputerHandler(computerService)
+	otherHandler     = handler.NewOtherHandler(otherService)
 )

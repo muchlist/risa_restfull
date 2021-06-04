@@ -57,8 +57,8 @@ type otherDao struct {
 type OtherDaoAssumer interface {
 	InsertOther(input dto.Other) (*string, rest_err.APIError)
 	EditOther(input dto.OtherEdit) (*dto.Other, rest_err.APIError)
-	DeleteOther(input dto.FilterIDBranchCreateGte) (*dto.Other, rest_err.APIError)
-	DisableOther(pcID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Other, rest_err.APIError)
+	DeleteOther(input dto.FilterIDBranchCategoryCreateGte) (*dto.Other, rest_err.APIError)
+	DisableOther(pcID primitive.ObjectID, user mjwt.CustomClaim, subCategory string, value bool) (*dto.Other, rest_err.APIError)
 	UploadImage(pcID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Other, rest_err.APIError)
 
 	GetOtherByID(pcID primitive.ObjectID, branchIfSpecific string) (*dto.Other, rest_err.APIError)
@@ -98,6 +98,8 @@ func (c *otherDao) EditOther(input dto.OtherEdit) (*dto.Other, rest_err.APIError
 	defer cancel()
 
 	input.Name = strings.ToUpper(input.Name)
+	input.FilterBranch = strings.ToUpper(input.FilterBranch)
+	input.FilterSubCategory = strings.ToUpper(input.FilterSubCategory)
 	input.Location = strings.ToUpper(input.Location)
 	input.Division = strings.ToUpper(input.Division)
 	if input.Tag == nil {
@@ -108,9 +110,10 @@ func (c *otherDao) EditOther(input dto.OtherEdit) (*dto.Other, rest_err.APIError
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyOtherID:        input.ID,
-		keyOtherBranch:    input.FilterBranch,
-		keyOtherUpdatedAt: input.FilterTimestamp,
+		keyOtherID:          input.ID,
+		keyOtherBranch:      input.FilterBranch,
+		keyOtherSubCategory: input.FilterSubCategory,
+		keyOtherUpdatedAt:   input.FilterTimestamp,
 	}
 
 	update := bson.M{
@@ -140,33 +143,34 @@ func (c *otherDao) EditOther(input dto.OtherEdit) (*dto.Other, rest_err.APIError
 	var other dto.Other
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&other); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError(fmt.Sprintf("%s tidak diupdate : validasi id branch timestamp", input.SubCategory))
+			return nil, rest_err.NewBadRequestError(fmt.Sprintf("%s tidak diupdate : validasi id branch category timestamp", input.FilterSubCategory))
 		}
 
-		logger.Error(fmt.Sprintf("Gagal mendapatkan %s dari database (EditOther)", input.SubCategory), err)
-		apiErr := rest_err.NewInternalServerError(fmt.Sprintf("Gagal mendapatkan %s dari database", input.SubCategory), err)
+		logger.Error(fmt.Sprintf("Gagal mendapatkan %s dari database (EditOther)", input.FilterSubCategory), err)
+		apiErr := rest_err.NewInternalServerError(fmt.Sprintf("Gagal mendapatkan %s dari database", input.FilterSubCategory), err)
 		return nil, apiErr
 	}
 
 	return &other, nil
 }
 
-func (c *otherDao) DeleteOther(input dto.FilterIDBranchCreateGte) (*dto.Other, rest_err.APIError) {
+func (c *otherDao) DeleteOther(input dto.FilterIDBranchCategoryCreateGte) (*dto.Other, rest_err.APIError) {
 	coll := db.DB.Collection(keyOtherCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
-		keyOtherID:        input.FilterID,
-		keyOtherBranch:    input.FilterBranch,
-		keyOtherCreatedAt: bson.M{"$gte": input.FilterCreateGTE},
+		keyOtherID:          input.FilterID,
+		keyOtherBranch:      strings.ToUpper(input.FilterBranch),
+		keyOtherSubCategory: strings.ToUpper(input.FilterSubCategory),
+		keyOtherCreatedAt:   bson.M{"$gte": input.FilterCreateGTE},
 	}
 
 	var other dto.Other
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&other)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError("Data tidak diupdate : validasi id branch time_reach")
+			return nil, rest_err.NewBadRequestError("Data tidak diupdate : validasi id branch category time_reach")
 		}
 
 		logger.Error("Gagal menghapus data dari database (DeleteOther)", err)
@@ -178,7 +182,7 @@ func (c *otherDao) DeleteOther(input dto.FilterIDBranchCreateGte) (*dto.Other, r
 }
 
 // DisableOther if value true , other will disabled
-func (c *otherDao) DisableOther(otherID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Other, rest_err.APIError) {
+func (c *otherDao) DisableOther(otherID primitive.ObjectID, user mjwt.CustomClaim, subCategory string, value bool) (*dto.Other, rest_err.APIError) {
 	coll := db.DB.Collection(keyOtherCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -187,8 +191,9 @@ func (c *otherDao) DisableOther(otherID primitive.ObjectID, user mjwt.CustomClai
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyOtherID:     otherID,
-		keyOtherBranch: user.Branch,
+		keyOtherID:          otherID,
+		keyOtherBranch:      strings.ToUpper(user.Branch),
+		keyOtherSubCategory: strings.ToUpper(subCategory),
 	}
 
 	update := bson.M{
@@ -203,7 +208,7 @@ func (c *otherDao) DisableOther(otherID primitive.ObjectID, user mjwt.CustomClai
 	var other dto.Other
 	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&other); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError("Data tidak diupdate : validasi id branch")
+			return nil, rest_err.NewBadRequestError("Data tidak diupdate : validasi id branch category")
 		}
 
 		logger.Error("Gagal mendisable data dari database (DisableOther)", err)
