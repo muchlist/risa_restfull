@@ -27,13 +27,13 @@ func (iv *improveHandler) Insert(c *fiber.Ctx) error {
 	var req dto.ImproveRequest
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
-		logger.Info(fmt.Sprintf("u: %iv | parse | %iv", claims.Name, err.Error()))
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
-		logger.Info(fmt.Sprintf("u: %iv | validate | %iv", claims.Name, err.Error()))
+		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
@@ -42,7 +42,7 @@ func (iv *improveHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	res := fmt.Sprintf("Menambahkan improvement berhasil, ID: %iv", *insertID)
+	res := fmt.Sprintf("Menambahkan improvement berhasil, ID: %s", *insertID)
 	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
 
@@ -53,13 +53,13 @@ func (iv *improveHandler) Edit(c *fiber.Ctx) error {
 	var req dto.ImproveEditRequest
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
-		logger.Info(fmt.Sprintf("u: %iv | parse | %iv", claims.Name, err.Error()))
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
 	if err := req.Validate(); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
-		logger.Info(fmt.Sprintf("u: %iv | validate | %iv", claims.Name, err.Error()))
+		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
@@ -77,7 +77,7 @@ func (iv *improveHandler) ChangeImprove(c *fiber.Ctx) error {
 	var req dto.ImproveChangeRequest
 	if err := c.BodyParser(&req); err != nil {
 		apiErr := rest_err.NewBadRequestError(err.Error())
-		logger.Info(fmt.Sprintf("u: %iv | parse | %iv", claims.Name, err.Error()))
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
@@ -163,5 +163,5 @@ func (iv *improveHandler) Delete(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("improve %iv berhasil dihapus", id)})
+	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("improve %s berhasil dihapus", id)})
 }
