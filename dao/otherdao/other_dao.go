@@ -73,8 +73,6 @@ func (c *otherDao) InsertOther(input dto.Other) (*string, rest_err.APIError) {
 	input.Name = strings.ToUpper(input.Name)
 	input.Branch = strings.ToUpper(input.Branch)
 	input.SubCategory = strings.ToUpper(input.SubCategory)
-	input.Location = strings.ToUpper(input.Location)
-	input.Division = strings.ToUpper(input.Division)
 	if input.Tag == nil {
 		input.Tag = []string{}
 	}
@@ -100,8 +98,6 @@ func (c *otherDao) EditOther(input dto.OtherEdit) (*dto.Other, rest_err.APIError
 	input.Name = strings.ToUpper(input.Name)
 	input.FilterBranch = strings.ToUpper(input.FilterBranch)
 	input.FilterSubCategory = strings.ToUpper(input.FilterSubCategory)
-	input.Location = strings.ToUpper(input.Location)
-	input.Division = strings.ToUpper(input.Division)
 	if input.Tag == nil {
 		input.Tag = []string{}
 	}

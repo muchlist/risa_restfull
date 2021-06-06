@@ -76,8 +76,6 @@ func (c *computerDao) InsertPc(input dto.Computer) (*string, rest_err.APIError) 
 
 	input.Name = strings.ToUpper(input.Name)
 	input.Branch = strings.ToUpper(input.Branch)
-	input.Location = strings.ToUpper(input.Location)
-	input.Division = strings.ToUpper(input.Division)
 	if input.Tag == nil {
 		input.Tag = []string{}
 	}
@@ -101,8 +99,6 @@ func (c *computerDao) EditPc(input dto.ComputerEdit) (*dto.Computer, rest_err.AP
 	defer cancel()
 
 	input.Name = strings.ToUpper(input.Name)
-	input.Location = strings.ToUpper(input.Location)
-	input.Division = strings.ToUpper(input.Division)
 	if input.Tag == nil {
 		input.Tag = []string{}
 	}
