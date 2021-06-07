@@ -100,3 +100,21 @@ func (o *optionHandler) OptBranch(c *fiber.Ctx) error {
 	}
 	return c.JSON(options)
 }
+
+// OptBranch mengembalikan branch yang tersedia
+func (o *optionHandler) OptLocationDivision(c *fiber.Ctx) error {
+	branch := c.Query("branch")
+	var optLocation []string
+
+	if branch != "" {
+		optLocation = location.GetLocationAvailableFrom(strings.ToUpper(branch))
+	} else {
+		optLocation = location.GetLocationAvailable()
+	}
+	division := location.GetDivisionAvailable()
+	options := fiber.Map{
+		"location": optLocation,
+		"division": division,
+	}
+	return c.JSON(options)
+}
