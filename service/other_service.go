@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
-	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
@@ -455,7 +454,7 @@ func (c *otherService) FindOther(filter dto.FilterOther) (dto.OtherResponseMinLi
 
 		generalList, err := c.daoG.FindUnit(dto.GenUnitFilter{
 			Branch:   filter.FilterBranch,
-			Category: category.PC,
+			Category: filter.FilterSubCategory,
 			Pings:    false,
 			Name:     "",
 		})
