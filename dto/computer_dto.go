@@ -120,7 +120,6 @@ type ComputerEditRequest struct {
 
 type ComputerResponseMinList []ComputerResponseMin
 
-// ComputerResponse
 type ComputerResponseMin struct {
 	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Branch         string             `json:"branch" bson:"branch"`

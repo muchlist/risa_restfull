@@ -97,7 +97,6 @@ func (s *stockHandler) ChangeQty(c *fiber.Ctx) error {
 
 // GetStock menampilkan stock Detail
 func (s *stockHandler) GetStock(c *fiber.Ctx) error {
-
 	stockID := c.Params("id")
 
 	stock, apiErr := s.service.GetStockByID(stockID, "")
@@ -111,7 +110,6 @@ func (s *stockHandler) GetStock(c *fiber.Ctx) error {
 // Find menampilkan list stock
 // Query [branch, name, category, disable]
 func (s *stockHandler) Find(c *fiber.Ctx) error {
-
 	branch := c.Query("branch")
 	name := c.Query("name")
 	category := c.Query("category")

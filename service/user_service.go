@@ -30,6 +30,7 @@ type UserServiceAssumer interface {
 	InsertUser(dto.UserRequest) (*string, rest_err.APIError)
 	FindUsers() (dto.UserResponseList, rest_err.APIError)
 	EditUser(userID string, userEdit dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError)
+	EditFcm(userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError)
 	DeleteUser(userID string) rest_err.APIError
 	Login(dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError)
 	Refresh(login dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError)
@@ -58,7 +59,7 @@ func (u *userService) GetUserByID(userID string) (*dto.UserResponse, rest_err.AP
 
 // FindUsers
 func (u *userService) FindUsers() (dto.UserResponseList, rest_err.APIError) {
-	userList, err := u.dao.FindUser()
+	userList, err := u.dao.FindUser("")
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +93,14 @@ func (u *userService) InsertUser(user dto.UserRequest) (*string, rest_err.APIErr
 // EditUser
 func (u *userService) EditUser(userID string, request dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
 	result, err := u.dao.EditUser(userID, request)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (u *userService) EditFcm(userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError) {
+	result, err := u.dao.EditFcm(userID, fcmToken)
 	if err != nil {
 		return nil, err
 	}

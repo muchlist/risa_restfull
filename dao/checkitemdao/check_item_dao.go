@@ -295,7 +295,7 @@ func (c *checkItemDao) FindCheckItem(filterA dto.FilterBranchNameDisable, filter
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyChType, -1}, {keyChName, 1}})
+	opts.SetSort(bson.D{{keyChType, -1}, {keyChName, 1}}) //nolint:govet
 
 	cursor, err := coll.Find(ctx, filter, opts)
 	if err != nil {

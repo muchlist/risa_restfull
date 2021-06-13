@@ -3,6 +3,7 @@ module github.com/muchlist/risa_restfull
 go 1.15
 
 require (
+	firebase.google.com/go/v4 v4.6.0
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
@@ -15,5 +16,5 @@ require (
 	github.com/valyala/fasthttp v1.21.0 // indirect
 	go.mongodb.org/mongo-driver v1.4.6
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	golang.org/x/sys v0.0.0-20210220050731-9a76102bfb43 // indirect
+	google.golang.org/api v0.40.0
 )

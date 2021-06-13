@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/muchlist/risa_restfull/clients/fcm"
 	"github.com/muchlist/risa_restfull/dao/cctvdao"
 	"github.com/muchlist/risa_restfull/dao/checkdao"
 	"github.com/muchlist/risa_restfull/dao/checkitemdao"
@@ -34,12 +35,15 @@ var (
 	computerDao  = computerdao.NewComputerDao()
 	otherDao     = otherdao.NewOtherDao()
 
+	// api client
+	fcmClient = fcm.NewFcmClient()
+
 	// Service
 	userService      = service.NewUserService(userDao, cryptoUtils, jwt)
 	genUnitService   = service.NewGenUnitService(genUnitDao)
-	historyService   = service.NewHistoryService(historyDao, genUnitDao)
+	historyService   = service.NewHistoryService(historyDao, genUnitDao, userDao, fcmClient)
 	cctvService      = service.NewCctvService(cctvDao, historyDao, genUnitDao)
-	stockService     = service.NewStockService(stockDao, historyDao)
+	stockService     = service.NewStockService(stockDao, historyDao, userDao, fcmClient)
 	checkItemService = service.NewCheckItemService(checkItemDao)
 	checkService     = service.NewCheckService(checkDao, checkItemDao, genUnitDao, historyService)
 	improveService   = service.NewImproveService(improveDao)

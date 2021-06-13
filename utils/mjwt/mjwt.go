@@ -4,9 +4,23 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"log"
 	"net/http"
 	"os"
 	"time"
+)
+
+const (
+	CLAIMS    = "claims"
+	secretKey = "SECRET_KEY"
+
+	identityKey  = "identity"
+	nameKey      = "name"
+	rolesKey     = "roles"
+	branchKey    = "branch"
+	tokenTypeKey = "type"
+	expKey       = "exp"
+	freshKey     = "fresh"
 )
 
 var (
@@ -21,7 +35,7 @@ func NewJwt() JWTAssumer {
 func init() {
 	secret = []byte(os.Getenv(secretKey))
 	if string(secret) == "" {
-		secret = []byte("rahasia")
+		log.Fatal("Secret key tidak boleh kosong, ENV : SECRET_KEY")
 	}
 
 	JwtObj = &jwtUtils{}
@@ -35,19 +49,6 @@ type JWTAssumer interface {
 
 type jwtUtils struct {
 }
-
-const (
-	CLAIMS    = "claims"
-	secretKey = "SECRET_KEY"
-
-	identityKey  = "identity"
-	nameKey      = "name"
-	rolesKey     = "roles"
-	branchKey    = "branch"
-	tokenTypeKey = "type"
-	expKey       = "exp"
-	freshKey     = "fresh"
-)
 
 // GenerateToken membuat token jwt untuk login header, untuk menguji nilai payloadnya
 // dapat menggunakan situs jwt.io

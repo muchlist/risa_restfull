@@ -138,7 +138,7 @@ func (iv *improveHandler) ActivateImprove(c *fiber.Ctx) error {
 	// validation
 	statusAvailable := []string{"disable", "enable"}
 	if !sfunc.InSlice(status, statusAvailable) {
-		apiErr := rest_err.NewBadRequestError(fmt.Sprintf("Status yang dimasukkan tidak tersedia. gunakan %iv", statusAvailable))
+		apiErr := rest_err.NewBadRequestError(fmt.Sprintf("Status yang dimasukkan tidak tersedia. gunakan %s", statusAvailable))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 	var isEnable bool

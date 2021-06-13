@@ -29,6 +29,7 @@ const (
 	keyUserRoles     = "roles"
 	keyUserBranch    = "branch"
 	keyUserAvatar    = "avatar"
+	keyUserFcmToken  = "fcm_token"
 	keyUserTimeStamp = "timestamp"
 )
 
@@ -112,6 +113,39 @@ func (u *userDao) EditUser(userID string, userRequest dto.UserEditRequest) (*dto
 		}
 
 		logger.Error("Gagal mendapatkan user dari database", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan user dari database", err)
+		return nil, apiErr
+	}
+
+	return &user, nil
+}
+
+func (u *userDao) EditFcm(userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError) {
+	coll := db.DB.Collection(keyUserColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	userID = strings.ToUpper(userID)
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyUserID: userID,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			keyUserFcmToken: fcmToken,
+		},
+	}
+
+	var user dto.UserResponse
+	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&user); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, rest_err.NewBadRequestError("User tidak diupdate karena ID tidak valid")
+		}
+
+		logger.Error("Gagal mendapatkan user dari database (UpdateFCM)", err)
 		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan user dari database", err)
 		return nil, apiErr
 	}
@@ -265,15 +299,20 @@ func (u *userDao) GetUserByIDWithPassword(userID string) (*dto.User, rest_err.AP
 }
 
 // FindUser mendapatkan daftar semua user dari database
-func (u *userDao) FindUser() (dto.UserResponseList, rest_err.APIError) {
+func (u *userDao) FindUser(branch string) (dto.UserResponseList, rest_err.APIError) {
 	coll := db.DB.Collection(keyUserColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
+	filter := bson.M{}
+	if branch != "" {
+		filter[keyUserBranch] = strings.ToUpper(branch)
+	}
+
 	users := dto.UserResponseList{}
 	opts := options.Find()
 	opts.SetSort(bson.D{{keyUserID, -1}}) //nolint:govet
-	sortCursor, err := coll.Find(ctx, bson.M{}, opts)
+	sortCursor, err := coll.Find(ctx, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan user dari database", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)

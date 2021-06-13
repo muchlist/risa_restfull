@@ -36,6 +36,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/profile", middleware.NormalAuth(), userHandler.GetProfile)
 	api.Post("/avatar", middleware.NormalAuth(), userHandler.UploadImage)
 	api.Post("/change-password", middleware.FreshAuth(), userHandler.ChangePassword)
+	api.Post("/update-fcm", middleware.NormalAuth(), userHandler.UpdateFcmToken)
 
 	// USER ADMIN
 	apiAuthAdmin := app.Group("/api/v1/admin")

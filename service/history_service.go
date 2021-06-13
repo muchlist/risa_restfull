@@ -2,26 +2,38 @@ package service
 
 import (
 	"fmt"
+	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"github.com/muchlist/risa_restfull/clients/fcm"
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
+	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"strings"
 	"time"
 )
 
-func NewHistoryService(histDao historydao.HistoryDaoAssumer, genDao genunitdao.GenUnitDaoAssumer) HistoryServiceAssumer {
+func NewHistoryService(
+	histDao historydao.HistoryDaoAssumer,
+	genDao genunitdao.GenUnitDaoAssumer,
+	userDao userdao.UserDaoAssumer,
+	fcmClient fcm.ClientAssumer) HistoryServiceAssumer {
 	return &historyService{
-		daoH: histDao,
-		daoG: genDao,
+		daoH:      histDao,
+		daoG:      genDao,
+		daoU:      userDao,
+		fcmClient: fcmClient,
 	}
 }
 
 type historyService struct {
-	daoH historydao.HistoryDaoAssumer
-	daoG genunitdao.GenUnitDaoAssumer
+	daoH      historydao.HistoryDaoAssumer
+	daoG      genunitdao.GenUnitDaoAssumer
+	daoU      userdao.UserDaoAssumer
+	fcmClient fcm.ClientAssumer
 }
 type HistoryServiceAssumer interface {
 	InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError)
@@ -108,6 +120,27 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	if err != nil {
 		return nil, err
 	}
+
+	go func() {
+		users, err := h.daoU.FindUser(user.Branch)
+		if err != nil {
+			logger.Error("mendapatkan user gagal saat menambahkan fcm (INSERT HISTORY)", err)
+		}
+
+		var tokens []string
+		for _, u := range users {
+			if u.ID != user.Identity && u.ID != "" {
+				tokens = append(tokens, u.FcmToken)
+			}
+		}
+		// firebase
+		h.fcmClient.SendMessage(fcm.Payload{
+			Title:          fmt.Sprintf("Insiden ditambahkan"),
+			Message:        fmt.Sprintf("%s :: %s - %s :: oleh %s", enum.GetProgressString(input.CompleteStatus), input.Problem, input.ProblemResolve, strings.ToLower(user.Name)),
+			ReceiverTokens: tokens,
+		})
+	}()
+
 	return insertedID, nil
 }
 
@@ -166,6 +199,26 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 			return nil, err
 		}
 	}
+
+	go func() {
+		users, err := h.daoU.FindUser(user.Branch)
+		if err != nil {
+			logger.Error("mendapatkan user gagal saat menambahkan fcm (EDIT HISTORY)", err)
+		}
+
+		var tokens []string
+		for _, u := range users {
+			if u.ID != user.Identity && u.ID != "" {
+				tokens = append(tokens, u.FcmToken)
+			}
+		}
+		// firebase
+		h.fcmClient.SendMessage(fcm.Payload{
+			Title:          fmt.Sprintf("Ins %s - %s diupdate", historyEdited.Category, historyEdited.ParentName),
+			Message:        fmt.Sprintf("%s :: %s - %s :: oleh %s", enum.GetProgressString(input.CompleteStatus), input.Problem, input.ProblemResolve, strings.ToLower(user.Name)),
+			ReceiverTokens: tokens,
+		})
+	}()
 
 	return historyEdited, nil
 }

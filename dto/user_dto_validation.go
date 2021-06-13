@@ -64,3 +64,10 @@ func (u UserRefreshTokenRequest) Validate() error {
 		validation.Field(&u.RefreshToken, validation.Required),
 	)
 }
+
+// Validate input
+func (u UserUpdateFcmRequest) Validate() error {
+	return validation.ValidateStruct(&u,
+		validation.Field(&u.FcmToken, validation.Required),
+	)
+}

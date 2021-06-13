@@ -80,12 +80,6 @@ func (usr *userHandler) Find(c *fiber.Ctx) error {
 // Edit mengedit user oleh admin
 func (usr *userHandler) Edit(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
-	//if err := validation.Validate(userID,
-	//	is.Email,
-	//); err != nil {
-	//	apiErr := rest_err.NewBadRequestError(err.Error())
-	//	return c.Status(apiErr.Status()).JSON(apiErr)
-	//}
 
 	var user dto.UserEditRequest
 	if err := c.BodyParser(&user); err != nil {
@@ -99,6 +93,29 @@ func (usr *userHandler) Edit(c *fiber.Ctx) error {
 	}
 
 	userEdited, apiErr := usr.service.EditUser(userID, user)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": userEdited})
+}
+
+// UpdateFcmToken mengupdateFCM token
+func (usr *userHandler) UpdateFcmToken(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+
+	var fcmPayload dto.UserUpdateFcmRequest
+	if err := c.BodyParser(&fcmPayload); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	if err := fcmPayload.Validate(); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	userEdited, apiErr := usr.service.EditFcm(claims.Identity, fcmPayload.FcmToken)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

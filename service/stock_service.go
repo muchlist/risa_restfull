@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"github.com/muchlist/risa_restfull/clients/fcm"
 	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/stockdao"
+	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -15,16 +17,21 @@ import (
 )
 
 func NewStockService(stockDao stockdao.StockDaoAssumer,
-	histDao historydao.HistoryDaoAssumer) StockServiceAssumer {
+	histDao historydao.HistoryDaoAssumer, userDao userdao.UserDaoAssumer,
+	fcmClient fcm.ClientAssumer) StockServiceAssumer {
 	return &stockService{
-		daoS: stockDao,
-		daoH: histDao,
+		daoS:      stockDao,
+		daoH:      histDao,
+		daoU:      userDao,
+		fcmClient: fcmClient,
 	}
 }
 
 type stockService struct {
-	daoS stockdao.StockDaoAssumer
-	daoH historydao.HistoryDaoAssumer
+	daoS      stockdao.StockDaoAssumer
+	daoH      historydao.HistoryDaoAssumer
+	daoU      userdao.UserDaoAssumer
+	fcmClient fcm.ClientAssumer
 }
 type StockServiceAssumer interface {
 	InsertStock(user mjwt.CustomClaim, input dto.StockRequest) (*string, rest_err.APIError)
@@ -251,7 +258,7 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 	} else {
 		if stockEdited.Qty <= stockEdited.Threshold {
 			history.Problem = fmt.Sprintf("Mengurangi stok (%d) %s : %s - sisa stok %d %s (perlu restock)",
-				data.Qty,
+				-data.Qty,
 				stockEdited.Unit,
 				data.Note,
 				stockEdited.Qty,
@@ -259,7 +266,7 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 			)
 		} else {
 			history.Problem = fmt.Sprintf("Mengurangi stok (%d) %s : %s - sisa stok %d %s",
-				data.Qty,
+				-data.Qty,
 				stockEdited.Unit,
 				data.Note,
 				stockEdited.Qty,
@@ -276,9 +283,25 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 		return nil, errPlus
 	}
 
-	// IMPROVEMENT
-	// jika stockEdited qty lebih kurang atau semadengan threshold
-	// send notification to firebase
+	go func() {
+		users, err := s.daoU.FindUser(user.Branch)
+		if err != nil {
+			logger.Error("mendapatkan user gagal saat menambahkan fcm (EDIT STOCK)", err)
+		}
+
+		var tokens []string
+		for _, u := range users {
+			if u.ID != user.Identity && u.ID != "" {
+				tokens = append(tokens, u.FcmToken)
+			}
+		}
+		// firebase
+		s.fcmClient.SendMessage(fcm.Payload{
+			Title:          fmt.Sprintf("Stok %s berubah", stockEdited.Name),
+			Message:        history.Problem,
+			ReceiverTokens: tokens,
+		})
+	}()
 
 	return stockEdited, nil
 }

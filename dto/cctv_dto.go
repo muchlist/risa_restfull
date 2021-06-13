@@ -89,7 +89,6 @@ type CctvEditRequest struct {
 
 type CctvResponseMinList []CctvResponseMin
 
-// CctvResponse
 type CctvResponseMin struct {
 	ID       primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Branch   string             `json:"branch" bson:"branch"`

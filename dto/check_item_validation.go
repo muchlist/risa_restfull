@@ -32,7 +32,7 @@ func (c CheckItemRequest) Validate() error {
 	if c.Shifts != nil {
 		shiftsAvailable := []int{1, 2, 3}
 		if !sfunc.ValueIntInSliceIsAvailable(c.Shifts, shiftsAvailable) {
-			errorList = append(errorList, fmt.Sprint("Shift yang dimasukkan tidak tersedia."))
+			errorList = append(errorList, "Shift yang dimasukkan tidak tersedia.")
 		}
 	}
 
