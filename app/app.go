@@ -2,9 +2,9 @@ package app
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/risa_restfull/clients/fcm"
 	"github.com/muchlist/risa_restfull/db"
-	"log"
 )
 
 func RunApp() {
@@ -19,7 +19,7 @@ func RunApp() {
 	app := fiber.New()
 	mapUrls(app)
 	if err := app.Listen(":3500"); err != nil {
-		log.Print(err)
+		logger.Error("error fiber listen", err)
 		return
 	}
 }

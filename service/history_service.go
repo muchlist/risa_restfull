@@ -135,7 +135,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		}
 		// firebase
 		h.fcmClient.SendMessage(fcm.Payload{
-			Title:          fmt.Sprintf("Insiden ditambahkan"),
+			Title:          fmt.Sprintf("Insiden %s ditambahkan", strings.ToLower(parent.Category)),
 			Message:        fmt.Sprintf("%s :: %s - %s :: oleh %s", enum.GetProgressString(input.CompleteStatus), input.Problem, input.ProblemResolve, strings.ToLower(user.Name)),
 			ReceiverTokens: tokens,
 		})
@@ -214,7 +214,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 		}
 		// firebase
 		h.fcmClient.SendMessage(fcm.Payload{
-			Title:          fmt.Sprintf("Ins %s - %s diupdate", historyEdited.Category, historyEdited.ParentName),
+			Title:          fmt.Sprintf("History %s - %s diupdate", strings.ToLower(historyEdited.Category), strings.ToLower(historyEdited.ParentName)),
 			Message:        fmt.Sprintf("%s :: %s - %s :: oleh %s", enum.GetProgressString(input.CompleteStatus), input.Problem, input.ProblemResolve, strings.ToLower(user.Name)),
 			ReceiverTokens: tokens,
 		})
