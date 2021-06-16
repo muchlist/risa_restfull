@@ -19,10 +19,27 @@ type ClientAssumer interface {
 
 // SendMEssage mengirimkan pesan notifikasi ke firebase
 func (u *fcmClient) SendMessage(payload Payload) {
+
+	// cek jika penerima 0 atau nil
 	if payload.ReceiverTokens == nil || len(payload.ReceiverTokens) == 0 {
 		logger.Info("receiver tidak ada")
 		return
 	}
+
+	// cek jika masing masing penerima tidak string kosong atau nil
+	var validTokens []string
+	for _, token := range payload.ReceiverTokens {
+		if token != "" {
+			validTokens = append(validTokens, token)
+		}
+	}
+
+	// cek jika valid token tidak 0
+	if len(validTokens) == 0 {
+		logger.Info("receiver tidak ada")
+		return
+	}
+
 	client, err := FCM.Messaging(context.Background())
 	if err != nil {
 		logger.Error("gagal mendapatkan client messaging", err)
@@ -33,7 +50,7 @@ func (u *fcmClient) SendMessage(payload Payload) {
 			Title: payload.Title,
 			Body:  payload.Message,
 		},
-		Tokens: payload.ReceiverTokens,
+		Tokens: validTokens,
 	}
 
 	_, err = client.SendMulticast(context.Background(), message)

@@ -291,7 +291,7 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 
 		var tokens []string
 		for _, u := range users {
-			if u.ID != user.Identity && u.ID != "" {
+			if u.ID != user.Identity {
 				tokens = append(tokens, u.FcmToken)
 			}
 		}
