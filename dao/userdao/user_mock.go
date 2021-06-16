@@ -61,6 +61,19 @@ func (m *MockDao) EditUser(userEmail string, userRequest dto.UserEditRequest) (*
 	return res, err
 }
 
+func (m *MockDao) EditFcm(userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError) {
+	args := m.Called(userID, fcmToken)
+	var res *dto.UserResponse
+	if args.Get(0) != nil {
+		res = args.Get(0).(*dto.UserResponse)
+	}
+	var err rest_err.APIError
+	if args.Get(1) != nil {
+		err = args.Get(1).(rest_err.APIError)
+	}
+	return res, err
+}
+
 func (m *MockDao) DeleteUser(userEmail string) rest_err.APIError {
 	args := m.Called(userEmail)
 	var err rest_err.APIError
@@ -108,8 +121,8 @@ func (m *MockDao) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIErr
 	return res, err
 }
 
-func (m *MockDao) FindUser() (dto.UserResponseList, rest_err.APIError) {
-	args := m.Called()
+func (m *MockDao) FindUser(branch string) (dto.UserResponseList, rest_err.APIError) {
+	args := m.Called(branch)
 
 	var err rest_err.APIError
 	if args.Get(1) != nil {
