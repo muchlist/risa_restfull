@@ -8,6 +8,7 @@ const (
 	Tpkb     = "TPKB"
 	Bmc      = "BMC"
 	Marba    = "Marba"
+	Pocc     = "POCC"
 	Pulpis   = "Pulpis"
 
 	Sampit    = "Sampit"
@@ -29,6 +30,7 @@ func GetLocationAvailable() []string {
 		Tpkb,
 		Bmc,
 		Marba,
+		Pocc,
 		Pulpis,
 		Sampit,
 		Bagendang,
@@ -49,6 +51,7 @@ func GetLocationAvailableFrom(branch string) []string {
 			Tpkb,
 			Bmc,
 			Marba,
+			Pocc,
 			Pulpis,
 			Lainnya,
 		}
