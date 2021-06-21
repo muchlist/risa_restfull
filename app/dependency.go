@@ -10,6 +10,7 @@ import (
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/improvedao"
 	"github.com/muchlist/risa_restfull/dao/otherdao"
+	"github.com/muchlist/risa_restfull/dao/speedtestdao"
 	"github.com/muchlist/risa_restfull/dao/stockdao"
 	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/handler"
@@ -34,6 +35,7 @@ var (
 	improveDao   = improvedao.NewImproveDao()
 	computerDao  = computerdao.NewComputerDao()
 	otherDao     = otherdao.NewOtherDao()
+	speedDao     = speedtestdao.NewSpeedTestDao()
 
 	// api client
 	fcmClient = fcm.NewFcmClient()
@@ -49,6 +51,7 @@ var (
 	improveService   = service.NewImproveService(improveDao)
 	computerService  = service.NewComputerService(computerDao, historyDao, genUnitDao)
 	otherService     = service.NewOtherService(otherDao, historyDao, genUnitDao)
+	speedService     = service.NewSpeedTestService(speedDao)
 
 	// Controller or Handler
 	pingHandler      = handler.NewPingHandler()
@@ -63,4 +66,5 @@ var (
 	improveHandler   = handler.NewImproveHandler(improveService)
 	computerHandler  = handler.NewComputerHandler(computerService)
 	otherHandler     = handler.NewOtherHandler(otherService)
+	speedHandler     = handler.NewSpeedHandler(speedService)
 )

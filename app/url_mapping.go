@@ -124,6 +124,9 @@ func mapUrls(app *fiber.App) {
 	api.Get("/improve", middleware.NormalAuth(), improveHandler.Find)
 	api.Get("/improve-status/:id/:status", middleware.NormalAuth(roles.RoleApprove), improveHandler.ActivateImprove)
 
+	// speed test inet
+	api.Get("/speed-test", middleware.NormalAuth(), speedHandler.Retrieve)
+
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)
 	api.Get("/opt-stock", optionHandler.OptCreateStock)

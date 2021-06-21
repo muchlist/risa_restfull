@@ -3,24 +3,20 @@ package location
 import "github.com/muchlist/risa_restfull/constants/branches"
 
 const (
-	Regional = "Regional"
-	Trisakti = "Trisakti"
-	Tpkb     = "TPKB"
-	Bmc      = "BMC"
-	Marba    = "Marba"
-	Pocc     = "POCC"
-	Pulpis   = "Pulpis"
-
+	Regional  = "Regional"
+	Trisakti  = "Trisakti"
+	Tpkb      = "TPKB"
+	Bmc       = "BMC"
+	Marba     = "Marba"
+	Pocc      = "POCC"
+	Pulpis    = "Pulpis"
 	Sampit    = "Sampit"
 	Bagendang = "Bagendang"
-
 	Kotabaru  = "Kotabaru"
 	Batulicin = "Batulicin"
-
 	Kumai     = "Kumai"
 	Bumiharjo = "Bumiharjo"
-
-	Lainnya = "Lainnya"
+	Lainnya   = "Lainnya"
 )
 
 func GetLocationAvailable() []string {
