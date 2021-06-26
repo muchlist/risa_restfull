@@ -42,7 +42,7 @@ var (
 
 	// Service
 	userService      = service.NewUserService(userDao, cryptoUtils, jwt)
-	genUnitService   = service.NewGenUnitService(genUnitDao)
+	genUnitService   = service.NewGenUnitService(genUnitDao, userDao, fcmClient)
 	historyService   = service.NewHistoryService(historyDao, genUnitDao, userDao, fcmClient)
 	cctvService      = service.NewCctvService(cctvDao, historyDao, genUnitDao)
 	stockService     = service.NewStockService(stockDao, historyDao, userDao, fcmClient)

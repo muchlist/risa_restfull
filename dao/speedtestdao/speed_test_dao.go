@@ -15,12 +15,6 @@ import (
 const (
 	connectTimeout  = 3
 	keySpCollection = "speedTest"
-
-	keySpID       = "id"
-	keySpTime     = "time"
-	keySpLatency  = "latency_ms"
-	keySpUpload   = "upload"
-	keySpDownload = "download"
 )
 
 func NewSpeedTestDao() SpedTestDaoAssumer {
