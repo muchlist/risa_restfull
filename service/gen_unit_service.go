@@ -84,6 +84,11 @@ func (g *genUnitService) CheckHardwareDownAndSendNotif(branchIfSpecific string, 
 	// filtering
 	filterUncheckedUnitList(&unitList)
 
+	// jika tidak ada unitnya, continue
+	if len(unitList) == 0 {
+		return nil
+	}
+
 	users, err := g.daoU.FindUser(branchIfSpecific)
 	if err != nil {
 		logger.Error("mendapatkan user gagal saat menambahkan fcm (CheckHardwareDownAndSendNotif)", err)
