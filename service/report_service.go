@@ -1,44 +1,43 @@
 package service
 
 import (
-	"fmt"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/dao/checkdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
+	"github.com/muchlist/risa_restfull/dao/reportdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/pdfgen"
-	"github.com/muchlist/risa_restfull/utils/timegen"
 )
 
 func NewReportService(
 	histDao historydao.HistoryDaoAssumer,
 	checkDao checkdao.CheckDaoAssumer,
+	pdfDao reportdao.PdfDaoAssumer,
 ) ReportServiceAssumer {
 	return &reportService{
 		daoH: histDao,
 		daoC: checkDao,
+		daoP: pdfDao,
 	}
 }
 
 type reportService struct {
 	daoH historydao.HistoryDaoAssumer
 	daoC checkdao.CheckDaoAssumer
+	daoP reportdao.PdfDaoAssumer
 }
+
 type ReportServiceAssumer interface {
-	GenerateReportPDF(branch string, start int64, end int64) (*string, rest_err.APIError)
+	InsertPdf(input dto.PdfFile) (*string, rest_err.APIError)
+	GenerateReportPDF(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
+	FindPdf(branch string) ([]dto.PdfFile, rest_err.APIError)
 }
 
 // GeneratePDFReport
-func (r *reportService) GenerateReportPDF(branch string, start int64, end int64) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportPDF(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
 		return nil, rest_err.NewBadRequestError("tanggal terakhir tidak boleh lebih besar dari tanggal awal")
 	}
-
-	pdfName, err2 := timegen.GetTimeAsName(end)
-	if err2 != nil {
-		return nil, rest_err.NewBadRequestError("gagal membuat nama pdf berdasarkan tanggal terakhir")
-	}
-	pdfName = fmt.Sprintf("manual-%s", pdfName)
 
 	// GET HISTORIES
 	historyList, err := r.daoH.FindHistoryForReport(branch, start, end)
@@ -57,7 +56,7 @@ func (r *reportService) GenerateReportPDF(branch string, start int64, end int64)
 	}
 
 	errPDF := pdfgen.GeneratePDF(pdfgen.PDFReq{
-		Name:        pdfName,
+		Name:        name,
 		HistoryList: historyList,
 		CheckList:   checkList,
 		Start:       start,
@@ -67,5 +66,13 @@ func (r *reportService) GenerateReportPDF(branch string, start int64, end int64)
 		return nil, rest_err.NewInternalServerError("gagal membuat pdf", errPDF)
 	}
 
-	return &pdfName, nil
+	return &name, nil
+}
+
+func (r *reportService) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
+	return r.daoP.InsertPdf(input)
+}
+
+func (r *reportService) FindPdf(branch string) ([]dto.PdfFile, rest_err.APIError) {
+	return r.daoP.FindPdf(branch)
 }

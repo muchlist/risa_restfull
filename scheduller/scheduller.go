@@ -1,11 +1,13 @@
 package scheduller
 
 import (
+	"fmt"
 	"github.com/go-co-op/gocron"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
+	"github.com/muchlist/risa_restfull/utils/timegen"
 	"github.com/showwin/speedtest-go/speedtest"
 	"time"
 )
@@ -52,8 +54,29 @@ func runCctvCheckBanjarmasin(genUnitService service.GenUnitServiceAssumer) {
 func runReportGeneratorBanjarmasin(reportService service.ReportServiceAssumer) {
 	timeNow := time.Now().Unix()
 	timePast := timeNow - 28801 // minus 8 jam
-	_, err := reportService.GenerateReportPDF("BANJARMASIN", timePast, timeNow)
+
+	pdfName, err2 := timegen.GetTimeAsName(timeNow)
+	if err2 != nil {
+		logger.Error("error membuat nama pdf otomatis", err2)
+	}
+	pdfName = fmt.Sprintf("auto-%s", pdfName)
+
+	_, err := reportService.GenerateReportPDF(pdfName, "BANJARMASIN", timePast, timeNow)
 	if err != nil {
+		logger.Error("gagal membuat pdf otomatis", err)
+	}
+
+	// simpan pdf ke database
+	_, apiErr := reportService.InsertPdf(dto.PdfFile{
+		CreatedAt: time.Now().Unix(),
+		CreatedBy: "SYSTEM",
+		Branch:    "BANJARMASIN",
+		Name:      pdfName,
+		Type:      "LAPORAN",
+		FileName:  fmt.Sprintf("pdf/%s.pdf", pdfName),
+	})
+
+	if apiErr != nil {
 		logger.Error("gagal membuat pdf otomatis", err)
 	}
 }

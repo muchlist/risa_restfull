@@ -130,6 +130,7 @@ func mapUrls(app *fiber.App) {
 
 	// REPORT
 	api.Get("/generate-pdf", middleware.NormalAuth(), reportHandler.GeneratePDF)
+	api.Get("/list-pdf", middleware.NormalAuth(), reportHandler.FindPDF)
 
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)
