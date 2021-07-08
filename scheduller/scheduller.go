@@ -52,7 +52,7 @@ func runCctvCheckBanjarmasin(genUnitService service.GenUnitServiceAssumer) {
 func runReportGeneratorBanjarmasin(reportService service.ReportServiceAssumer) {
 	timeNow := time.Now().Unix()
 	timePast := timeNow - 28801 // minus 8 jam
-	_, err := reportService.GenerateReportPDF("BANJARMASIN", timeNow, timePast)
+	_, err := reportService.GenerateReportPDF("BANJARMASIN", timePast, timeNow)
 	if err != nil {
 		logger.Error("gagal membuat pdf otomatis", err)
 	}
