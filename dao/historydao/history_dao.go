@@ -58,6 +58,7 @@ type HistoryDaoAssumer interface {
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError)
+	FindHistoryForReport(branchIfSpecific string, start int64, end int64) (dto.HistoryResponseMinList, rest_err.APIError)
 }
 
 func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIError) {
@@ -400,4 +401,57 @@ func (h *historyDao) UploadImage(historyID primitive.ObjectID, imagePath string,
 	}
 
 	return &history, nil
+}
+
+func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, end int64) (dto.HistoryResponseMinList, rest_err.APIError) {
+	coll := db.DB.Collection(keyHistColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+	branch := strings.ToUpper(branchIfSpecific)
+
+	// Find complete (4) and info (0)
+	filter := bson.M{
+		keyHistBranch:         branch,
+		keyHistCompleteStatus: bson.M{"$in": bson.A{0, 4}},
+		keyHistUpdatedAt:      bson.M{"$gte": start, "$lte": end},
+	}
+	opts := options.Find()
+	opts.SetSort(bson.D{{keyHistUpdatedAt, -1}}) //nolint:govet
+
+	cursor, err := coll.Find(ctx, filter, opts)
+	if err != nil {
+		logger.Error("Gagal mendapatkan daftar history dari database (FindHistoryForReport cursor)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.HistoryResponseMinList{}, apiErr
+	}
+
+	histories04 := dto.HistoryResponseMinList{}
+	if err = cursor.All(ctx, &histories04); err != nil {
+		logger.Error("Gagal decode histories cursor ke objek slice (FindHistoryForReport 04)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.HistoryResponseMinList{}, apiErr
+	}
+
+	// Find progress (1) and pending (2, 3)
+	filter = bson.M{
+		keyHistBranch:         branch,
+		keyHistCompleteStatus: bson.M{"$in": bson.A{1, 2, 3}},
+	}
+
+	cursor, err = coll.Find(ctx, filter, opts)
+	if err != nil {
+		logger.Error("Gagal mendapatkan daftar history dari database (FindHistoryForReport cursor2)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.HistoryResponseMinList{}, apiErr
+	}
+
+	histories123 := dto.HistoryResponseMinList{}
+	if err = cursor.All(ctx, &histories123); err != nil {
+		logger.Error("Gagal decode histories cursor ke objek slice (FindHistoryForReport 123)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.HistoryResponseMinList{}, apiErr
+	}
+
+	histories := append(histories04, histories123...)
+	return histories, nil
 }

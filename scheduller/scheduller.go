@@ -10,19 +10,52 @@ import (
 	"time"
 )
 
-func RunScheduler(speedService service.SpeedTestServiceAssumer, genUnitService service.GenUnitServiceAssumer) {
-	s := gocron.NewScheduler(time.UTC)
-	_, _ = s.Every(1).Days().At("02:00").Do(func() {
+func RunScheduler(
+	speedService service.SpeedTestServiceAssumer,
+	genUnitService service.GenUnitServiceAssumer,
+	reportService service.ReportServiceAssumer,
+) {
+	witaTimeZone, err := time.LoadLocation("Asia/Makassar")
+	if err != nil {
+		logger.Error("gagal menggunakan timezone wita", err)
+	}
+	s := gocron.NewScheduler(witaTimeZone)
+
+	// run speed test
+	_, _ = s.Every(1).Days().At("23:00").Do(func() {
 		runSpeedTest(speedService)
 	})
+
+	// run check cctv
 	_, _ = s.Every(2).Hours().Do(func() {
 		runCctvCheckBanjarmasin(genUnitService)
 	})
+
+	// run report generator
+	_, _ = s.Every(1).Days().At("08:00").Do(func() {
+		runReportGeneratorBanjarmasin(reportService)
+	})
+	_, _ = s.Every(1).Days().At("16:00").Do(func() {
+		runReportGeneratorBanjarmasin(reportService)
+	})
+	_, _ = s.Every(1).Days().At("00:00").Do(func() {
+		runReportGeneratorBanjarmasin(reportService)
+	})
+
 	s.StartAsync()
 }
 
 func runCctvCheckBanjarmasin(genUnitService service.GenUnitServiceAssumer) {
 	_ = genUnitService.CheckHardwareDownAndSendNotif("BANJARMASIN", category.Cctv)
+}
+
+func runReportGeneratorBanjarmasin(reportService service.ReportServiceAssumer) {
+	timeNow := time.Now().Unix()
+	timePast := timeNow - 28801 // minus 8 jam
+	_, err := reportService.GenerateReportPDF("BANJARMASIN", timeNow, timePast)
+	if err != nil {
+		logger.Error("gagal membuat pdf otomatis", err)
+	}
 }
 
 func runSpeedTest(speedService service.SpeedTestServiceAssumer) {

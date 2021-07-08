@@ -60,6 +60,7 @@ type CheckDaoAssumer interface {
 
 	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.Check, rest_err.APIError)
 	FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError)
+	FindCheckForReports(branch string, filterA dto.FilterTimeRangeLimit) ([]dto.Check, rest_err.APIError)
 }
 
 func (c *checkDao) InsertCheck(input dto.Check) (*string, rest_err.APIError) {
@@ -303,6 +304,50 @@ func (c *checkDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (d
 		logger.Error("Gagal decode checkList cursor ke objek slice (FindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.CheckResponseMinList{}, apiErr
+	}
+
+	return checkList, nil
+}
+
+// FindCheckForReports mengembalikan check detail dengan limit 2
+func (c *checkDao) FindCheckForReports(branch string, filterA dto.FilterTimeRangeLimit) ([]dto.Check, rest_err.APIError) {
+	coll := db.DB.Collection(keyChCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	if filterA.Limit == 0 {
+		filterA.Limit = 2
+	}
+
+	// filter
+	filter := bson.M{}
+	// filter condition
+	if branch != "" {
+		filter[keyChBranch] = strings.ToUpper(branch)
+	}
+	if filterA.FilterStart != 0 {
+		filter[keyChCreatedAt] = bson.M{"$gte": filterA.FilterStart}
+	}
+	if filterA.FilterEnd != 0 {
+		filter[keyChCreatedAt] = bson.M{"$lte": filterA.FilterEnd}
+	}
+
+	opts := options.Find()
+	opts.SetSort(bson.D{{keyChID, -1}}) //nolint:govet
+	opts.SetLimit(filterA.Limit)
+
+	cursor, err := coll.Find(ctx, filter, opts)
+	if err != nil {
+		logger.Error("Gagal mendapatkan daftar check dari database (FindCheck)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return []dto.Check{}, apiErr
+	}
+
+	var checkList []dto.Check
+	if err = cursor.All(ctx, &checkList); err != nil {
+		logger.Error("Gagal decode checkList cursor ke objek slice (FindCheck)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return []dto.Check{}, apiErr
 	}
 
 	return checkList, nil

@@ -9,6 +9,7 @@ require (
 	github.com/go-co-op/gocron v1.6.2
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofiber/fiber/v2 v2.6.0
+	github.com/johnfercher/maroto v0.33.0
 	github.com/joho/godotenv v1.3.0
 	github.com/klauspost/compress v1.11.7 // indirect
 	github.com/muchlist/erru_utils_go v1.0.4

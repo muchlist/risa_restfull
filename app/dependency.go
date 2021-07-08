@@ -52,6 +52,7 @@ var (
 	computerService  = service.NewComputerService(computerDao, historyDao, genUnitDao)
 	otherService     = service.NewOtherService(otherDao, historyDao, genUnitDao)
 	speedService     = service.NewSpeedTestService(speedDao)
+	reportService    = service.NewReportService(historyDao, checkDao)
 
 	// Controller or Handler
 	pingHandler      = handler.NewPingHandler()
@@ -67,4 +68,5 @@ var (
 	computerHandler  = handler.NewComputerHandler(computerService)
 	otherHandler     = handler.NewOtherHandler(otherService)
 	speedHandler     = handler.NewSpeedHandler(speedService)
+	reportHandler    = handler.NewReportHandler(reportService)
 )
