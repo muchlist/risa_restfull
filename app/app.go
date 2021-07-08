@@ -22,7 +22,7 @@ func RunApp() {
 	mapUrls(app)
 
 	// menjalankan job scheduller speedTest Internet dan cek cctv
-	scheduller.RunScheduler(speedService, genUnitService)
+	scheduller.RunScheduler(speedService, genUnitService, reportService)
 
 	if err := app.Listen(":3500"); err != nil {
 		logger.Error("error fiber listen", err)
