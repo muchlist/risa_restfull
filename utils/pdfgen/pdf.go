@@ -117,10 +117,16 @@ func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryResponseMin, title str
 		if err != nil {
 			updateAt = "error"
 		}
+
+		note := data.Problem
+		if data.ProblemResolve != "" {
+			note = fmt.Sprintf("%s\n##%s", note, data.ProblemResolve)
+		}
+
 		contents = append(contents, []string{
 			data.ParentName,
 			data.Category,
-			data.Problem,
+			note,
 			enum.GetProgressString(data.CompleteStatus),
 			updateAt,
 			strings.Split(data.UpdatedBy, " ")[0]})
@@ -171,7 +177,8 @@ func buildCheckList(m pdf.Maroto, checkList []dto.Check) {
 				checkedAt = "error"
 			}
 			if data.CheckedAt == 0 {
-				checkedAt = "no cek"
+				checkedAt = "tidak dicek"
+				data.CheckedNote = ""
 			}
 
 			haveProblem := ""

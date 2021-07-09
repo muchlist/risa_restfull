@@ -24,7 +24,7 @@ func RunScheduler(
 	s := gocron.NewScheduler(witaTimeZone)
 
 	// run speed test
-	_, _ = s.Every(1).Days().At("23:00").Do(func() {
+	_, _ = s.Every(1).Days().At("06:00").Do(func() {
 		runSpeedTest(speedService)
 	})
 
