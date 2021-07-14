@@ -41,7 +41,7 @@ func GeneratePDF(
 	}
 
 	m := pdf.NewMaroto(consts.Landscape, consts.A4)
-	m.SetPageMargins(10, 10, 10)
+	m.SetPageMargins(5, 10, 5)
 
 	startWita, _ := timegen.GetTimeWithYearWITA(pdfStruct.Start)
 	endWita, _ := timegen.GetTimeWithYearWITA(pdfStruct.End)
@@ -108,7 +108,7 @@ func verticalSpace(m pdf.Maroto) {
 }
 
 func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryResponseMin, title string, customColor color.Color) {
-	tableHeading := []string{"Nama", "Kategori", "Keterangan", "Status", "Update", "Oleh"}
+	tableHeading := []string{"Nama", "Kategori", "Keterangan", "Solusi", "Status", "Update", "Oleh"}
 
 	var contents [][]string
 
@@ -118,15 +118,11 @@ func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryResponseMin, title str
 			updateAt = "error"
 		}
 
-		note := data.Problem
-		if data.ProblemResolve != "" {
-			note = fmt.Sprintf("%s\n##%s", note, data.ProblemResolve)
-		}
-
 		contents = append(contents, []string{
 			data.ParentName,
 			data.Category,
-			note,
+			data.Problem,
+			data.ProblemResolve,
 			enum.GetProgressString(data.CompleteStatus),
 			updateAt,
 			strings.Split(data.UpdatedBy, " ")[0]})
@@ -152,11 +148,11 @@ func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryResponseMin, title str
 	m.TableList(tableHeading, contents, props.TableList{
 		HeaderProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{2, 1, 5, 1, 2, 1},
+			GridSizes: []uint{2, 1, 3, 3, 1, 1, 1},
 		},
 		ContentProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{2, 1, 5, 1, 2, 1},
+			GridSizes: []uint{2, 1, 3, 3, 1, 1, 1},
 		},
 		Align:                consts.Left,
 		AlternatedBackground: &lightPurpleColor,
