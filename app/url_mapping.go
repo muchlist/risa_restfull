@@ -116,6 +116,9 @@ func mapUrls(app *fiber.App) {
 	api.Post("/check-update", middleware.NormalAuth(), checkHandler.UpdateCheckItem)
 	api.Post("/check-image/:id/:child_id", middleware.NormalAuth(), checkHandler.UploadImage)
 
+	// VENDOR CHECK
+	api.Get("/vendor-check", middleware.NormalAuth(), vendorCheckHandler.Insert)
+
 	// IMPROVE
 	api.Post("/improve", middleware.NormalAuth(), improveHandler.Insert)
 	api.Get("/improve/:id", middleware.NormalAuth(), improveHandler.GetImprove)

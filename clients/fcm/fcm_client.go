@@ -4,6 +4,7 @@ import (
 	"context"
 	"firebase.google.com/go/v4/messaging"
 	"github.com/muchlist/erru_utils_go/logger"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 )
 
 func NewFcmClient() ClientAssumer {
@@ -40,6 +41,8 @@ func (u *fcmClient) SendMessage(payload Payload) {
 		return
 	}
 
+	uniqueTokenValid := sfunc.Unique(validTokens)
+
 	client, err := FCM.Messaging(context.Background())
 	if err != nil {
 		logger.Error("gagal mendapatkan client messaging", err)
@@ -50,7 +53,7 @@ func (u *fcmClient) SendMessage(payload Payload) {
 			Title: payload.Title,
 			Body:  payload.Message,
 		},
-		Tokens: validTokens,
+		Tokens: uniqueTokenValid,
 	}
 
 	_, err = client.SendMulticast(context.Background(), message)

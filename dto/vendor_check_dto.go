@@ -13,6 +13,7 @@ type VendorCheck struct {
 	Branch           string                 `json:"branch" bson:"branch"`
 	TimeStarted      int64                  `json:"time_started" bson:"time_started"`
 	TimeEnded        int64                  `json:"time_ended" bson:"time_ended"`
+	IsVirtualCheck   bool                   `json:"is_virtual_check" bson:"is_virtual_check"`
 	IsFinish         bool                   `json:"is_finish" bson:"is_finish"`
 	VendorCheckItems []VendorCheckItemEmbed `json:"vendor_check_items" bson:"vendor_check_items"`
 	Note             string                 `json:"note" bson:"note"`
