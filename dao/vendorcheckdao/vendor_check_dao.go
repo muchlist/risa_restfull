@@ -194,6 +194,7 @@ func (c checkVendorDao) UpdateCheckItem(input dto.VendorCheckItemUpdate) (*dto.V
 	filter := bson.M{
 		keyID:       input.FilterParentID,
 		keyChXId:    input.FilterChildID,
+		keyBranch:   strings.ToUpper(input.FilterBranch),
 		keyIsFinish: false,
 	}
 

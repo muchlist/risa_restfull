@@ -51,7 +51,7 @@ type VendorCheckItemUpdateRequest struct {
 }
 
 type VendorCheckItemUpdate struct {
-	FilterParentIDChildIDAuthor
+	FilterParentIDChildIDBranch
 	CheckedAt int64
 	CheckedBy string
 	IsChecked bool
