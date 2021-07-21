@@ -17,7 +17,7 @@ type Improve struct {
 	Goal           int                `json:"goal" bson:"goal"`
 	GoalsAchieved  int                `json:"goals_achieved" bson:"goals_achieved"`
 	IsActive       bool               `json:"is_active" bson:"is_active"`
-	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
+	CompleteStatus int                `json:"complete_status" bson:"complete_status"` // 0 all, 1 progress, 2 complete
 	ImproveChanges []ImproveChange    `json:"improve_changes" bson:"improve_changes"`
 }
 

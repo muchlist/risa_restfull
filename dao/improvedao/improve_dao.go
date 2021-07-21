@@ -265,7 +265,7 @@ func (s *improveDao) FindImprove(filterA dto.FilterBranchCompleteTimeRangeLimit)
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyImpID, -1}})
+	opts.SetSort(bson.D{{Key: keyImpID, Value: -1}})
 	opts.SetLimit(filterA.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
