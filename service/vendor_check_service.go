@@ -42,6 +42,7 @@ type VendorCheckServiceAssumer interface {
 	GetVendorCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError)
 	FindVendorCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError)
 	UpdateVendorCheckItem(user mjwt.CustomClaim, input dto.VendorCheckItemUpdateRequest) (*dto.VendorCheck, rest_err.APIError)
+	BulkUpdateVendorItem(user mjwt.CustomClaim, inputs []dto.VendorCheckItemUpdateRequest) (int64, rest_err.APIError)
 	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError)
 }
 
@@ -186,6 +187,40 @@ func (c *vendorCheckService) UpdateVendorCheckItem(user mjwt.CustomClaim, input 
 		return nil, err
 	}
 	return vendorCheck, nil
+}
+
+func (c *vendorCheckService) BulkUpdateVendorItem(user mjwt.CustomClaim, inputs []dto.VendorCheckItemUpdateRequest) (int64, rest_err.APIError) {
+	if len(inputs) == 0 {
+		return 0, rest_err.NewBadRequestError("tidak ada perubahan")
+	}
+
+	parentOid, errT := primitive.ObjectIDFromHex(inputs[0].ParentID)
+	if errT != nil {
+		return 0, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
+	}
+
+	timeNow := time.Now().Unix()
+
+	inputDatas := make([]dto.VendorCheckItemUpdate, len(inputs))
+	for i, input := range inputs {
+		inputDatas[i] = dto.VendorCheckItemUpdate{
+			FilterParentIDChildIDBranch: dto.FilterParentIDChildIDBranch{
+				FilterParentID: parentOid,
+				FilterChildID:  input.ChildID,
+				FilterBranch:   user.Branch,
+			},
+			CheckedAt: timeNow,
+			CheckedBy: user.Name,
+			IsChecked: input.IsChecked,
+			IsBlur:    input.IsBlur,
+			IsOffline: input.IsOffline,
+		}
+	}
+	result, err := c.daoC.BulkUpdateItem(inputDatas)
+	if err != nil {
+		return 0, err
+	}
+	return result, nil
 }
 
 func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError) {
