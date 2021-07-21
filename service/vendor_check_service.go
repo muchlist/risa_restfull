@@ -42,7 +42,7 @@ type VendorCheckServiceAssumer interface {
 	GetVendorCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError)
 	FindVendorCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError)
 	UpdateVendorCheckItem(user mjwt.CustomClaim, input dto.VendorCheckItemUpdateRequest) (*dto.VendorCheck, rest_err.APIError)
-	BulkUpdateVendorItem(user mjwt.CustomClaim, inputs []dto.VendorCheckItemUpdateRequest) (int64, rest_err.APIError)
+	BulkUpdateVendorItem(user mjwt.CustomClaim, inputs []dto.VendorCheckItemUpdateRequest) (string, rest_err.APIError)
 	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError)
 }
 
@@ -189,14 +189,14 @@ func (c *vendorCheckService) UpdateVendorCheckItem(user mjwt.CustomClaim, input 
 	return vendorCheck, nil
 }
 
-func (c *vendorCheckService) BulkUpdateVendorItem(user mjwt.CustomClaim, inputs []dto.VendorCheckItemUpdateRequest) (int64, rest_err.APIError) {
+func (c *vendorCheckService) BulkUpdateVendorItem(user mjwt.CustomClaim, inputs []dto.VendorCheckItemUpdateRequest) (string, rest_err.APIError) {
 	if len(inputs) == 0 {
-		return 0, rest_err.NewBadRequestError("tidak ada perubahan")
+		return "", rest_err.NewBadRequestError("tidak ada perubahan")
 	}
 
 	parentOid, errT := primitive.ObjectIDFromHex(inputs[0].ParentID)
 	if errT != nil {
-		return 0, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
+		return "", rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
 	}
 
 	timeNow := time.Now().Unix()
@@ -218,9 +218,9 @@ func (c *vendorCheckService) BulkUpdateVendorItem(user mjwt.CustomClaim, inputs 
 	}
 	result, err := c.daoC.BulkUpdateItem(inputDatas)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
-	return result, nil
+	return fmt.Sprintf("%d data telah diubah", result), nil
 }
 
 func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError) {
