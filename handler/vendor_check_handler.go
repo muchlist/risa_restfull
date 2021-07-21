@@ -97,3 +97,15 @@ func (vc *vendorCheckHandler) UpdateCheckItem(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"error": nil, "data": checkUpdated})
 }
+
+func (vc *vendorCheckHandler) Finish(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+
+	result, apiErr := vc.service.FinishCheck(*claims, id)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": result})
+}

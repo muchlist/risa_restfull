@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
+	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/cctvdao"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/vendorcheckdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strings"
 	"time"
@@ -40,8 +42,7 @@ type VendorCheckServiceAssumer interface {
 	GetVendorCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError)
 	FindVendorCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError)
 	UpdateVendorCheckItem(user mjwt.CustomClaim, input dto.VendorCheckItemUpdateRequest) (*dto.VendorCheck, rest_err.APIError)
-
-	// PutChildImage(user mjwt.CustomClaim, parentID string, childID string, imagePath string) (*dto.VendorCheck, rest_err.APIError)
+	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError)
 }
 
 func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim, isVirtualCheck bool) (*string, rest_err.APIError) {
@@ -159,28 +160,6 @@ func (c *vendorCheckService) DeleteVendorCheck(user mjwt.CustomClaim, id string)
 	return nil
 }
 
-//
-//// PutImage memasukkan lokasi file (path) ke dalam database vendorCheck dengan mengecek kesesuaian branch
-//func (c *vendorCheckService) PutChildImage(user mjwt.CustomClaim, parentID string, childID string, imagePath string) (*dto.VendorCheck, rest_err.APIError) {
-//	parentOid, errT := primitive.ObjectIDFromHex(parentID)
-//	if errT != nil {
-//		return nil, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
-//	}
-//
-//	filter := dto.FilterParentIDChildIDAuthor{
-//		FilterParentID: parentOid,
-//		FilterChildID:  childID,
-//		FilterAuthorID: user.Identity,
-//	}
-//
-//	vendorCheck, err := c.daoC.UploadChildImage(filter, imagePath)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return vendorCheck, nil
-//}
-//
-
 func (c *vendorCheckService) UpdateVendorCheckItem(user mjwt.CustomClaim, input dto.VendorCheckItemUpdateRequest) (*dto.VendorCheck, rest_err.APIError) {
 	parentOid, errT := primitive.ObjectIDFromHex(input.ParentID)
 	if errT != nil {
@@ -207,6 +186,107 @@ func (c *vendorCheckService) UpdateVendorCheckItem(user mjwt.CustomClaim, input 
 		return nil, err
 	}
 	return vendorCheck, nil
+}
+
+func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(detailID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	timeNow := time.Now().Unix()
+
+	// 1. cek cctv existing, untuk mendapatkan keterangan apakah ada case
+	genItems, err := c.daoG.FindUnit(dto.GenUnitFilter{
+		Branch:   user.Branch,
+		Category: category.Cctv,
+		Pings:    false,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. cctv yang memiliki case tersebut di exclude dari update berikutnya
+	var cctvExcludeID []string
+	for _, cctv := range genItems {
+		if cctv.CasesSize != 0 {
+			cctvExcludeID = append(cctvExcludeID, cctv.ID)
+		}
+	}
+
+	// 3. filter items check yang memiliki is_offline atau is_blur true
+	var cctvBlurID []string
+	var cctvOfflineID []string
+	cctvChecklistDetail, err := c.daoC.GetCheckByID(oid, user.Branch)
+	if err != nil {
+		return nil, err
+	}
+	for _, cctv := range cctvChecklistDetail.VendorCheckItems {
+		if sfunc.InSlice(cctv.ID, cctvExcludeID) {
+			continue
+		}
+		if cctv.IsBlur {
+			cctvBlurID = append(cctvBlurID, cctv.ID)
+		}
+		if cctv.IsOffline {
+			cctvOfflineID = append(cctvOfflineID, cctv.ID)
+		}
+	}
+
+	// send to background
+	go func() {
+		// Insert History isBlur
+		if len(cctvBlurID) != 0 {
+			for _, cctvID := range cctvBlurID {
+				_, _ = c.servHistory.InsertHistory(user, dto.HistoryRequest{
+					ParentID:       cctvID,
+					Status:         "",
+					Problem:        "Display CCTV buram #isBlur",
+					ProblemResolve: "",
+					CompleteStatus: enum.HProgress,
+					DateStart:      timeNow,
+					DateEnd:        0,
+					Tag:            []string{},
+				})
+			}
+		}
+
+		// Insert History isoffline
+		if len(cctvOfflineID) != 0 {
+			for _, cctvID := range cctvOfflineID {
+				_, _ = c.servHistory.InsertHistory(user, dto.HistoryRequest{
+					ParentID:       cctvID,
+					Status:         "",
+					Problem:        "CCTV Offline",
+					ProblemResolve: "",
+					CompleteStatus: enum.HProgress,
+					DateStart:      timeNow,
+					DateEnd:        0,
+					Tag:            []string{},
+				})
+			}
+		}
+	}()
+
+	// 7. tandai isFinish true dan end_date ke waktu sekarang
+	cctvChecklistDetail, err = c.daoC.EditCheck(dto.VendorCheckEdit{
+		FilterIDBranch: dto.FilterIDBranch{
+			FilterID:     oid,
+			FilterBranch: user.Branch,
+		},
+		UpdatedAt:   timeNow,
+		UpdatedBy:   user.Name,
+		UpdatedByID: user.Identity,
+		TimeStarted: cctvChecklistDetail.TimeStarted,
+		TimeEnded:   timeNow,
+		IsFinish:    true,
+		Note:        "",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return cctvChecklistDetail, nil
 }
 
 func (c *vendorCheckService) GetVendorCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError) {

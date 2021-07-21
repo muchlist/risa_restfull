@@ -8,6 +8,7 @@ import (
 	"github.com/muchlist/risa_restfull/middleware"
 )
 
+//nolint:funlen
 func mapUrls(app *fiber.App) {
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
@@ -122,6 +123,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/vendor-check/:id", middleware.NormalAuth(), vendorCheckHandler.Get)
 	api.Get("/vendor-check", middleware.NormalAuth(), vendorCheckHandler.Find)
 	api.Post("/vendor-check-update", middleware.NormalAuth(), vendorCheckHandler.UpdateCheckItem)
+	api.Get("/vendor-check-finish/:id", middleware.NormalAuth(), vendorCheckHandler.Finish)
 
 	// IMPROVE
 	api.Post("/improve", middleware.NormalAuth(), improveHandler.Insert)

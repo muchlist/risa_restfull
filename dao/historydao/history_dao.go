@@ -49,6 +49,7 @@ type historyDao struct {
 
 type HistoryDaoAssumer interface {
 	InsertHistory(input dto.History) (*string, rest_err.APIError)
+	InsertManyHistory(dataList []dto.History) (int, rest_err.APIError)
 	EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit) (*dto.HistoryResponse, rest_err.APIError)
 	DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.HistoryResponse, rest_err.APIError)
 	UploadImage(historyID primitive.ObjectID, imagePath string, filterBranch string) (*dto.HistoryResponse, rest_err.APIError)
@@ -82,6 +83,37 @@ func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIErro
 	insertID := result.InsertedID.(primitive.ObjectID).Hex()
 
 	return &insertID, nil
+}
+
+func (h *historyDao) InsertManyHistory(dataList []dto.History) (int, rest_err.APIError) {
+	coll := db.DB.Collection(keyHistColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	var dataForInserts []interface{}
+	for _, data := range dataList {
+		data.Branch = strings.ToUpper(data.Branch)
+		data.Category = strings.ToUpper(data.Category)
+		if data.Tag == nil {
+			data.Tag = []string{}
+		}
+		dataForInserts = append(dataForInserts, data)
+	}
+
+	if len(dataForInserts) == 0 {
+		return 0, nil
+	}
+
+	result, err := coll.InsertMany(ctx, dataForInserts)
+	if err != nil {
+		apiErr := rest_err.NewInternalServerError("Gagal menyimpan banyak history ke database", err)
+		logger.Error("Gagal menyimpan banyak history ke database, (InsertManyHistory)", err)
+		return 0, apiErr
+	}
+
+	totalInserted := len(result.InsertedIDs)
+
+	return totalInserted, nil
 }
 
 func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit) (*dto.HistoryResponse, rest_err.APIError) {

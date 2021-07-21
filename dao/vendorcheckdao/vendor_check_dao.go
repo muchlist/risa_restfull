@@ -59,7 +59,7 @@ type CheckVendorDaoAssumer interface {
 	FindCheck(branch string, filterA dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError)
 }
 
-func (c checkVendorDao) InsertCheck(input dto.VendorCheck) (*string, rest_err.APIError) {
+func (c *checkVendorDao) InsertCheck(input dto.VendorCheck) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -82,7 +82,7 @@ func (c checkVendorDao) InsertCheck(input dto.VendorCheck) (*string, rest_err.AP
 	return &insertID, nil
 }
 
-func (c checkVendorDao) EditCheck(input dto.VendorCheckEdit) (*dto.VendorCheck, rest_err.APIError) {
+func (c *checkVendorDao) EditCheck(input dto.VendorCheckEdit) (*dto.VendorCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -124,7 +124,7 @@ func (c checkVendorDao) EditCheck(input dto.VendorCheckEdit) (*dto.VendorCheck, 
 	return &check, nil
 }
 
-func (c checkVendorDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.VendorCheck, rest_err.APIError) {
+func (c *checkVendorDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.VendorCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -150,7 +150,7 @@ func (c checkVendorDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Ven
 	return &check, nil
 }
 
-func (c checkVendorDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.VendorCheck, rest_err.APIError) {
+func (c *checkVendorDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.VendorCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -183,7 +183,7 @@ func (c checkVendorDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor
 	return &check, nil
 }
 
-func (c checkVendorDao) UpdateCheckItem(input dto.VendorCheckItemUpdate) (*dto.VendorCheck, rest_err.APIError) {
+func (c *checkVendorDao) UpdateCheckItem(input dto.VendorCheckItemUpdate) (*dto.VendorCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -222,7 +222,7 @@ func (c checkVendorDao) UpdateCheckItem(input dto.VendorCheckItemUpdate) (*dto.V
 	return &check, nil
 }
 
-func (c checkVendorDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError) {
+func (c *checkVendorDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -248,7 +248,7 @@ func (c checkVendorDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecifi
 	return &check, nil
 }
 
-func (c checkVendorDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError) {
+func (c *checkVendorDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
