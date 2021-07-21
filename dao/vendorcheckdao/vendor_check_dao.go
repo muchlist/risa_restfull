@@ -54,6 +54,7 @@ type CheckVendorDaoAssumer interface {
 	DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.VendorCheck, rest_err.APIError)
 	UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.VendorCheck, rest_err.APIError)
 	UpdateCheckItem(input dto.VendorCheckItemUpdate) (*dto.VendorCheck, rest_err.APIError)
+	BulkUpdateItem(inputs []dto.VendorCheckItemUpdate) (int64, rest_err.APIError)
 
 	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError)
 	FindCheck(branch string, filterA dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError)
@@ -220,6 +221,51 @@ func (c *checkVendorDao) UpdateCheckItem(input dto.VendorCheckItemUpdate) (*dto.
 	}
 
 	return &check, nil
+}
+
+func (c *checkVendorDao) BulkUpdateItem(inputs []dto.VendorCheckItemUpdate) (int64, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	if len(inputs) == 0 {
+		return 0, rest_err.NewBadRequestError("input tidak boleh kosong")
+	}
+
+	operations := make([]mongo.WriteModel, len(inputs))
+	for i, input := range inputs {
+		filter := bson.M{
+			keyID:       input.FilterParentID,
+			keyChXId:    input.FilterChildID,
+			keyBranch:   strings.ToUpper(input.FilterBranch),
+			keyIsFinish: false,
+		}
+
+		update := bson.M{
+			"$set": bson.M{
+				keyChXCheckedAt: input.CheckedAt,
+				keyChXCheckedBy: input.CheckedBy,
+				keyChXIsChecked: input.IsChecked,
+				keyChXIsBlur:    input.IsBlur,
+				keyChXIsOffline: input.IsOffline,
+			},
+		}
+		operations[i] = mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update).SetUpsert(false)
+	}
+
+	opts := options.BulkWrite().SetOrdered(false)
+	result, err := coll.BulkWrite(ctx, operations, opts)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return 0, rest_err.NewBadRequestError("cctv check tidak diupdate : validasi id branch isFinish")
+		}
+
+		logger.Error("gagal bulk write checkItem dari database (BulkUpdateItem)", err)
+		apiErr := rest_err.NewInternalServerError("gagal bulk write cctv check dari database", err)
+		return 0, apiErr
+	}
+
+	return result.ModifiedCount, nil
 }
 
 func (c *checkVendorDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError) {

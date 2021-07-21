@@ -58,3 +58,7 @@ type VendorCheckItemUpdate struct {
 	IsBlur    bool
 	IsOffline bool
 }
+
+type BulkVendorCheckUpdateRequest struct {
+	Items []VendorCheckItemUpdateRequest `json:"items"`
+}

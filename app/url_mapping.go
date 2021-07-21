@@ -123,6 +123,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/vendor-check/:id", middleware.NormalAuth(), vendorCheckHandler.Get)
 	api.Get("/vendor-check", middleware.NormalAuth(), vendorCheckHandler.Find)
 	api.Post("/vendor-check-update", middleware.NormalAuth(), vendorCheckHandler.UpdateCheckItem)
+	api.Post("/bulk-vendor-update", middleware.NormalAuth(), vendorCheckHandler.BulkUpdateCheckItem)
 	api.Get("/vendor-check-finish/:id", middleware.NormalAuth(), vendorCheckHandler.Finish)
 
 	// IMPROVE

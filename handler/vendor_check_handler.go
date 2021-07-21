@@ -98,6 +98,31 @@ func (vc *vendorCheckHandler) UpdateCheckItem(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": checkUpdated})
 }
 
+func (vc *vendorCheckHandler) BulkUpdateCheckItem(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+
+	var reqs dto.BulkVendorCheckUpdateRequest
+	if err := c.BodyParser(&reqs); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	for _, req := range reqs.Items {
+		if err := req.Validate(); err != nil {
+			apiErr := rest_err.NewBadRequestError(err.Error())
+			logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
+			return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+		}
+	}
+
+	updatedCount, apiErr := vc.service.BulkUpdateVendorItem(*claims, reqs.Items)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	return c.JSON(fiber.Map{"error": nil, "data": updatedCount})
+}
+
 func (vc *vendorCheckHandler) Finish(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
