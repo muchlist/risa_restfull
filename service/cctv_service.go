@@ -224,7 +224,7 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 				ParentID:       cctvID,
 				ParentName:     cctvEdited.Name,
 				Status:         "Edit",
-				Problem:        "Detail Cctv dirubah",
+				Problem:        "Detail Cctv diubah",
 				ProblemResolve: "",
 				CompleteStatus: enum.HInfo,
 				DateStart:      timeNow,

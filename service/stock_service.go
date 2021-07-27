@@ -279,7 +279,7 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 	_, err = s.daoH.InsertHistory(history)
 	if err != nil {
 		logger.Error("Berhasil membuat stock namun gagal membuat history (ChangeQtyStock)", err)
-		errPlus := rest_err.NewInternalServerError(fmt.Sprintf("galat : stock berhasil dirubah -> %s", err.Message()), err)
+		errPlus := rest_err.NewInternalServerError(fmt.Sprintf("galat : stock berhasil diuubah -> %s", err.Message()), err)
 		return nil, errPlus
 	}
 
