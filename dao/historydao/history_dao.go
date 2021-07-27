@@ -178,7 +178,7 @@ func (h *historyDao) DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.Hist
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&history)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError("History tidak diupdate : validasi id branch time_reach")
+			return nil, rest_err.NewBadRequestError("History tidak dihapus : validasi id branch time_reach")
 		}
 
 		logger.Error("Gagal menghapus history dari database (DeleteHistory)", err)
