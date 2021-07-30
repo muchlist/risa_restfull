@@ -77,11 +77,16 @@ func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIErro
 		input.Updates = []dto.HistoryUpdate{}
 	}
 
+	// History versi 2 akan menambahkan detail riwayat perubahan dalam bentuk array
+	input.Version = 2
 	input.Updates = []dto.HistoryUpdate{{
 		Time:           input.CreatedAt,
 		UpdatedBy:      input.UpdatedBy,
 		UpdatedByID:    input.UpdatedByID,
-		CompleteStatus: input.CompleteStatus},
+		Problem:        input.Problem,
+		ProblemResolve: input.ProblemResolve,
+		CompleteStatus: input.CompleteStatus,
+	},
 	}
 
 	result, err := coll.InsertOne(ctx, input)
@@ -115,6 +120,8 @@ func (h *historyDao) InsertManyHistory(dataList []dto.History) (int, rest_err.AP
 			Time:           data.CreatedAt,
 			UpdatedBy:      data.UpdatedBy,
 			UpdatedByID:    data.UpdatedByID,
+			Problem:        data.Problem,
+			ProblemResolve: data.ProblemResolve,
 			CompleteStatus: data.CompleteStatus},
 		}
 		dataForInserts = append(dataForInserts, data)
@@ -172,6 +179,8 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 				Time:           input.UpdatedAt,
 				UpdatedBy:      input.UpdatedBy,
 				UpdatedByID:    input.UpdatedByID,
+				Problem:        input.Problem,
+				ProblemResolve: input.ProblemResolve,
 				CompleteStatus: input.CompleteStatus,
 			},
 		},

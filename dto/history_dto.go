@@ -7,6 +7,7 @@ import (
 // History struct penuh dari domain history, ID di isikan dari luar karena ada keperluan
 // penamaan foto. bukan generate dari database
 type History struct {
+	Version        int                `json:"version" bson:"version"`
 	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	CreatedAt      int64              `json:"created_at" bson:"created_at"`
 	CreatedBy      string             `json:"created_by" bson:"created_by"`
@@ -26,13 +27,15 @@ type History struct {
 	DateEnd        int64              `json:"date_end" bson:"date_end"`
 	Tag            []string           `json:"tag" bson:"tag"`
 	Image          string             `json:"image" bson:"image"`
-	Updates        []HistoryUpdate    `bson:"updates" bson:"updates"`
+	Updates        []HistoryUpdate    `json:"updates" bson:"updates"`
 }
 
 type HistoryUpdate struct {
 	Time           int64  `json:"time" bson:"time"`
 	UpdatedBy      string `json:"updated_by" bson:"updated_by"`
 	UpdatedByID    string `json:"updated_by_id" bson:"updated_by_id"`
+	Problem        string `json:"problem" bson:"problem"`
+	ProblemResolve string `json:"problem_resolve" bson:"problem_resolve"`
 	CompleteStatus int    `json:"complete_status" bson:"complete_status"`
 }
 
@@ -50,6 +53,7 @@ type HistoryRequest struct {
 }
 
 type HistoryResponse struct {
+	Version        int                `json:"version" bson:"version"`
 	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	CreatedAt      int64              `json:"created_at" bson:"created_at"`
 	CreatedBy      string             `json:"created_by" bson:"created_by"`
@@ -67,12 +71,13 @@ type HistoryResponse struct {
 	DateEnd        int64              `json:"date_end" bson:"date_end"`
 	Tag            []string           `json:"tag" bson:"tag"`
 	Image          string             `json:"image" bson:"image"`
-	Updates        []HistoryUpdate    `bson:"updates" bson:"updates"`
+	Updates        []HistoryUpdate    `json:"updates" bson:"updates"`
 }
 
 type HistoryResponseMinList []HistoryResponseMin
 
 type HistoryResponseMin struct {
+	Version        int                `json:"version" bson:"version"`
 	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	CreatedAt      int64              `json:"created_at" bson:"created_at"`
 	CreatedBy      string             `json:"created_by" bson:"created_by"`
@@ -90,7 +95,7 @@ type HistoryResponseMin struct {
 	DateEnd        int64              `json:"date_end" bson:"date_end"`
 	Tag            []string           `json:"tag" bson:"tag"`
 	Image          string             `json:"image" bson:"image"`
-	Updates        []HistoryUpdate    `bson:"updates" bson:"updates"`
+	Updates        []HistoryUpdate    `json:"-" bson:"updates"`
 }
 
 type HistoryCountList []HistoryCountResponse
