@@ -26,6 +26,14 @@ type History struct {
 	DateEnd        int64              `json:"date_end" bson:"date_end"`
 	Tag            []string           `json:"tag" bson:"tag"`
 	Image          string             `json:"image" bson:"image"`
+	Updates        []HistoryUpdate    `bson:"updates" bson:"updates"`
+}
+
+type HistoryUpdate struct {
+	Time           int64  `json:"time" bson:"time"`
+	UpdatedBy      string `json:"updated_by" bson:"updated_by"`
+	UpdatedByID    string `json:"updated_by_id" bson:"updated_by_id"`
+	CompleteStatus int    `json:"complete_status" bson:"complete_status"`
 }
 
 // HistoryRequest user input
@@ -59,6 +67,7 @@ type HistoryResponse struct {
 	DateEnd        int64              `json:"date_end" bson:"date_end"`
 	Tag            []string           `json:"tag" bson:"tag"`
 	Image          string             `json:"image" bson:"image"`
+	Updates        []HistoryUpdate    `bson:"updates" bson:"updates"`
 }
 
 type HistoryResponseMinList []HistoryResponseMin
@@ -81,6 +90,7 @@ type HistoryResponseMin struct {
 	DateEnd        int64              `json:"date_end" bson:"date_end"`
 	Tag            []string           `json:"tag" bson:"tag"`
 	Image          string             `json:"image" bson:"image"`
+	Updates        []HistoryUpdate    `bson:"updates" bson:"updates"`
 }
 
 type HistoryCountList []HistoryCountResponse

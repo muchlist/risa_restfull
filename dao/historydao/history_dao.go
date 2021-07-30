@@ -38,6 +38,7 @@ const (
 	keyHistDateEnd        = "date_end"
 	keyHistTag            = "tag"
 	keyHistImage          = "image"
+	keyHistUpdates        = "updates"
 )
 
 func NewHistoryDao() HistoryDaoAssumer {
@@ -72,6 +73,16 @@ func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIErro
 	if input.Tag == nil {
 		input.Tag = []string{}
 	}
+	if input.Updates == nil {
+		input.Updates = []dto.HistoryUpdate{}
+	}
+
+	input.Updates = []dto.HistoryUpdate{{
+		Time:           input.CreatedAt,
+		UpdatedBy:      input.UpdatedBy,
+		UpdatedByID:    input.UpdatedByID,
+		CompleteStatus: input.CompleteStatus},
+	}
 
 	result, err := coll.InsertOne(ctx, input)
 	if err != nil {
@@ -96,6 +107,15 @@ func (h *historyDao) InsertManyHistory(dataList []dto.History) (int, rest_err.AP
 		data.Category = strings.ToUpper(data.Category)
 		if data.Tag == nil {
 			data.Tag = []string{}
+		}
+		if data.Updates == nil {
+			data.Updates = []dto.HistoryUpdate{}
+		}
+		data.Updates = []dto.HistoryUpdate{{
+			Time:           data.CreatedAt,
+			UpdatedBy:      data.UpdatedBy,
+			UpdatedByID:    data.UpdatedByID,
+			CompleteStatus: data.CompleteStatus},
 		}
 		dataForInserts = append(dataForInserts, data)
 	}
@@ -146,6 +166,14 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 			keyHistCompleteStatus: input.CompleteStatus,
 			keyHistDateEnd:        input.DateEnd,
 			keyHistTag:            input.Tag,
+		},
+		"$push": bson.M{
+			keyHistUpdates: dto.HistoryUpdate{
+				Time:           input.UpdatedAt,
+				UpdatedBy:      input.UpdatedBy,
+				UpdatedByID:    input.UpdatedByID,
+				CompleteStatus: input.CompleteStatus,
+			},
 		},
 	}
 
