@@ -195,7 +195,7 @@ func (c *checkItemDao) DeleteCheckItem(input dto.FilterIDBranch) (*dto.CheckItem
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&checkItem)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError("CheckItem tidak diupdate : validasi id branch")
+			return nil, rest_err.NewBadRequestError("CheckItem tidak dihapus : validasi id branch")
 		}
 
 		logger.Error("Gagal menghapus checkItem dari database (DeleteCheckItem)", err)

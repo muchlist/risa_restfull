@@ -151,7 +151,7 @@ func (c *checkDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Check, r
 	err := coll.FindOneAndDelete(ctx, filter).Decode(&check)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError("Check tidak diupdate : validasi id branch time_reach")
+			return nil, rest_err.NewBadRequestError("Check tidak dihapus : validasi id branch time_reach")
 		}
 
 		logger.Error("Gagal menghapus check dari database (DeleteCheck)", err)
