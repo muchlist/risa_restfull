@@ -5,12 +5,15 @@ import (
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/clients/fcm"
+	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/enum"
+	"github.com/muchlist/risa_restfull/constants/roles"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strings"
 	"time"
@@ -129,9 +132,15 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 
 		var tokens []string
 		for _, u := range users {
-			if u.ID != user.Identity {
-				tokens = append(tokens, u.FcmToken)
+			// skip jika user == user yang mengirim
+			if u.ID == user.Identity {
+				continue
 			}
+			// skip jika category bukan cctv dan rolenya vendor
+			if strings.ToUpper(data.Category) != category.Cctv && sfunc.InSlice(roles.RoleVendor, u.Roles) {
+				continue
+			}
+			tokens = append(tokens, u.FcmToken)
 		}
 		// firebase
 		h.fcmClient.SendMessage(fcm.Payload{
@@ -207,11 +216,19 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 		}
 
 		var tokens []string
+
 		for _, u := range users {
-			if u.ID != user.Identity {
-				tokens = append(tokens, u.FcmToken)
+			// skip jika user == user yang mengirim
+			if u.ID == user.Identity {
+				continue
 			}
+			// skip jika category bukan cctv dan rolenya vendor
+			if strings.ToUpper(historyEdited.Category) != category.Cctv && sfunc.InSlice(roles.RoleVendor, u.Roles) {
+				continue
+			}
+			tokens = append(tokens, u.FcmToken)
 		}
+
 		// firebase
 		h.fcmClient.SendMessage(fcm.Payload{
 			Title:          fmt.Sprintf("History %s - %s diupdate", strings.ToLower(historyEdited.Category), strings.ToLower(historyEdited.ParentName)),

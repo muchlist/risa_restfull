@@ -270,12 +270,23 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	filter := bson.M{}
 
 	// filter condition
+	// branch
 	if filterA.FilterBranch != "" {
 		filter[keyHistBranch] = filterA.FilterBranch
 	}
+
+	// category
 	if filterA.FilterCategory != "" {
-		filter[keyHistCategory] = filterA.FilterCategory
+		// cek kategori jika multi category (pisah dengan koma)
+		if strings.Contains(filterA.FilterCategory, ",") {
+			categories := strings.Split(filterA.FilterCategory, ",")
+			filter[keyHistCategory] = bson.M{"$in": categories}
+		} else {
+			filter[keyHistCategory] = filterA.FilterCategory
+		}
 	}
+
+	// complete status
 	if filterA.FilterCompleteStatus != 0 {
 		filter[keyHistCompleteStatus] = filterA.FilterCompleteStatus
 	}
