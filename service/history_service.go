@@ -46,6 +46,7 @@ type HistoryServiceAssumer interface {
 
 	GetHistory(parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
+	UnwindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError)
@@ -290,6 +291,14 @@ func (h *historyService) GetHistory(parentID string, branchIfSpecific string) (*
 
 func (h *historyService) FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
 	historyList, err := h.daoH.FindHistory(filterA, filterB)
+	if err != nil {
+		return nil, err
+	}
+	return historyList, nil
+}
+
+func (h *historyService) UnwindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError) {
+	historyList, err := h.daoH.UnwindHistory(filterA, filterB)
 	if err != nil {
 		return nil, err
 	}
