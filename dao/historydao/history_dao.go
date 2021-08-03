@@ -61,6 +61,7 @@ type HistoryDaoAssumer interface {
 	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError)
 	FindHistoryForReport(branchIfSpecific string, start int64, end int64) (dto.HistoryResponseMinList, rest_err.APIError)
+	UnwindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
 }
 
 func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIError) {
@@ -316,6 +317,77 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 		logger.Error("Gagal decode histories cursor ke objek slice (FindHistory)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryResponseMinList{}, apiErr
+	}
+
+	return histories, nil
+}
+
+func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError) {
+	coll := db.DB.Collection(keyHistColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
+	filterA.FilterCategory = strings.ToUpper(filterA.FilterCategory)
+
+	// set default limit
+	if filterB.Limit == 0 {
+		filterB.Limit = 100
+	}
+
+	// empty filter
+	filter := bson.M{}
+
+	// filter condition
+	// branch
+	if filterA.FilterBranch != "" {
+		filter[keyHistBranch] = filterA.FilterBranch
+	}
+
+	// category
+	if filterA.FilterCategory != "" {
+		// cek kategori jika multi category (pisah dengan koma)
+		if strings.Contains(filterA.FilterCategory, ",") {
+			categories := strings.Split(filterA.FilterCategory, ",")
+			filter[keyHistCategory] = bson.M{"$in": categories}
+		} else {
+			filter[keyHistCategory] = filterA.FilterCategory
+		}
+	}
+
+	// complete status
+	if filterA.FilterCompleteStatus != 0 {
+		filter[keyHistCompleteStatus] = filterA.FilterCompleteStatus
+	}
+
+	// option range
+	if filterB.FilterStart != 0 {
+		filter[keyHistCreatedAt] = bson.M{"$gte": filterB.FilterStart}
+	}
+	if filterB.FilterEnd != 0 {
+		filter[keyHistCreatedAt] = bson.M{"$lte": filterB.FilterEnd}
+	}
+
+	groupStage := bson.D{
+		{Key: "$match", Value: filter},
+	}
+	unwindStage := bson.D{
+		{Key: "$unwind", Value: "$updates"},
+	}
+
+	cursor, err := coll.Aggregate(ctx, mongo.Pipeline{groupStage, unwindStage})
+
+	if err != nil {
+		logger.Error("Gagal mendapatkan daftar history dari database (FindHistory)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.HistoryUnwindResponseList{}, apiErr
+	}
+
+	histories := dto.HistoryUnwindResponseList{}
+	if err = cursor.All(ctx, &histories); err != nil {
+		logger.Error("Gagal decode histories cursor ke objek slice (FindHistory)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.HistoryUnwindResponseList{}, apiErr
 	}
 
 	return histories, nil

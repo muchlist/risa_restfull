@@ -74,6 +74,29 @@ type HistoryResponse struct {
 	Updates        []HistoryUpdate    `json:"updates" bson:"updates"`
 }
 
+type HistoryUnwindResponseList []HistoryUnwindResponse
+type HistoryUnwindResponse struct {
+	Version        int                `json:"version" bson:"version"`
+	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	CreatedAt      int64              `json:"created_at" bson:"created_at"`
+	CreatedBy      string             `json:"created_by" bson:"created_by"`
+	UpdatedAt      int64              `json:"updated_at" bson:"updated_at"`
+	UpdatedBy      string             `json:"updated_by" bson:"updated_by"`
+	Category       string             `json:"category" bson:"category"`
+	Branch         string             `json:"branch" bson:"branch"`
+	ParentID       string             `json:"parent_id" bson:"parent_id"`
+	ParentName     string             `json:"parent_name" bson:"parent_name"`
+	Status         string             `json:"status" bson:"status"`
+	Problem        string             `json:"problem" bson:"problem"`
+	ProblemResolve string             `json:"problem_resolve" bson:"problem_resolve"`
+	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
+	DateStart      int64              `json:"date_start" bson:"date_start"`
+	DateEnd        int64              `json:"date_end" bson:"date_end"`
+	Tag            []string           `json:"tag" bson:"tag"`
+	Image          string             `json:"image" bson:"image"`
+	Updates        HistoryUpdate      `json:"updates" bson:"updates"`
+}
+
 type HistoryResponseMinList []HistoryResponseMin
 
 type HistoryResponseMin struct {
