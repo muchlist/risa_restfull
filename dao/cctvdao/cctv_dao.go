@@ -289,7 +289,7 @@ func (c *cctvDao) FindCctv(filterA dto.FilterBranchLocIPNameDisable) (dto.CctvRe
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyCtvLocation, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{keyCtvLocation, -1}, {keyCtvName, 1}}) //nolint:govet
 	opts.SetLimit(500)
 
 	cursor, err := coll.Find(ctx, filter, opts)
