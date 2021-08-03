@@ -374,8 +374,11 @@ func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatComplete, filterB 
 	unwindStage := bson.D{
 		{Key: "$unwind", Value: "$updates"},
 	}
+	sortStage := bson.D{
+		{Key: "$sort", Value: bson.D{{Key: keyHistUpdatedAt, Value: -1}, {Key: "updates.time", Value: -1}}},
+	}
 
-	cursor, err := coll.Aggregate(ctx, mongo.Pipeline{groupStage, unwindStage})
+	cursor, err := coll.Aggregate(ctx, mongo.Pipeline{groupStage, unwindStage, sortStage})
 
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar history dari database (FindHistory)", err)

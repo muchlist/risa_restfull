@@ -100,6 +100,36 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": histories})
 }
 
+// FindUnwind menampilkan list history unwind
+// Query [branch, category, c_status, start, end, limit]
+func (h *historyHandler) FindUnwind(c *fiber.Ctx) error {
+	branch := c.Query("branch")
+	category := c.Query("category")
+	cStatus := stringToInt(c.Query("c_status"))
+	start := stringToInt(c.Query("start"))
+	end := stringToInt(c.Query("end"))
+	limit := stringToInt(c.Query("limit"))
+
+	filterA := dto.FilterBranchCatComplete{
+		FilterBranch:         branch,
+		FilterCategory:       category,
+		FilterCompleteStatus: cStatus,
+	}
+
+	filterB := dto.FilterTimeRangeLimit{
+		FilterStart: int64(start),
+		FilterEnd:   int64(end),
+		Limit:       int64(limit),
+	}
+
+	histories, apiErr := h.service.UnwindHistory(filterA, filterB)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": histories})
+}
+
 // Find menampilkan list history berdasarkan parent string
 func (h *historyHandler) FindFromParent(c *fiber.Ctx) error {
 	parentID := c.Params("id")
