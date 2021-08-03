@@ -6,11 +6,14 @@ import (
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
+	"github.com/muchlist/risa_restfull/constants/enum"
+	"github.com/muchlist/risa_restfull/constants/roles"
 	"github.com/muchlist/risa_restfull/dao/cctvdao"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net"
 	"sync"
@@ -190,12 +193,9 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 		return nil, err
 	}
 
-	errChan := make(chan rest_err.APIError, 1)
-	//errChan := make(chan rest_err.APIError, 2)
+	errChan := make(chan rest_err.APIError, 2)
 	var wg sync.WaitGroup
-	//wg.Add(2)
-	wg.Add(1)
-
+	wg.Add(2)
 	editUnit := func() {
 		defer wg.Done()
 		// DB
@@ -208,37 +208,37 @@ func (c *cctvService) EditCctv(user mjwt.CustomClaim, cctvID string, input dto.C
 		errChan <- err
 	}
 
-	//insertHistory := func() {
-	//	defer wg.Done()
-	//	isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
-	//	// DB
-	//	_, err = c.daoH.InsertHistory(
-	//		dto.History{
-	//			ID:             primitive.NewObjectID(),
-	//			CreatedAt:      timeNow,
-	//			CreatedBy:      user.Name,
-	//			CreatedByID:    user.Identity,
-	//			UpdatedAt:      timeNow,
-	//			UpdatedBy:      user.Name,
-	//			UpdatedByID:    user.Identity,
-	//			Category:       category.Cctv,
-	//			Branch:         user.Branch,
-	//			ParentID:       cctvID,
-	//			ParentName:     cctvEdited.Name,
-	//			Status:         "Edit",
-	//			Problem:        "Detail Cctv diubah",
-	//			ProblemResolve: "",
-	//			CompleteStatus: enum.HInfo,
-	//			DateStart:      timeNow,
-	//			DateEnd:        timeNow,
-	//			Tag:            []string{},
-	//			Image:          "",
-	//		}, isVendor)
-	//	errChan <- err
-	//}
+	insertHistory := func() {
+		defer wg.Done()
+		isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
+		// DB
+		_, err = c.daoH.InsertHistory(
+			dto.History{
+				ID:             primitive.NewObjectID(),
+				CreatedAt:      timeNow,
+				CreatedBy:      user.Name,
+				CreatedByID:    user.Identity,
+				UpdatedAt:      timeNow,
+				UpdatedBy:      user.Name,
+				UpdatedByID:    user.Identity,
+				Category:       category.Cctv,
+				Branch:         user.Branch,
+				ParentID:       cctvID,
+				ParentName:     cctvEdited.Name,
+				Status:         "Edit",
+				Problem:        "Detail Cctv diubah",
+				ProblemResolve: "",
+				CompleteStatus: enum.HInfo,
+				DateStart:      timeNow,
+				DateEnd:        timeNow,
+				Tag:            []string{},
+				Image:          "",
+			}, isVendor)
+		errChan <- err
+	}
 
 	go editUnit()
-	//go insertHistory()
+	go insertHistory()
 
 	go func() {
 		wg.Wait()
