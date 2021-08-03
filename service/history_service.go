@@ -119,8 +119,10 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		Tag:            input.Tag,
 	}
 
+	isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
+
 	// DB
-	insertedID, err := h.daoH.InsertHistory(data)
+	insertedID, err := h.daoH.InsertHistory(data, isVendor)
 	if err != nil {
 		return nil, err
 	}
@@ -176,8 +178,10 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 		UpdatedByID:     user.Identity,
 	}
 
+	isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
+
 	// DB
-	historyEdited, err := h.daoH.EditHistory(oid, data)
+	historyEdited, err := h.daoH.EditHistory(oid, data, isVendor)
 	if err != nil {
 		return nil, err
 	}

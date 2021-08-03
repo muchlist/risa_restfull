@@ -6,11 +6,13 @@ import (
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/enum"
+	"github.com/muchlist/risa_restfull/constants/roles"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/otherdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net"
 	"strings"
@@ -220,6 +222,7 @@ func (c *otherService) EditOther(user mjwt.CustomClaim, otherID string, input dt
 	}
 
 	insertHistory := func() {
+		isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 		defer wg.Done()
 		// DB
 		_, err = c.daoH.InsertHistory(
@@ -243,7 +246,7 @@ func (c *otherService) EditOther(user mjwt.CustomClaim, otherID string, input dt
 				DateEnd:        timeNow,
 				Tag:            []string{},
 				Image:          "",
-			})
+			}, isVendor)
 		errChan <- err
 	}
 

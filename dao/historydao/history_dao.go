@@ -49,9 +49,9 @@ type historyDao struct {
 }
 
 type HistoryDaoAssumer interface {
-	InsertHistory(input dto.History) (*string, rest_err.APIError)
-	InsertManyHistory(dataList []dto.History) (int, rest_err.APIError)
-	EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit) (*dto.HistoryResponse, rest_err.APIError)
+	InsertHistory(input dto.History, isVendor bool) (*string, rest_err.APIError)
+	InsertManyHistory(dataList []dto.History, isVendor bool) (int, rest_err.APIError)
+	EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit, isVendor bool) (*dto.HistoryResponse, rest_err.APIError)
 	DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.HistoryResponse, rest_err.APIError)
 	UploadImage(historyID primitive.ObjectID, imagePath string, filterBranch string) (*dto.HistoryResponse, rest_err.APIError)
 
@@ -64,7 +64,7 @@ type HistoryDaoAssumer interface {
 	UnwindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
 }
 
-func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIError) {
+func (h *historyDao) InsertHistory(input dto.History, isVendor bool) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -87,6 +87,7 @@ func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIErro
 		Problem:        input.Problem,
 		ProblemResolve: input.ProblemResolve,
 		CompleteStatus: input.CompleteStatus,
+		Vendor:         isVendor,
 	},
 	}
 
@@ -102,7 +103,7 @@ func (h *historyDao) InsertHistory(input dto.History) (*string, rest_err.APIErro
 	return &insertID, nil
 }
 
-func (h *historyDao) InsertManyHistory(dataList []dto.History) (int, rest_err.APIError) {
+func (h *historyDao) InsertManyHistory(dataList []dto.History, isVendor bool) (int, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -123,7 +124,9 @@ func (h *historyDao) InsertManyHistory(dataList []dto.History) (int, rest_err.AP
 			UpdatedByID:    data.UpdatedByID,
 			Problem:        data.Problem,
 			ProblemResolve: data.ProblemResolve,
-			CompleteStatus: data.CompleteStatus},
+			CompleteStatus: data.CompleteStatus,
+			Vendor:         isVendor,
+		},
 		}
 		dataForInserts = append(dataForInserts, data)
 	}
@@ -144,7 +147,7 @@ func (h *historyDao) InsertManyHistory(dataList []dto.History) (int, rest_err.AP
 	return totalInserted, nil
 }
 
-func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit, isVendor bool) (*dto.HistoryResponse, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -183,6 +186,7 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 				Problem:        input.Problem,
 				ProblemResolve: input.ProblemResolve,
 				CompleteStatus: input.CompleteStatus,
+				Vendor:         isVendor,
 			},
 		},
 	}

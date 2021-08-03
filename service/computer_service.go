@@ -7,11 +7,13 @@ import (
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/enum"
+	"github.com/muchlist/risa_restfull/constants/roles"
 	"github.com/muchlist/risa_restfull/dao/computerdao"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net"
 	"sync"
@@ -225,6 +227,7 @@ func (c *computerService) EditComputer(user mjwt.CustomClaim, computerID string,
 
 	insertHistory := func() {
 		defer wg.Done()
+		isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 		// DB
 		_, err = c.daoH.InsertHistory(
 			dto.History{
@@ -247,7 +250,7 @@ func (c *computerService) EditComputer(user mjwt.CustomClaim, computerID string,
 				DateEnd:        timeNow,
 				Tag:            []string{},
 				Image:          "",
-			})
+			}, isVendor)
 		errChan <- err
 	}
 

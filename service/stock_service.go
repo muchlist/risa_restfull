@@ -7,11 +7,13 @@ import (
 	"github.com/muchlist/risa_restfull/clients/fcm"
 	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/enum"
+	"github.com/muchlist/risa_restfull/constants/roles"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/stockdao"
 	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
@@ -87,7 +89,7 @@ func (s *stockService) InsertStock(user mjwt.CustomClaim, input dto.StockRequest
 	if err != nil {
 		return nil, err
 	}
-
+	isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 	// DB
 	_, err = s.daoH.InsertHistory(dto.History{
 		CreatedAt:      timeNow,
@@ -109,7 +111,7 @@ func (s *stockService) InsertStock(user mjwt.CustomClaim, input dto.StockRequest
 		DateEnd:        timeNow,
 		Tag:            []string{},
 		Image:          "",
-	})
+	}, isVendor)
 	if err != nil {
 		logger.Error("Berhasil membuat stock namun gagal membuat history (InsertStock)", err)
 		errPlus := rest_err.NewInternalServerError(fmt.Sprintf("galat : stock berhasil ditambahkan -> %s", err.Message()), err)
@@ -275,8 +277,9 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 		}
 	}
 
+	isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 	// DB
-	_, err = s.daoH.InsertHistory(history)
+	_, err = s.daoH.InsertHistory(history, isVendor)
 	if err != nil {
 		logger.Error("Berhasil membuat stock namun gagal membuat history (ChangeQtyStock)", err)
 		errPlus := rest_err.NewInternalServerError(fmt.Sprintf("galat : stock berhasil diuubah -> %s", err.Message()), err)

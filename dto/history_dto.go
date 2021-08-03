@@ -37,6 +37,7 @@ type HistoryUpdate struct {
 	Problem        string `json:"problem" bson:"problem"`
 	ProblemResolve string `json:"problem_resolve" bson:"problem_resolve"`
 	CompleteStatus int    `json:"complete_status" bson:"complete_status"`
+	Vendor         bool   `json:"vendor" bson:"vendor"`
 }
 
 // HistoryRequest user input
