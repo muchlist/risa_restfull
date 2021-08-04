@@ -51,6 +51,7 @@ type HistoryRequest struct {
 	DateStart      int64    `json:"date_start" bson:"date_start"`
 	DateEnd        int64    `json:"date_end" bson:"date_end"`
 	Tag            []string `json:"tag" bson:"tag"`
+	Image          string   `json:"image" bson:"image"`
 }
 
 type HistoryResponse struct {

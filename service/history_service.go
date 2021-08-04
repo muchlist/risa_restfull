@@ -117,6 +117,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		DateStart:      input.DateStart,
 		DateEnd:        input.DateEnd,
 		Tag:            input.Tag,
+		Image:          input.Image,
 	}
 
 	isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
