@@ -53,21 +53,17 @@ func GeneratePDF(
 
 	if len(completeList) != 0 {
 		buildHistoryList(m, completeList, " Completed", getTealColor())
-		verticalSpace(m)
 	}
 
 	if len(progressList) != 0 {
 		buildHistoryList(m, progressList, " Progress", getOrangeColor())
-		verticalSpace(m)
 	}
 
 	if len(pendingList) != 0 {
 		buildHistoryList(m, pendingList, " Pending", getPinkColor())
-		verticalSpace(m)
 	}
 
 	if len(pdfStruct.CheckList) != 0 {
-		m.AddPage()
 		buildCheckList(m, pdfStruct.CheckList)
 	}
 
@@ -101,11 +97,6 @@ func buildHeading(m pdf.Maroto, subtitle string) error {
 		m.ColSpace(2)
 	})
 	return errTemp
-}
-
-func verticalSpace(m pdf.Maroto) {
-	m.Row(10, func() {
-	})
 }
 
 func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryResponseMin, title string, customColor color.Color) {
