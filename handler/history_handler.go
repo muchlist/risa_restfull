@@ -215,3 +215,17 @@ func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"error": nil, "data": historyResult})
 }
+
+// UploadImageWithoutParent melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan mengembalikan nama image
+func (h *historyHandler) UploadImageWithoutParent(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+
+	randomName := fmt.Sprintf("%s%v", claims.Identity, time.Now().Unix())
+	// simpan image
+	pathInDB, apiErr := saveImage(c, *claims, "history", randomName, true)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": pathInDB})
+}

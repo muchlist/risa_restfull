@@ -63,6 +63,7 @@ func mapUrls(app *fiber.App) {
 	api.Post("/histories", middleware.NormalAuth(), historyHandler.Insert)
 	api.Put("/histories/:id", middleware.NormalAuth(), historyHandler.Edit)
 	api.Post("/history-image/:id", middleware.NormalAuth(), historyHandler.UploadImage) // IMPROVEMENT post image when build history
+	api.Post("/upload-image/", middleware.NormalAuth(), historyHandler.UploadImageWithoutParent)
 
 	// CCTV
 	api.Post("/cctv", middleware.NormalAuth(), cctvHandler.Insert)
