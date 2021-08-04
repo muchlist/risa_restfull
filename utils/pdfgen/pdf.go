@@ -67,6 +67,7 @@ func GeneratePDF(
 	}
 
 	if len(pdfStruct.CheckList) != 0 {
+		m.AddPage()
 		buildCheckList(m, pdfStruct.CheckList)
 	}
 
