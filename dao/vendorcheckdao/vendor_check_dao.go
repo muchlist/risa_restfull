@@ -201,6 +201,7 @@ func (c *checkVendorDao) UpdateCheckItem(input dto.VendorCheckItemUpdate) (*dto.
 
 	update := bson.M{
 		"$set": bson.M{
+			keyUpdatedAt:    input.CheckedAt,
 			keyChXCheckedAt: input.CheckedAt,
 			keyChXCheckedBy: input.CheckedBy,
 			keyChXIsChecked: input.IsChecked,
@@ -243,6 +244,7 @@ func (c *checkVendorDao) BulkUpdateItem(inputs []dto.VendorCheckItemUpdate) (int
 
 		update := bson.M{
 			"$set": bson.M{
+				keyUpdatedAt:    input.CheckedAt,
 				keyChXCheckedAt: input.CheckedAt,
 				keyChXCheckedBy: input.CheckedBy,
 				keyChXIsChecked: input.IsChecked,
@@ -320,7 +322,7 @@ func (c *checkVendorDao) FindCheck(branch string, filterA dto.FilterTimeRangeLim
 	opts.SetProjection(bson.M{
 		keyVendorCheckItems: 0,
 	})
-	opts.SetSort(bson.D{{keyID, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{keyUpdatedAt, -1}}) //nolint:govet
 	opts.SetLimit(filterA.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
