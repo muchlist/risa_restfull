@@ -105,12 +105,12 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 func (h *historyHandler) FindUnwind(c *fiber.Ctx) error {
 	branch := c.Query("branch")
 	category := c.Query("category")
-	cStatus := stringToInt(c.Query("c_status"))
+	cStatus := c.Query("c_status")
 	start := stringToInt(c.Query("start"))
 	end := stringToInt(c.Query("end"))
 	limit := stringToInt(c.Query("limit"))
 
-	filterA := dto.FilterBranchCatComplete{
+	filterA := dto.FilterBranchCatInCompleteIn{
 		FilterBranch:         branch,
 		FilterCategory:       category,
 		FilterCompleteStatus: cStatus,

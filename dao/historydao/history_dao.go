@@ -9,6 +9,7 @@ import (
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/db"
 	"github.com/muchlist/risa_restfull/dto"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -61,7 +62,7 @@ type HistoryDaoAssumer interface {
 	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError)
 	FindHistoryForReport(branchIfSpecific string, start int64, end int64) (dto.HistoryResponseMinList, rest_err.APIError)
-	UnwindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
+	UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
 }
 
 func (h *historyDao) InsertHistory(input dto.History, isVendor bool) (*string, rest_err.APIError) {
@@ -326,7 +327,7 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	return histories, nil
 }
 
-func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError) {
+func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -360,8 +361,25 @@ func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatComplete, filterB 
 	}
 
 	// complete status
-	if filterA.FilterCompleteStatus != 0 {
-		filter[keyHistCompleteStatus] = filterA.FilterCompleteStatus
+	if filterA.FilterCompleteStatus != "" {
+		// cek complete status jika multi status (pisah dengan koma)
+		if strings.Contains(filterA.FilterCompleteStatus, ",") {
+			statusStr := strings.Split(filterA.FilterCompleteStatus, ",")
+			var statusInt []int
+			for _, status := range statusStr {
+				statusConverted := sfunc.StrToInt(strings.Trim(status, " "), -1)
+				if statusConverted == -1 {
+					continue
+				}
+				statusInt = append(statusInt, sfunc.StrToInt(status, statusConverted))
+			}
+			filter[keyHistCompleteStatus] = bson.M{"$in": statusInt}
+		} else {
+			statusConverted := sfunc.StrToInt(strings.Trim(filterA.FilterCompleteStatus, " "), -1)
+			if statusConverted != -1 {
+				filter[keyHistCompleteStatus] = statusConverted
+			}
+		}
 	}
 
 	// option range
@@ -385,14 +403,14 @@ func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatComplete, filterB 
 	cursor, err := coll.Aggregate(ctx, mongo.Pipeline{groupStage, unwindStage, sortStage})
 
 	if err != nil {
-		logger.Error("Gagal mendapatkan daftar history dari database (FindHistory)", err)
+		logger.Error("Gagal mendapatkan daftar history dari database (UnwindHistory)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryUnwindResponseList{}, apiErr
 	}
 
 	histories := dto.HistoryUnwindResponseList{}
 	if err = cursor.All(ctx, &histories); err != nil {
-		logger.Error("Gagal decode histories cursor ke objek slice (FindHistory)", err)
+		logger.Error("Gagal decode histories cursor ke objek slice (UnwindHistory)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryUnwindResponseList{}, apiErr
 	}
@@ -568,6 +586,8 @@ func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, 
 	defer cancel()
 	branch := strings.ToUpper(branchIfSpecific)
 
+	// kenapa dipisah ?
+	// karena yang dimunculkan adalah yang pending dan progress sebelum waktu end, sedangkan complete dan info sesuai range waktu
 	// Find complete (4) and info (0)
 	filter := bson.M{
 		keyHistBranch:         branch,
@@ -595,6 +615,7 @@ func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, 
 	filter = bson.M{
 		keyHistBranch:         branch,
 		keyHistCompleteStatus: bson.M{"$in": bson.A{1, 2, 3}},
+		keyHistUpdatedAt:      bson.M{"$lte": end},
 	}
 
 	cursor, err = coll.Find(ctx, filter, opts)

@@ -63,6 +63,47 @@ func (h *reportHandler) GeneratePDF(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("pdf/%s.pdf", pdfName)})
 }
 
+// GeneratePDFVendor membuat pdf
+// Query [branch, start, end]
+func (h *reportHandler) GeneratePDFVendor(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	branch := c.Query("branch")
+	if branch == "" {
+		branch = claims.Branch
+	}
+
+	start := stringToInt(c.Query("start"))
+	end := stringToInt(c.Query("end"))
+
+	pdfName, err2 := timegen.GetTimeAsName(int64(end))
+	if err2 != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
+	}
+	pdfName = fmt.Sprintf("manual-vendor-%s", pdfName)
+
+	_, apiErr := h.service.GenerateReportPDFVendor(pdfName, branch, int64(start), int64(end))
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	// simpan pdf ke database
+	_, apiErr = h.service.InsertPdf(dto.PdfFile{
+		CreatedAt: time.Now().Unix(),
+		CreatedBy: claims.Name,
+		Branch:    branch,
+		Name:      pdfName,
+		Type:      "VENDOR",
+		FileName:  fmt.Sprintf("pdf-vendor/%s.pdf", pdfName),
+	})
+
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("pdf-vendor/%s.pdf", pdfName)})
+}
+
 func (h *reportHandler) FindPDF(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	branch := c.Query("branch")
