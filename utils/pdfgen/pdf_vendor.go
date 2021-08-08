@@ -13,12 +13,6 @@ import (
 	"strings"
 )
 
-const (
-	complete = iota
-	progress
-	pending
-)
-
 type PDFVendorReq struct {
 	Name        string
 	HistoryList dto.HistoryUnwindResponseList
@@ -49,7 +43,10 @@ func GeneratePDFVendor(
 		if idTemp == history.ID.Hex() {
 			// menambahkan nama pengupdate
 			updatedByExisting := allListComputed[len(allListComputed)-1].UpdatedBy
-			allListComputed[len(allListComputed)-1].UpdatedBy = updatedByExisting + ", " + strings.Split(history.Updates.UpdatedBy, " ")[0]
+			updatedByCurrent := strings.Split(history.Updates.UpdatedBy, " ")[0]
+			if updatedByExisting != updatedByCurrent {
+				allListComputed[len(allListComputed)-1].UpdatedBy = updatedByExisting + " > " + updatedByCurrent
+			}
 
 			// menambahkan waktu pengerjaan, jika statusComplete sebelumnya pending maka waktu tidak ditambahkan
 			difference := history.Updates.Time - allListComputed[len(allListComputed)-1].Updates.Time
@@ -145,7 +142,7 @@ func buildHeadingVendor(m pdf.Maroto, subtitle string) error {
 }
 
 func buildHistoryVendorList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title string, customColor color.Color) {
-	tableHeading := []string{"Nama", "Pengerjaan", "Keterangan", "Solusi", "Status", "Update", "Oleh"}
+	tableHeading := []string{"Nama", "Keterangan", "Solusi", "Status", "Pengerjaan", "Update", "Oleh"}
 
 	var contents [][]string
 	for _, data := range dataList {
@@ -156,10 +153,10 @@ func buildHistoryVendorList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, 
 
 		contents = append(contents, []string{
 			data.ParentName,
-			sfunc.IntToTime(data.UpdatedAt, ""), // data UpdatedAt sudah diubah pada komputasi sebelumnya menjadi lama pengerjaan
 			data.Updates.Problem,
 			data.Updates.ProblemResolve,
 			enum.GetProgressString(data.Updates.CompleteStatus),
+			sfunc.IntToTime(data.UpdatedAt, ""), // data UpdatedAt sudah diubah pada komputasi sebelumnya menjadi lama pengerjaan
 			updateAt,
 			strings.ToLower(data.UpdatedBy)},
 		)
@@ -185,11 +182,11 @@ func buildHistoryVendorList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, 
 	m.TableList(tableHeading, contents, props.TableList{
 		HeaderProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{2, 1, 3, 3, 1, 1, 1},
+			GridSizes: []uint{2, 3, 3, 1, 1, 1, 1},
 		},
 		ContentProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{2, 1, 3, 3, 1, 1, 1},
+			GridSizes: []uint{2, 3, 3, 1, 1, 1, 1},
 		},
 		Align:                consts.Left,
 		AlternatedBackground: &lightPurpleColor,

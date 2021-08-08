@@ -24,43 +24,55 @@ type PDFReq struct {
 func GeneratePDF(
 	pdfStruct PDFReq,
 ) error {
+
+	// slice yang sudah di filter dan dimodifikasi isinya
+	var allListComputed []dto.HistoryUnwindResponse
+
 	var completeList []dto.HistoryUnwindResponse
 	var progressList []dto.HistoryUnwindResponse
 	var pendingList []dto.HistoryUnwindResponse
 
-	// idTemp menyimpan id, karena akan banyak id yang sama, maka akan diambil yang pertama
-	// pertama dalam urutan unwind dengan asumsi unwind sorted by updatedAt -1 (terakhir kali update tampil pertama)
+	// idTemp menyimpan id, karena akan banyak id yang sama, maka akan diambil history yang terakhir
+	// urutan unwind dengan asumsi unwind sorted by updates.time 1 (pertama kali update tampil pertama)
 	var idTemp string
-	var lastListInserted int
 	for _, history := range pdfStruct.HistoryList {
-		// jika statusnya maintenace di exclude dari laporan
+		// skip jika waktu updatenya melebihi time end laporan
+		if history.Updates.Time > pdfStruct.End {
+			continue
+		}
+
 		if strings.ToUpper(history.Status) == "MAINTENANCE" {
 			continue
 		}
+
+		// blok if yang dijalankan jika historynya sama
 		if idTemp == history.ID.Hex() {
-			switch lastListInserted {
-			case complete:
-				completeList[len(completeList)-1].Updates.UpdatedBy += ", " + history.Updates.UpdatedBy
-			case progress:
-				progressList[len(progressList)-1].Updates.UpdatedBy += ", " + history.Updates.UpdatedBy
-			case pending:
-				pendingList[len(pendingList)-1].Updates.UpdatedBy += ", " + history.Updates.UpdatedBy
+			updatedByExisting := allListComputed[len(allListComputed)-1].UpdatedBy
+			updatedByCurrent := strings.Split(history.Updates.UpdatedBy, " ")[0]
+			if updatedByExisting != updatedByCurrent {
+				allListComputed[len(allListComputed)-1].UpdatedBy = updatedByExisting + " > " + updatedByCurrent
 			}
+			allListComputed[len(allListComputed)-1].Updates = history.Updates
 			continue
 		}
+		// end blok
+
 		idTemp = history.ID.Hex()
 
-		if history.Updates.CompleteStatus == 0 || history.Updates.CompleteStatus == 4 {
-			lastListInserted = complete
-			completeList = append(completeList, history)
+		history.UpdatedBy = strings.Split(history.Updates.UpdatedBy, " ")[0]
+
+		allListComputed = append(allListComputed, history)
+	}
+
+	for _, historyComputed := range allListComputed {
+		if historyComputed.Updates.CompleteStatus == 0 || historyComputed.Updates.CompleteStatus == 4 {
+			completeList = append(completeList, historyComputed)
 		}
-		if history.Updates.CompleteStatus == 1 {
-			lastListInserted = progress
-			progressList = append(progressList, history)
+		if historyComputed.Updates.CompleteStatus == 1 {
+			progressList = append(progressList, historyComputed)
 		}
-		if history.Updates.CompleteStatus == 2 || history.Updates.CompleteStatus == 3 {
-			lastListInserted = pending
-			pendingList = append(pendingList, history)
+		if historyComputed.Updates.CompleteStatus == 2 || historyComputed.Updates.CompleteStatus == 3 {
+			pendingList = append(pendingList, historyComputed)
 		}
 	}
 
@@ -140,7 +152,7 @@ func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title 
 			data.Updates.ProblemResolve,
 			enum.GetProgressString(data.Updates.CompleteStatus),
 			updateAt,
-			strings.ToLower(data.Updates.UpdatedBy)},
+			strings.ToLower(data.UpdatedBy)},
 		)
 	}
 
