@@ -8,6 +8,7 @@ import (
 	"github.com/johnfercher/maroto/pkg/props"
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dto"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"github.com/muchlist/risa_restfull/utils/timegen"
 	"strings"
 )
@@ -28,39 +29,63 @@ type PDFVendorReq struct {
 func GeneratePDFVendor(
 	pdfVendorStruct PDFVendorReq,
 ) error {
+	// slice yang sudah di filter dan dimodifikasi isinya
+	var allListComputed []dto.HistoryUnwindResponse
+
 	var completeList []dto.HistoryUnwindResponse
 	var progressList []dto.HistoryUnwindResponse
 	var pendingList []dto.HistoryUnwindResponse
 
-	// idTemp menyimpan id, karena akan banyak id yang sama, maka akan diambil yang pertama
-	// pertama dalam urutan unwind dengan asumsi unwind sorted by updatedAt -1 (terakhir kali update tampil pertama)
+	// idTemp menyimpan id, karena akan banyak id yang sama, maka akan diambil history yang terakhir
+	// urutan unwind dengan asumsi unwind sorted by updates.time 1 (pertama kali update tampil pertama)
 	var idTemp string
-	var lastListInserted int
 	for _, history := range pdfVendorStruct.HistoryList {
-		if idTemp == history.ID.Hex() {
-			switch lastListInserted {
-			case complete:
-				completeList[len(completeList)-1].Updates.UpdatedBy += ", " + history.Updates.UpdatedBy
-			case progress:
-				progressList[len(progressList)-1].Updates.UpdatedBy += ", " + history.Updates.UpdatedBy
-			case pending:
-				pendingList[len(pendingList)-1].Updates.UpdatedBy += ", " + history.Updates.UpdatedBy
-			}
+		// skip jika waktu updatenya melebihi time end laporan
+		if history.Updates.Time > pdfVendorStruct.End {
 			continue
 		}
+
+		// blok if yang dijalankan jika historynya sama
+		if idTemp == history.ID.Hex() {
+			// menambahkan nama pengupdate
+			updatedByExisting := allListComputed[len(allListComputed)-1].UpdatedBy
+			allListComputed[len(allListComputed)-1].UpdatedBy = updatedByExisting + ", " + strings.Split(history.Updates.UpdatedBy, " ")[0]
+
+			// menambahkan waktu pengerjaan, jika statusComplete sebelumnya pending maka waktu tidak ditambahkan
+			difference := history.Updates.Time - allListComputed[len(allListComputed)-1].Updates.Time
+			if allListComputed[len(allListComputed)-1].Updates.CompleteStatus == enum.HPending {
+				difference = 0
+			}
+
+			timeToConsumeExisting := allListComputed[len(allListComputed)-1].UpdatedAt
+			allListComputed[len(allListComputed)-1].UpdatedAt = timeToConsumeExisting + difference
+			allListComputed[len(allListComputed)-1].Updates = history.Updates
+			continue
+		}
+		// end blok
+
 		idTemp = history.ID.Hex()
 
-		if history.Updates.CompleteStatus == 0 || history.Updates.CompleteStatus == 4 {
-			lastListInserted = complete
-			completeList = append(completeList, history)
+		// updatedAt tidak lagi dipakai pada history versi 2,
+		// updatedAt akan dialih fungsikan untuk menghitung seberapa lama pekerjaannya diselesaikan
+		// rumus createdAt - updatedAt tidak berlaku karena apabila statusCompleted nya pending tidak boleh dihitung
+		// terpaksa menggunakan field bertipe int64 lain untuk menampung perhitungan sementara belum memiliki solusi lain
+		// updatedAt di nol kan pada data pertama dan akan ditambah jika ada history yang sama
+		history.UpdatedAt = 0
+		history.UpdatedBy = strings.Split(history.Updates.UpdatedBy, " ")[0]
+
+		allListComputed = append(allListComputed, history)
+	}
+
+	for _, historyComputed := range allListComputed {
+		if historyComputed.Updates.CompleteStatus == 0 || historyComputed.Updates.CompleteStatus == 4 {
+			completeList = append(completeList, historyComputed)
 		}
-		if history.Updates.CompleteStatus == 1 {
-			lastListInserted = progress
-			progressList = append(progressList, history)
+		if historyComputed.Updates.CompleteStatus == 1 {
+			progressList = append(progressList, historyComputed)
 		}
-		if history.Updates.CompleteStatus == 2 || history.Updates.CompleteStatus == 3 {
-			lastListInserted = pending
-			pendingList = append(pendingList, history)
+		if historyComputed.Updates.CompleteStatus == 2 || historyComputed.Updates.CompleteStatus == 3 {
+			pendingList = append(pendingList, historyComputed)
 		}
 	}
 
@@ -120,7 +145,7 @@ func buildHeadingVendor(m pdf.Maroto, subtitle string) error {
 }
 
 func buildHistoryVendorList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title string, customColor color.Color) {
-	tableHeading := []string{"Nama", "Kategori", "Keterangan", "Solusi", "Status", "Update", "Oleh"}
+	tableHeading := []string{"Nama", "Pengerjaan", "Keterangan", "Solusi", "Status", "Update", "Oleh"}
 
 	var contents [][]string
 	for _, data := range dataList {
@@ -131,12 +156,12 @@ func buildHistoryVendorList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, 
 
 		contents = append(contents, []string{
 			data.ParentName,
-			data.Category,
+			sfunc.IntToTime(data.UpdatedAt, ""), // data UpdatedAt sudah diubah pada komputasi sebelumnya menjadi lama pengerjaan
 			data.Updates.Problem,
 			data.Updates.ProblemResolve,
 			enum.GetProgressString(data.Updates.CompleteStatus),
 			updateAt,
-			strings.ToLower(data.Updates.UpdatedBy)},
+			strings.ToLower(data.UpdatedBy)},
 		)
 	}
 

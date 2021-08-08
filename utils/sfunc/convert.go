@@ -1,6 +1,10 @@
 package sfunc
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+	"time"
+)
 
 func StrToInt(text string, defaultReturn int) int {
 	number := defaultReturn
@@ -12,4 +16,13 @@ func StrToInt(text string, defaultReturn int) int {
 		}
 	}
 	return number
+}
+
+func IntToTime(second int64, returnIfZero string) string {
+	if second <= 0 {
+		return returnIfZero
+	}
+	var timeNeed time.Duration
+	timeNeed = time.Duration(second)
+	return fmt.Sprint(timeNeed * time.Second)
 }

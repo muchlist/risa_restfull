@@ -327,6 +327,8 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	return histories, nil
 }
 
+// UnwindHistory mengembalikan unwind history dengan urutan
+//{Key: "$sort", Value: bson.D{{Key: keyHistUpdatedAt, Value: -1}, {Key: "updates.time", Value: 1}}},
 func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
@@ -397,7 +399,7 @@ func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filt
 		{Key: "$unwind", Value: "$updates"},
 	}
 	sortStage := bson.D{
-		{Key: "$sort", Value: bson.D{{Key: keyHistUpdatedAt, Value: -1}, {Key: "updates.time", Value: -1}}},
+		{Key: "$sort", Value: bson.D{{Key: keyHistUpdatedAt, Value: -1}, {Key: "updates.time", Value: 1}}},
 	}
 
 	cursor, err := coll.Aggregate(ctx, mongo.Pipeline{groupStage, unwindStage, sortStage})

@@ -15,7 +15,7 @@ import (
 
 type PDFReq struct {
 	Name        string
-	HistoryList []dto.HistoryResponseMin
+	HistoryList dto.HistoryUnwindResponseList
 	CheckList   []dto.Check
 	Start       int64
 	End         int64
@@ -24,18 +24,42 @@ type PDFReq struct {
 func GeneratePDF(
 	pdfStruct PDFReq,
 ) error {
-	var completeList []dto.HistoryResponseMin
-	var progressList []dto.HistoryResponseMin
-	var pendingList []dto.HistoryResponseMin
+	var completeList []dto.HistoryUnwindResponse
+	var progressList []dto.HistoryUnwindResponse
+	var pendingList []dto.HistoryUnwindResponse
 
+	// idTemp menyimpan id, karena akan banyak id yang sama, maka akan diambil yang pertama
+	// pertama dalam urutan unwind dengan asumsi unwind sorted by updatedAt -1 (terakhir kali update tampil pertama)
+	var idTemp string
+	var lastListInserted int
 	for _, history := range pdfStruct.HistoryList {
-		if history.CompleteStatus == 0 || history.CompleteStatus == 4 {
+		// jika statusnya maintenace di exclude dari laporan
+		if strings.ToUpper(history.Status) == "MAINTENANCE" {
+			continue
+		}
+		if idTemp == history.ID.Hex() {
+			switch lastListInserted {
+			case complete:
+				completeList[len(completeList)-1].Updates.UpdatedBy += ", " + history.Updates.UpdatedBy
+			case progress:
+				progressList[len(progressList)-1].Updates.UpdatedBy += ", " + history.Updates.UpdatedBy
+			case pending:
+				pendingList[len(pendingList)-1].Updates.UpdatedBy += ", " + history.Updates.UpdatedBy
+			}
+			continue
+		}
+		idTemp = history.ID.Hex()
+
+		if history.Updates.CompleteStatus == 0 || history.Updates.CompleteStatus == 4 {
+			lastListInserted = complete
 			completeList = append(completeList, history)
 		}
-		if history.CompleteStatus == 1 {
+		if history.Updates.CompleteStatus == 1 {
+			lastListInserted = progress
 			progressList = append(progressList, history)
 		}
-		if history.CompleteStatus == 2 || history.CompleteStatus == 3 {
+		if history.Updates.CompleteStatus == 2 || history.Updates.CompleteStatus == 3 {
+			lastListInserted = pending
 			pendingList = append(pendingList, history)
 		}
 	}
@@ -99,13 +123,12 @@ func buildHeading(m pdf.Maroto, subtitle string) error {
 	return errTemp
 }
 
-func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryResponseMin, title string, customColor color.Color) {
+func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title string, customColor color.Color) {
 	tableHeading := []string{"Nama", "Kategori", "Keterangan", "Solusi", "Status", "Update", "Oleh"}
 
 	var contents [][]string
-
 	for _, data := range dataList {
-		updateAt, err := timegen.GetTimeWITA(data.UpdatedAt)
+		updateAt, err := timegen.GetTimeWITA(data.Updates.Time)
 		if err != nil {
 			updateAt = "error"
 		}
@@ -113,11 +136,12 @@ func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryResponseMin, title str
 		contents = append(contents, []string{
 			data.ParentName,
 			data.Category,
-			data.Problem,
-			data.ProblemResolve,
-			enum.GetProgressString(data.CompleteStatus),
+			data.Updates.Problem,
+			data.Updates.ProblemResolve,
+			enum.GetProgressString(data.Updates.CompleteStatus),
 			updateAt,
-			strings.Split(data.UpdatedBy, " ")[0]})
+			strings.ToLower(data.Updates.UpdatedBy)},
+		)
 	}
 
 	lightPurpleColor := getLightPurpleColor()

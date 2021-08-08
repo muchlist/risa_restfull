@@ -42,11 +42,37 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
 	}
 
-	// GET HISTORIES
-	historyList, err := r.daoH.FindHistoryForReport(branch, start, end)
+	// GET HISTORIES 0, 4 sesuai start end inputan
+	historyList04, err := r.daoH.UnwindHistory(
+		dto.FilterBranchCatInCompleteIn{
+			FilterBranch:         branch,
+			FilterCategory:       "",
+			FilterCompleteStatus: "0,4",
+		}, dto.FilterTimeRangeLimit{
+			FilterStart: start,
+			FilterEnd:   end,
+			Limit:       300,
+		},
+	)
+
 	if err != nil {
 		return nil, err
 	}
+
+	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
+	historyList123, err := r.daoH.UnwindHistory(
+		dto.FilterBranchCatInCompleteIn{
+			FilterBranch:         branch,
+			FilterCategory:       "",
+			FilterCompleteStatus: "1,2,3",
+		}, dto.FilterTimeRangeLimit{
+			FilterStart: end - (3 * 30 * 24 * 60 * 60), // 3 bulan,
+			FilterEnd:   end,
+			Limit:       300,
+		},
+	)
+
+	historiesCombined := append(historyList04, historyList123...)
 
 	// GET CHECK LIST
 	checkList, err := r.daoC.FindCheckForReports(branch, dto.FilterTimeRangeLimit{
@@ -60,7 +86,7 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 
 	errPDF := pdfgen.GeneratePDF(pdfgen.PDFReq{
 		Name:        name,
-		HistoryList: historyList,
+		HistoryList: historiesCombined,
 		CheckList:   checkList,
 		Start:       start,
 		End:         end,
