@@ -19,6 +19,7 @@ const (
 
 	keyPdfCreatedAt = "created_at"
 	keyPdfBranch    = "branch"
+	keyPdftype      = "type"
 )
 
 func NewPdfDao() PdfDaoAssumer {
@@ -30,7 +31,7 @@ type pdfDao struct {
 
 type PdfDaoAssumer interface {
 	InsertPdf(input dto.PdfFile) (*string, rest_err.APIError)
-	FindPdf(branch string) ([]dto.PdfFile, rest_err.APIError)
+	FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
 }
 
 func (c *pdfDao) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
@@ -40,6 +41,7 @@ func (c *pdfDao) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
 
 	input.Name = strings.ToUpper(input.Name)
 	input.Branch = strings.ToUpper(input.Branch)
+	input.Type = strings.ToUpper(input.Type)
 	input.CreatedBy = strings.ToUpper(input.CreatedBy)
 
 	result, err := coll.InsertOne(ctx, input)
@@ -54,7 +56,7 @@ func (c *pdfDao) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
 	return &insertID, nil
 }
 
-func (c *pdfDao) FindPdf(branch string) ([]dto.PdfFile, rest_err.APIError) {
+func (c *pdfDao) FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError) {
 	coll := db.DB.Collection(keyPdfCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -64,6 +66,10 @@ func (c *pdfDao) FindPdf(branch string) ([]dto.PdfFile, rest_err.APIError) {
 	// filter
 	filter := bson.M{
 		keyPdfBranch: branch,
+	}
+
+	if typePdf != "" {
+		filter[keyPdftype] = strings.ToUpper(typePdf)
 	}
 
 	opts := options.Find()

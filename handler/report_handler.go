@@ -107,11 +107,12 @@ func (h *reportHandler) GeneratePDFVendor(c *fiber.Ctx) error {
 func (h *reportHandler) FindPDF(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	branch := c.Query("branch")
+	pdfType := c.Query("type")
 	if branch == "" {
 		branch = claims.Branch
 	}
 
-	pdfList, apiErr := h.service.FindPdf(branch)
+	pdfList, apiErr := h.service.FindPdf(branch, pdfType)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

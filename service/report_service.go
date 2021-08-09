@@ -37,7 +37,7 @@ type ReportServiceAssumer interface {
 	InsertPdf(input dto.PdfFile) (*string, rest_err.APIError)
 	GenerateReportPDF(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
 	GenerateReportPDFVendor(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
-	FindPdf(branch string) ([]dto.PdfFile, rest_err.APIError)
+	FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
 }
 
 // GenerateReportPDF membuat laporan untuk it support
@@ -171,6 +171,6 @@ func (r *reportService) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError
 	return r.daoP.InsertPdf(input)
 }
 
-func (r *reportService) FindPdf(branch string) ([]dto.PdfFile, rest_err.APIError) {
-	return r.daoP.FindPdf(branch)
+func (r *reportService) FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError) {
+	return r.daoP.FindPdf(branch, typePdf)
 }
