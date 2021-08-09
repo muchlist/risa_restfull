@@ -22,13 +22,13 @@ func RunScheduler(
 	}
 	s := gocron.NewScheduler(witaTimeZone)
 
-	// run speed test
-	//_, _ = s.Every(1).Days().At("06:00").Do(func() {
-	//	runSpeedTest(speedService)
-	//})
+	/*run speed test
+	_, _ = s.Every(1).Days().At("06:00").Do(func() {
+		runSpeedTest(speedService)
+	})*/
 
 	// run check cctv
-	_, _ = s.Every(2).Hours().Do(func() {
+	_, _ = s.Every(2).Hours().StartAt(time.Now().Add(time.Second * 30)).Do(func() {
 		runCctvCheckBanjarmasin(genUnitService)
 	})
 
