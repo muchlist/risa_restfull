@@ -338,7 +338,7 @@ func (c *vendorCheckService) GetVendorCheckByID(vendorCheckID string, branchIfSp
 }
 
 func (c *vendorCheckService) FindVendorCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError) {
-	vendorCheckList, err := c.daoC.FindCheck(branch, filter)
+	vendorCheckList, err := c.daoC.FindCheck(branch, filter, false)
 	if err != nil {
 		return []dto.VendorCheck{}, err
 	}

@@ -14,10 +14,11 @@ import (
 )
 
 type PDFVendorReq struct {
-	Name        string
-	HistoryList dto.HistoryUnwindResponseList
-	Start       int64
-	End         int64
+	Name            string
+	HistoryList     dto.HistoryUnwindResponseList
+	VendorCheckList []dto.VendorCheck
+	Start           int64
+	End             int64
 }
 
 func GeneratePDFVendor(
@@ -25,7 +26,6 @@ func GeneratePDFVendor(
 ) error {
 	// slice yang sudah di filter dan dimodifikasi isinya
 	var allListComputed []dto.HistoryUnwindResponse
-
 	var completeList []dto.HistoryUnwindResponse
 	var progressList []dto.HistoryUnwindResponse
 	var pendingList []dto.HistoryUnwindResponse
@@ -109,6 +109,27 @@ func GeneratePDFVendor(
 		buildHistoryVendorList(m, pendingList, " Pending", getPinkColor())
 	}
 
+	var physicalCheckCCTVFiltered []dto.VendorCheckItemEmbed
+	for _, checkParrent := range pdfVendorStruct.VendorCheckList {
+		if checkParrent.IsVirtualCheck {
+			continue
+		}
+		for _, check := range checkParrent.VendorCheckItems {
+			if !check.IsChecked {
+				continue
+			}
+			if check.CheckedAt <= pdfVendorStruct.End && check.CheckedAt >= pdfVendorStruct.Start {
+				physicalCheckCCTVFiltered = append(physicalCheckCCTVFiltered, check)
+			}
+		}
+	}
+
+	if len(physicalCheckCCTVFiltered) != 0 {
+		fmt.Printf("ceknya : %d", len(physicalCheckCCTVFiltered))
+		m.AddPage()
+		buildPhysicalCheckList(m, physicalCheckCCTVFiltered, " Cek Fisik")
+	}
+
 	err = m.OutputFileAndClose(fmt.Sprintf("static/pdf-vendor/%s.pdf", pdfVendorStruct.Name))
 	if err != nil {
 		return err
@@ -187,6 +208,71 @@ func buildHistoryVendorList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, 
 		ContentProp: props.TableListContent{
 			Size:      9,
 			GridSizes: []uint{2, 3, 3, 1, 1, 1, 1},
+		},
+		Align:                consts.Left,
+		AlternatedBackground: &lightPurpleColor,
+		HeaderContentSpace:   1,
+		Line:                 true,
+	})
+}
+
+func buildPhysicalCheckList(m pdf.Maroto, dataList []dto.VendorCheckItemEmbed, title string) {
+	tableHeading := []string{"No.", "CCTV", "Lokasi", "Offline", "Blur", "Pengecekan", "Oleh"}
+
+	var contents [][]string
+	for i, data := range dataList {
+		updateAt, err := timegen.GetTimeWITA(data.CheckedAt)
+		if err != nil {
+			updateAt = "error"
+		}
+
+		blurText := ""
+		offlineText := ""
+		if data.IsBlur {
+			blurText = "o"
+		}
+		if data.IsOffline {
+			offlineText = "o"
+		}
+
+		contents = append(contents, []string{
+			fmt.Sprintf("%03d\n", i+1),
+			data.Name,
+			data.Location,
+			offlineText,
+			blurText,
+			updateAt,
+			strings.ToLower(strings.Split(data.CheckedBy, " ")[0]),
+		},
+		)
+	}
+
+	lightPurpleColor := getLightPurpleColor()
+
+	m.SetBackgroundColor(getTealColor())
+	m.Row(9, func() {
+		m.Col(12, func() {
+			m.Text(title, props.Text{
+				Top:             2,
+				Family:          consts.Courier,
+				Style:           consts.Bold,
+				Size:            12,
+				Align:           consts.Left,
+				VerticalPadding: 0,
+				Color:           color.NewWhite(),
+			})
+		})
+	})
+
+	m.SetBackgroundColor(color.NewWhite())
+	m.TableList(tableHeading, contents, props.TableList{
+		HeaderProp: props.TableListContent{
+			Size:      9,
+			GridSizes: []uint{1, 3, 2, 1, 1, 2, 2},
+		},
+		ContentProp: props.TableListContent{
+			Size:      9,
+			GridSizes: []uint{1, 3, 2, 1, 1, 2, 2},
 		},
 		Align:                consts.Left,
 		AlternatedBackground: &lightPurpleColor,

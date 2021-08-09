@@ -279,7 +279,7 @@ func (c *checkDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (d
 		filter[keyChBranch] = strings.ToUpper(branch)
 	}
 	if filterA.FilterStart != 0 {
-		filter[keyChCreatedAt] = bson.M{"$gte": filterA.FilterStart}
+		filter[keyChUpdatedAt] = bson.M{"$gte": filterA.FilterStart}
 	}
 	if filterA.FilterEnd != 0 {
 		filter[keyChCreatedAt] = bson.M{"$lte": filterA.FilterEnd}
@@ -326,7 +326,7 @@ func (c *checkDao) FindCheckForReports(branch string, filterA dto.FilterTimeRang
 		filter[keyChBranch] = strings.ToUpper(branch)
 	}
 	if filterA.FilterStart != 0 {
-		filter[keyChCreatedAt] = bson.M{"$gte": filterA.FilterStart}
+		filter[keyChUpdatedAt] = bson.M{"$gte": filterA.FilterStart}
 	}
 	if filterA.FilterEnd != 0 {
 		filter[keyChCreatedAt] = bson.M{"$lte": filterA.FilterEnd}

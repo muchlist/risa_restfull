@@ -7,6 +7,7 @@ import (
 	"github.com/muchlist/risa_restfull/dao/checkdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/reportdao"
+	"github.com/muchlist/risa_restfull/dao/vendorcheckdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/pdfgen"
 )
@@ -14,19 +15,22 @@ import (
 func NewReportService(
 	histDao historydao.HistoryDaoAssumer,
 	checkDao checkdao.CheckDaoAssumer,
+	checkVendorDao vendorcheckdao.CheckVendorDaoAssumer,
 	pdfDao reportdao.PdfDaoAssumer,
 ) ReportServiceAssumer {
 	return &reportService{
-		daoH: histDao,
-		daoC: checkDao,
-		daoP: pdfDao,
+		daoH:  histDao,
+		daoC:  checkDao,
+		daoCV: checkVendorDao,
+		daoP:  pdfDao,
 	}
 }
 
 type reportService struct {
-	daoH historydao.HistoryDaoAssumer
-	daoC checkdao.CheckDaoAssumer
-	daoP reportdao.PdfDaoAssumer
+	daoH  historydao.HistoryDaoAssumer
+	daoC  checkdao.CheckDaoAssumer
+	daoCV vendorcheckdao.CheckVendorDaoAssumer
+	daoP  reportdao.PdfDaoAssumer
 }
 
 type ReportServiceAssumer interface {
@@ -36,7 +40,7 @@ type ReportServiceAssumer interface {
 	FindPdf(branch string) ([]dto.PdfFile, rest_err.APIError)
 }
 
-// GeneratePDFReport
+// GenerateReportPDF membuat laporan untuk it support
 func (r *reportService) GenerateReportPDF(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
@@ -98,7 +102,7 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 	return &name, nil
 }
 
-// GenerateReportPDFVendor
+// GenerateReportPDFVendor membuat pdf untuk vendor multinet
 func (r *reportService) GenerateReportPDFVendor(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
@@ -134,17 +138,27 @@ func (r *reportService) GenerateReportPDFVendor(name string, branch string, star
 		},
 	)
 
+	if err != nil {
+		return nil, err
+	}
+
 	historiesCombined := append(historyList04, historyList123...)
 
+	vendorCheckList, err := r.daoCV.FindCheck(branch, dto.FilterTimeRangeLimit{
+		FilterStart: start - (2 * 30 * 24 * 60 * 60), // batas awalnya di kurangi 2 bulan
+		FilterEnd:   end,
+		Limit:       20,
+	}, true)
 	if err != nil {
 		return nil, err
 	}
 
 	errPDF := pdfgen.GeneratePDFVendor(pdfgen.PDFVendorReq{
-		Name:        name,
-		HistoryList: historiesCombined,
-		Start:       start,
-		End:         end,
+		Name:            name,
+		HistoryList:     historiesCombined,
+		VendorCheckList: vendorCheckList,
+		Start:           start,
+		End:             end,
 	})
 	if errPDF != nil {
 		return nil, rest_err.NewInternalServerError("gagal membuat pdf", errPDF)

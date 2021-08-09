@@ -57,7 +57,7 @@ var (
 	otherService       = service.NewOtherService(otherDao, historyDao, genUnitDao)
 	vendorCheckService = service.NewVendorCheckService(vendorCheckDao, genUnitDao, cctvDao, historyService)
 	speedService       = service.NewSpeedTestService(speedDao)
-	reportService      = service.NewReportService(historyDao, checkDao, pdfDao)
+	reportService      = service.NewReportService(historyDao, checkDao, vendorCheckDao, pdfDao)
 
 	// Controller or Handler
 	pingHandler        = handler.NewPingHandler()

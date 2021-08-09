@@ -39,7 +39,7 @@ func (h *reportHandler) GeneratePDF(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
 	}
-	pdfName = fmt.Sprintf("manual-%s", pdfName)
+	pdfName = fmt.Sprintf("manual-support-%s", pdfName)
 
 	_, apiErr := h.service.GenerateReportPDF(pdfName, branch, int64(start), int64(end))
 	if apiErr != nil {

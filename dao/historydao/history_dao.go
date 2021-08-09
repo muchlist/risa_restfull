@@ -299,7 +299,7 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 
 	// option range
 	if filterB.FilterStart != 0 {
-		filter[keyHistCreatedAt] = bson.M{"$gte": filterB.FilterStart}
+		filter[keyHistUpdatedAt] = bson.M{"$gte": filterB.FilterStart}
 	}
 	if filterB.FilterEnd != 0 {
 		filter[keyHistCreatedAt] = bson.M{"$lte": filterB.FilterEnd}
@@ -386,7 +386,7 @@ func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filt
 
 	// option range
 	if filterB.FilterStart != 0 {
-		filter[keyHistCreatedAt] = bson.M{"$gte": filterB.FilterStart}
+		filter[keyHistUpdatedAt] = bson.M{"$gte": filterB.FilterStart}
 	}
 	if filterB.FilterEnd != 0 {
 		filter[keyHistCreatedAt] = bson.M{"$lte": filterB.FilterEnd}
