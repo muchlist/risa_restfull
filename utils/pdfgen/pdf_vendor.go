@@ -125,7 +125,6 @@ func GeneratePDFVendor(
 	}
 
 	if len(physicalCheckCCTVFiltered) != 0 {
-		fmt.Printf("ceknya : %d", len(physicalCheckCCTVFiltered))
 		m.AddPage()
 		buildPhysicalCheckList(m, physicalCheckCCTVFiltered, " Cek Fisik")
 	}
