@@ -8,26 +8,24 @@ import (
 	"github.com/johnfercher/maroto/pkg/props"
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dto"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"github.com/muchlist/risa_restfull/utils/timegen"
-	"strconv"
 	"strings"
 )
 
-type PDFReq struct {
-	Name        string
-	HistoryList dto.HistoryUnwindResponseList
-	CheckList   []dto.Check
-	Start       int64
-	End         int64
+type PDFVendorReq struct {
+	Name            string
+	HistoryList     dto.HistoryUnwindResponseList
+	VendorCheckList []dto.VendorCheck
+	Start           int64
+	End             int64
 }
 
-func GeneratePDF(
-	pdfStruct PDFReq,
+func GeneratePDFVendor(
+	pdfVendorStruct PDFVendorReq,
 ) error {
-
 	// slice yang sudah di filter dan dimodifikasi isinya
 	var allListComputed []dto.HistoryUnwindResponse
-
 	var completeList []dto.HistoryUnwindResponse
 	var progressList []dto.HistoryUnwindResponse
 	var pendingList []dto.HistoryUnwindResponse
@@ -35,23 +33,29 @@ func GeneratePDF(
 	// idTemp menyimpan id, karena akan banyak id yang sama, maka akan diambil history yang terakhir
 	// urutan unwind dengan asumsi unwind sorted by updates.time 1 (pertama kali update tampil pertama)
 	var idTemp string
-	for _, history := range pdfStruct.HistoryList {
+	for _, history := range pdfVendorStruct.HistoryList {
 		// skip jika waktu updatenya melebihi time end laporan
-		if history.Updates.Time > pdfStruct.End {
-			continue
-		}
-
-		if strings.ToUpper(history.Status) == "MAINTENANCE" {
+		if history.Updates.Time > pdfVendorStruct.End {
 			continue
 		}
 
 		// blok if yang dijalankan jika historynya sama
 		if idTemp == history.ID.Hex() {
+			// menambahkan nama pengupdate
 			updatedByExisting := allListComputed[len(allListComputed)-1].UpdatedBy
 			updatedByCurrent := strings.Split(history.Updates.UpdatedBy, " ")[0]
 			if updatedByExisting != updatedByCurrent {
 				allListComputed[len(allListComputed)-1].UpdatedBy = updatedByExisting + " > " + updatedByCurrent
 			}
+
+			// menambahkan waktu pengerjaan, jika statusComplete sebelumnya pending maka waktu tidak ditambahkan
+			difference := history.Updates.Time - allListComputed[len(allListComputed)-1].Updates.Time
+			if allListComputed[len(allListComputed)-1].Updates.CompleteStatus == enum.HPending {
+				difference = 0
+			}
+
+			timeToConsumeExisting := allListComputed[len(allListComputed)-1].UpdatedAt
+			allListComputed[len(allListComputed)-1].UpdatedAt = timeToConsumeExisting + difference
 			allListComputed[len(allListComputed)-1].Updates = history.Updates
 			continue
 		}
@@ -59,6 +63,12 @@ func GeneratePDF(
 
 		idTemp = history.ID.Hex()
 
+		// updatedAt tidak lagi dipakai pada history versi 2,
+		// updatedAt akan dialih fungsikan untuk menghitung seberapa lama pekerjaannya diselesaikan
+		// rumus createdAt - updatedAt tidak berlaku karena apabila statusCompleted nya pending tidak boleh dihitung
+		// terpaksa menggunakan field bertipe int64 lain untuk menampung perhitungan sementara belum memiliki solusi lain
+		// updatedAt di nol kan pada data pertama dan akan ditambah jika ada history yang sama
+		history.UpdatedAt = 0
 		history.UpdatedBy = strings.Split(history.Updates.UpdatedBy, " ")[0]
 
 		allListComputed = append(allListComputed, history)
@@ -79,38 +89,54 @@ func GeneratePDF(
 	m := pdf.NewMaroto(consts.Landscape, consts.A4)
 	m.SetPageMargins(5, 10, 5)
 
-	startWita, _ := timegen.GetTimeWithYearWITA(pdfStruct.Start)
-	endWita, _ := timegen.GetTimeWithYearWITA(pdfStruct.End)
+	startWita, _ := timegen.GetTimeWithYearWITA(pdfVendorStruct.Start)
+	endWita, _ := timegen.GetTimeWithYearWITA(pdfVendorStruct.End)
 	subtitle := fmt.Sprintf("Tanggal %s sd %s", startWita, endWita)
-	err := buildHeading(m, subtitle)
+	err := buildHeadingVendor(m, subtitle)
 	if err != nil {
 		return err
 	}
 
 	if len(completeList) != 0 {
-		buildHistoryList(m, completeList, " Completed", getTealColor())
+		buildHistoryVendorList(m, completeList, " Completed", getTealColor())
 	}
 
 	if len(progressList) != 0 {
-		buildHistoryList(m, progressList, " Progress", getOrangeColor())
+		buildHistoryVendorList(m, progressList, " Progress", getOrangeColor())
 	}
 
 	if len(pendingList) != 0 {
-		buildHistoryList(m, pendingList, " Pending", getPinkColor())
+		buildHistoryVendorList(m, pendingList, " Pending", getPinkColor())
 	}
 
-	if len(pdfStruct.CheckList) != 0 {
-		buildCheckList(m, pdfStruct.CheckList)
+	var physicalCheckCCTVFiltered []dto.VendorCheckItemEmbed
+	for _, checkParrent := range pdfVendorStruct.VendorCheckList {
+		if checkParrent.IsVirtualCheck {
+			continue
+		}
+		for _, check := range checkParrent.VendorCheckItems {
+			if !check.IsChecked {
+				continue
+			}
+			if check.CheckedAt <= pdfVendorStruct.End && check.CheckedAt >= pdfVendorStruct.Start {
+				physicalCheckCCTVFiltered = append(physicalCheckCCTVFiltered, check)
+			}
+		}
 	}
 
-	err = m.OutputFileAndClose(fmt.Sprintf("static/pdf/%s.pdf", pdfStruct.Name))
+	if len(physicalCheckCCTVFiltered) != 0 {
+		m.AddPage()
+		buildPhysicalCheckList(m, physicalCheckCCTVFiltered, " Cek Fisik")
+	}
+
+	err = m.OutputFileAndClose(fmt.Sprintf("static/pdf-vendor/%s.pdf", pdfVendorStruct.Name))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func buildHeading(m pdf.Maroto, subtitle string) error {
+func buildHeadingVendor(m pdf.Maroto, subtitle string) error {
 	var errTemp error
 	m.Row(10, func() {
 
@@ -127,7 +153,7 @@ func buildHeading(m pdf.Maroto, subtitle string) error {
 			}
 		})
 		m.Col(8, func() {
-			textH1(m, "Rekap Laporan IT Regional Kalimantan")
+			textH1(m, "Rekap Laporan Pekerjaan di Regional Kalimantan")
 			textBodyCenter(m, subtitle, 12)
 		})
 		m.ColSpace(2)
@@ -135,8 +161,8 @@ func buildHeading(m pdf.Maroto, subtitle string) error {
 	return errTemp
 }
 
-func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title string, customColor color.Color) {
-	tableHeading := []string{"Nama", "Kategori", "Keterangan", "Solusi", "Status", "Update", "Oleh"}
+func buildHistoryVendorList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title string, customColor color.Color) {
+	tableHeading := []string{"Nama", "Keterangan", "Solusi", "Status", "Pengerjaan", "Update", "Oleh"}
 
 	var contents [][]string
 	for _, data := range dataList {
@@ -147,10 +173,10 @@ func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title 
 
 		contents = append(contents, []string{
 			data.ParentName,
-			data.Category,
 			data.Updates.Problem,
 			data.Updates.ProblemResolve,
 			enum.GetProgressString(data.Updates.CompleteStatus),
+			sfunc.IntToTime(data.UpdatedAt, ""), // data UpdatedAt sudah diubah pada komputasi sebelumnya menjadi lama pengerjaan
 			updateAt,
 			strings.ToLower(data.UpdatedBy)},
 		)
@@ -176,11 +202,11 @@ func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title 
 	m.TableList(tableHeading, contents, props.TableList{
 		HeaderProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{2, 1, 3, 3, 1, 1, 1},
+			GridSizes: []uint{2, 3, 3, 1, 1, 1, 1},
 		},
 		ContentProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{2, 1, 3, 3, 1, 1, 1},
+			GridSizes: []uint{2, 3, 3, 1, 1, 1, 1},
 		},
 		Align:                consts.Left,
 		AlternatedBackground: &lightPurpleColor,
@@ -189,36 +215,35 @@ func buildHistoryList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title 
 	})
 }
 
-func buildCheckList(m pdf.Maroto, checkList []dto.Check) {
-	tableHeading := []string{"Judul", "Shift", "Lokasi", "Keterangan", "Problem", "Cek", "Oleh"}
+func buildPhysicalCheckList(m pdf.Maroto, dataList []dto.VendorCheckItemEmbed, title string) {
+	tableHeading := []string{"No.", "CCTV", "Lokasi", "Offline", "Blur", "Pengecekan", "Oleh"}
 
 	var contents [][]string
-
-	for _, check := range checkList {
-		for _, data := range check.CheckItems {
-			checkedAt, err := timegen.GetHourWITA(data.CheckedAt)
-			if err != nil {
-				checkedAt = "error"
-			}
-			if data.CheckedAt == 0 {
-				checkedAt = "tidak dicek"
-				data.CheckedNote = ""
-			}
-
-			haveProblem := ""
-			if data.HaveProblem {
-				haveProblem = "ada"
-			}
-
-			contents = append(contents, []string{
-				data.Name,
-				strconv.Itoa(check.Shift),
-				data.Location,
-				data.CheckedNote,
-				haveProblem,
-				checkedAt,
-				strings.Split(check.CreatedBy, " ")[0]})
+	for i, data := range dataList {
+		updateAt, err := timegen.GetTimeWITA(data.CheckedAt)
+		if err != nil {
+			updateAt = "error"
 		}
+
+		blurText := ""
+		offlineText := ""
+		if data.IsBlur {
+			blurText = "o"
+		}
+		if data.IsOffline {
+			offlineText = "o"
+		}
+
+		contents = append(contents, []string{
+			fmt.Sprintf("%03d\n", i+1),
+			data.Name,
+			data.Location,
+			offlineText,
+			blurText,
+			updateAt,
+			strings.ToLower(strings.Split(data.CheckedBy, " ")[0]),
+		},
+		)
 	}
 
 	lightPurpleColor := getLightPurpleColor()
@@ -226,7 +251,7 @@ func buildCheckList(m pdf.Maroto, checkList []dto.Check) {
 	m.SetBackgroundColor(getTealColor())
 	m.Row(9, func() {
 		m.Col(12, func() {
-			m.Text(" CheckList", props.Text{
+			m.Text(title, props.Text{
 				Top:             2,
 				Family:          consts.Courier,
 				Style:           consts.Bold,
@@ -237,15 +262,16 @@ func buildCheckList(m pdf.Maroto, checkList []dto.Check) {
 			})
 		})
 	})
+
 	m.SetBackgroundColor(color.NewWhite())
 	m.TableList(tableHeading, contents, props.TableList{
 		HeaderProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{3, 1, 1, 4, 1, 1, 1},
+			GridSizes: []uint{1, 3, 2, 1, 1, 2, 2},
 		},
 		ContentProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{3, 1, 1, 4, 1, 1, 1},
+			GridSizes: []uint{1, 3, 2, 1, 1, 2, 2},
 		},
 		Align:                consts.Left,
 		AlternatedBackground: &lightPurpleColor,

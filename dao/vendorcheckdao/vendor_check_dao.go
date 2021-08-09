@@ -57,7 +57,7 @@ type CheckVendorDaoAssumer interface {
 	BulkUpdateItem(inputs []dto.VendorCheckItemUpdate) (int64, rest_err.APIError)
 
 	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError)
-	FindCheck(branch string, filterA dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError)
+	FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.VendorCheck, rest_err.APIError)
 }
 
 func (c *checkVendorDao) InsertCheck(input dto.VendorCheck) (*string, rest_err.APIError) {
@@ -296,7 +296,7 @@ func (c *checkVendorDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecif
 	return &check, nil
 }
 
-func (c *checkVendorDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError) {
+func (c *checkVendorDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.VendorCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -312,15 +312,20 @@ func (c *checkVendorDao) FindCheck(branch string, filterA dto.FilterTimeRangeLim
 		filter[keyBranch] = strings.ToUpper(branch)
 	}
 	if filterA.FilterStart != 0 {
-		filter[keyCreatedAt] = bson.M{"$gte": filterA.FilterStart}
+		filter[keyUpdatedAt] = bson.M{"$gte": filterA.FilterStart}
 	}
 	if filterA.FilterEnd != 0 {
 		filter[keyCreatedAt] = bson.M{"$lte": filterA.FilterEnd}
 	}
 
 	opts := options.Find()
+
+	checkItemsProjection := 0
+	if detail {
+		checkItemsProjection = 1
+	}
 	opts.SetProjection(bson.M{
-		keyVendorCheckItems: 0,
+		keyVendorCheckItems: checkItemsProjection,
 	})
 	opts.SetSort(bson.D{{keyUpdatedAt, -1}}) //nolint:govet
 	opts.SetLimit(filterA.Limit)
