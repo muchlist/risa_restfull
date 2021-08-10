@@ -163,20 +163,20 @@ func buildHeadingVendor(m pdf.Maroto, subtitle string) error {
 }
 
 func buildHistoryVendorList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title string, customColor color.Color) {
-	tableHeading := []string{"Nama", "Keterangan", "Solusi", "Status", "Pengerjaan", "Update", "Oleh"}
+	tableHeading := []string{"No.", "Nama", "Keterangan", "Solusi", "Pengerjaan", "Update", "Oleh"}
 
 	var contents [][]string
-	for _, data := range dataList {
+	for i, data := range dataList {
 		updateAt, err := timegen.GetTimeWITA(data.Updates.Time)
 		if err != nil {
 			updateAt = "error"
 		}
 
 		contents = append(contents, []string{
+			fmt.Sprintf("%03d\n", i+1),
 			data.ParentName,
 			data.Updates.Problem,
 			data.Updates.ProblemResolve,
-			enum.GetProgressString(data.Updates.CompleteStatus),
 			sfunc.IntToTime(data.UpdatedAt, ""), // data UpdatedAt sudah diubah pada komputasi sebelumnya menjadi lama pengerjaan
 			updateAt,
 			strings.ToLower(data.UpdatedBy)},
@@ -203,11 +203,11 @@ func buildHistoryVendorList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, 
 	m.TableList(tableHeading, contents, props.TableList{
 		HeaderProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{2, 3, 3, 1, 1, 1, 1},
+			GridSizes: []uint{1, 2, 3, 3, 1, 1, 1},
 		},
 		ContentProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{2, 3, 3, 1, 1, 1, 1},
+			GridSizes: []uint{1, 2, 3, 3, 1, 1, 1},
 		},
 		Align:                consts.Left,
 		AlternatedBackground: &lightPurpleColor,
