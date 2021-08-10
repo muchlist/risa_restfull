@@ -31,55 +31,28 @@ func RunScheduler(
 		runCctvCheckBanjarmasin(genUnitService)
 	})
 
-	// run report generator
-	_, _ = s.Every(1).Days().At("08:00").Do(func() {
-		runReportGeneratorBanjarmasin(reportService)
-	})
-	_, _ = s.Every(1).Days().At("16:00").Do(func() {
-		runReportGeneratorBanjarmasin(reportService)
-	})
-	_, _ = s.Every(1).Days().At("16:00").Do(func() {
+	// run report vendor
+	_, _ = s.Every(1).Days().At("17:00").Do(func() {
 		runReportGeneratorVendorBanjarmasin(reportService)
 	})
-	_, _ = s.Every(1).Days().At("00:00").Do(func() {
-		runReportGeneratorBanjarmasin(reportService)
-	})
+
+	// run report generator
+	/*	_, _ = s.Every(1).Days().At("08:00").Do(func() {
+			runReportGeneratorBanjarmasin(reportService)
+		})
+		_, _ = s.Every(1).Days().At("16:00").Do(func() {
+			runReportGeneratorBanjarmasin(reportService)
+		})
+
+		_, _ = s.Every(1).Days().At("00:00").Do(func() {
+			runReportGeneratorBanjarmasin(reportService)
+		})*/
 
 	s.StartAsync()
 }
 
 func runCctvCheckBanjarmasin(genUnitService service.GenUnitServiceAssumer) {
 	_ = genUnitService.CheckHardwareDownAndSendNotif("BANJARMASIN", category.Cctv)
-}
-
-func runReportGeneratorBanjarmasin(reportService service.ReportServiceAssumer) {
-	timeNow := time.Now().Unix()
-	timePast := timeNow - 28801 // minus 8 jam
-
-	pdfName, err2 := timegen.GetTimeAsName(timeNow)
-	if err2 != nil {
-		logger.Error("error membuat nama pdf otomatis", err2)
-	}
-	pdfName = fmt.Sprintf("auto-%s", pdfName)
-
-	_, err := reportService.GenerateReportPDF(pdfName, "BANJARMASIN", timePast, timeNow)
-	if err != nil {
-		logger.Error("gagal membuat pdf otomatis", err)
-	}
-
-	// simpan pdf ke database
-	_, apiErr := reportService.InsertPdf(dto.PdfFile{
-		CreatedAt: time.Now().Unix(),
-		CreatedBy: "SYSTEM",
-		Branch:    "BANJARMASIN",
-		Name:      pdfName,
-		Type:      "LAPORAN",
-		FileName:  fmt.Sprintf("pdf/%s.pdf", pdfName),
-	})
-
-	if apiErr != nil {
-		logger.Error("gagal membuat pdf otomatis", err)
-	}
 }
 
 func runReportGeneratorVendorBanjarmasin(reportService service.ReportServiceAssumer) {
@@ -111,6 +84,37 @@ func runReportGeneratorVendorBanjarmasin(reportService service.ReportServiceAssu
 		logger.Error("gagal membuat pdf otomatis", err)
 	}
 }
+
+/*
+func runReportGeneratorBanjarmasin(reportService service.ReportServiceAssumer) {
+	timeNow := time.Now().Unix()
+	timePast := timeNow - 28801 // minus 8 jam
+
+	pdfName, err2 := timegen.GetTimeAsName(timeNow)
+	if err2 != nil {
+		logger.Error("error membuat nama pdf otomatis", err2)
+	}
+	pdfName = fmt.Sprintf("auto-%s", pdfName)
+
+	_, err := reportService.GenerateReportPDF(pdfName, "BANJARMASIN", timePast, timeNow)
+	if err != nil {
+		logger.Error("gagal membuat pdf otomatis", err)
+	}
+
+	// simpan pdf ke database
+	_, apiErr := reportService.InsertPdf(dto.PdfFile{
+		CreatedAt: time.Now().Unix(),
+		CreatedBy: "SYSTEM",
+		Branch:    "BANJARMASIN",
+		Name:      pdfName,
+		Type:      "LAPORAN",
+		FileName:  fmt.Sprintf("pdf/%s.pdf", pdfName),
+	})
+
+	if apiErr != nil {
+		logger.Error("gagal membuat pdf otomatis", err)
+	}
+}*/
 
 /*
 func runSpeedTest(speedService service.SpeedTestServiceAssumer) {
