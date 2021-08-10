@@ -217,7 +217,7 @@ func buildHistoryVendorList(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, 
 }
 
 func buildPhysicalCheckList(m pdf.Maroto, dataList []dto.VendorCheckItemEmbed, title string) {
-	tableHeading := []string{"No.", "CCTV", "Lokasi", "Offline", "Blur", "Pengecekan", "Oleh"}
+	tableHeading := []string{"No.", "CCTV", "Lokasi", "Normal", "Offline", "Blur", "Pengecekan", "Oleh"}
 
 	var contents [][]string
 	for i, data := range dataList {
@@ -226,19 +226,23 @@ func buildPhysicalCheckList(m pdf.Maroto, dataList []dto.VendorCheckItemEmbed, t
 			updateAt = "error"
 		}
 
+		normalText := "TRUE"
 		blurText := ""
 		offlineText := ""
 		if data.IsBlur {
-			blurText = "o"
+			blurText = "TRUE"
+			normalText = ""
 		}
 		if data.IsOffline {
-			offlineText = "o"
+			offlineText = "TRUE"
+			normalText = ""
 		}
 
 		contents = append(contents, []string{
 			fmt.Sprintf("%03d\n", i+1),
 			data.Name,
 			data.Location,
+			normalText,
 			offlineText,
 			blurText,
 			updateAt,
@@ -268,11 +272,11 @@ func buildPhysicalCheckList(m pdf.Maroto, dataList []dto.VendorCheckItemEmbed, t
 	m.TableList(tableHeading, contents, props.TableList{
 		HeaderProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{1, 3, 2, 1, 1, 2, 2},
+			GridSizes: []uint{1, 3, 2, 1, 1, 1, 1, 2},
 		},
 		ContentProp: props.TableListContent{
 			Size:      9,
-			GridSizes: []uint{1, 3, 2, 1, 1, 2, 2},
+			GridSizes: []uint{1, 3, 2, 1, 1, 1, 1, 2},
 		},
 		Align:                consts.Left,
 		AlternatedBackground: &lightPurpleColor,
