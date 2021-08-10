@@ -109,12 +109,13 @@ func GeneratePDFVendor(
 		buildHistoryVendorList(m, pendingList, " Pending", getPinkColor())
 	}
 
+	// Filtering check fisik
 	var physicalCheckCCTVFiltered []dto.VendorCheckItemEmbed
-	for _, checkParrent := range pdfVendorStruct.VendorCheckList {
-		if checkParrent.IsVirtualCheck {
+	for _, checkParent := range pdfVendorStruct.VendorCheckList {
+		if checkParent.IsVirtualCheck {
 			continue
 		}
-		for _, check := range checkParrent.VendorCheckItems {
+		for _, check := range checkParent.VendorCheckItems {
 			if !check.IsChecked {
 				continue
 			}

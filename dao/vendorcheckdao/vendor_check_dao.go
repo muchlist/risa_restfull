@@ -320,13 +320,11 @@ func (c *checkVendorDao) FindCheck(branch string, filterA dto.FilterTimeRangeLim
 
 	opts := options.Find()
 
-	checkItemsProjection := 0
-	if detail {
-		checkItemsProjection = 1
+	if !detail {
+		opts.SetProjection(bson.M{
+			keyVendorCheckItems: 0,
+		})
 	}
-	opts.SetProjection(bson.M{
-		keyVendorCheckItems: checkItemsProjection,
-	})
 	opts.SetSort(bson.D{{keyUpdatedAt, -1}}) //nolint:govet
 	opts.SetLimit(filterA.Limit)
 
