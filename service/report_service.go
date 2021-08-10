@@ -10,6 +10,7 @@ import (
 	"github.com/muchlist/risa_restfull/dao/vendorcheckdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/pdfgen"
+	"time"
 )
 
 func NewReportService(
@@ -44,6 +45,11 @@ type ReportServiceAssumer interface {
 func (r *reportService) GenerateReportPDF(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
+	}
+
+	currentTime := time.Now().Unix()
+	if end > currentTime {
+		end = currentTime
 	}
 
 	// GET HISTORIES 0, 4 sesuai start end inputan
@@ -106,6 +112,11 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 func (r *reportService) GenerateReportPDFVendor(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
+	}
+
+	currentTime := time.Now().Unix()
+	if end > currentTime {
+		end = currentTime
 	}
 
 	// GET HISTORIES 0, 4 sesuai start end inputan
