@@ -2,6 +2,21 @@
 
 RestfulApi Backend for Risa Aplication Pelindo III using Golang (Fiber) and MongoDB
 
+## Fitur
+- riwayat pemeliharaan
+- penarikan laporan
+- data inventaris alat
+- stok manajemen
+- monitoring speed test, cctv
+- checklist pengecekan harian
+- checklist maintenance cctv oleh vendor
+- tugas perbaikan / kemajuan
+- notifikasi perangkat bermasalah
+
+
+## Playstore
+- [Google Playstore](https://play.google.com/store/apps/details?id=dev.muchlis.risa2)
+
 ## Dependency lokal
 
 - [ErruUtils](https://github.com/muchlist/erru_utils_go/)  
@@ -15,7 +30,10 @@ RestfulApi Backend for Risa Aplication Pelindo III using Golang (Fiber) and Mong
 - [Mongo go driver](https://go.mongodb.org/mongo-driver/) : Saat ini service ini full menggunakan MongoDB.
 - [JWT go](https://github.com/dgrijalva/jwt-go/)
 - [Ozzo validation](https://github.com/go-ozzo/ozzo-validation/) : Library yang digunakan untuk validasi request body
-  dari user. (Karena Go Fiber tidak memiliki input validasi seperti Binding di Gin)
+  dari user.
+- [Go Cron](https://github.com/go-co-op/gocron/) : Scheduller
+- [Maroto](https://github.com/johnfercher/maroto/) : Framework pembuatan PDF
+- [Firebase](https://firebase.google.com/go/v4) : Notifikasi realtime ke Android
 
 ## LOG
 
@@ -24,27 +42,29 @@ RestfulApi Backend for Risa Aplication Pelindo III using Golang (Fiber) and Mong
   `gen_unit` dibuat karena ada permintaan dari client agar semua perangkat dapat dicari menggunakan satu buah kolom
   pencarian tanpa harus memilih kategori. Semakin banyak data akan semakin lambat sehingga kedepan akan diganti
   menggunakan database elasticsearch. domain ini tidak bersentuhan secara langsung dengan user dari segi inputan.
-  updatenya akan dilakukan dibelakang layar berasarkan : pembuatan perangkat pada kategori apapun, pengeditan jika nama,
-  ip , category, cabang berubah. dan penghapusan. serta ada update pada history/incident.
+  updatenya akan dilakukan dibelakang layar berdasarkan : pembuatan perangkat pada kategori apapun, pengeditan jika nama,
+  ip , category, cabang berubah. dan penghapusan. serta ada update pada history/incident.  `gen_unit` juga memuat data ping alamat ip kghusus perangkat
+yang memiliki ip address.
 - `history` digunakan untuk mencatat semua riwayat perangkat, riwayat ini memiliki status info (0), progress (1),
   persetujuan pending (2), pending (3), complete (4). Setiap penambahan `history` yang belum komplit akan mengupdate
-  field `cases`
-  pada domain `gen_unit` dan jika `history` diubah statusnya menjadi complete maka case di `gen_unit` akan dikurangi
-- `cctv`
-- `check` menggenerate daftar tempat atau perangkat yang harus di cek dengan menyesuaikan shifts inputan. Didalam check
-  akan ada `check item` yang cocok dan juga `general unit cctv` dengan kriteria tertentu (dalam hal ini perangkat yang
-  down dan field `cases` kosong maka harus dimunculkan di checklist). ketika mengupdate check item didalamnyam akan
-  mengupdate juga entity `check item` kecuali yang berdasarkan general unit (misalnya cctv) akan diupdate ketika `check`
-  ditandai sudah selesai (isFinish = true).
-  `check item` yang ditandai mempunyai problem juga akan di munculkan pada saat pembuatan check berikutnya.
-- `check item` sebagai template yang mana saja yang mau di cek. didalamnya ada slice shift untuk dimunculkan
+  field `cases` pada domain `gen_unit` dan jika `history` diubah statusnya menjadi complete maka case di `gen_unit` akan dikurangi.
+  `history` memiliki `history` lagi didalamnya untuk keperluan tracking perubahan dan pembuatan laporan
+  berdasarkan range waktu tertentu.
+- `cctv`, `computer`, `application` dll yang serupa memuat data inventaris.
+- `check` menggenerate daftar tempat atau perangkat yang harus di cek dengan menyesuaikan waktu shifts realtime.
+  `check item` yang ditandai have problem juga akan di munculkan pada saat pembuatan check berikutnya.
+- `check item` sebagai template item yang mana saja yang mau di cek. didalamnya ada slice shift untuk dimunculkan
   saat `check` dibuat.
+- `checklist_cctv` membuat ceklist maintenance harian atau bulanan cctv oleh vendor cctv
 - `stock` menyimpan stock sebagai satu buah dokumen saja , pemakaian dan penambahan stok dijadikan sebagai child didalam
   dokumen dan setiap perubahannya akan mempengaruhi field QTY pada stock.
+- `scheduller` setiap satu jam sistem akan memeriksa cctv yang status pingnya down. status ping didapatkan dari inputan aplikasi lain bernama pingers.
+hasil pemeriksaan dikirimkan ke user menggunakan `firebase`
+
 
 ## Kontrak Struktur
 
-### Handler > Middleware > Service > Dao
+### Middleware > Handler > Service > Dao || Api
 
 - Handler digunakan untuk mengekstrak inputan dari user. params, query, json body, claims dari jwt serta validasi input
   ,termasuk memastikan dan menimpa huruf besar atau kecil.
@@ -53,3 +73,4 @@ RestfulApi Backend for Risa Aplication Pelindo III using Golang (Fiber) and Mong
   string menjadi ObjectID dan Pengecekan IP address.
 - Dao berkomunikasi langsung ke database. Beberapa kasus juga memastikan inputan huruf besar dan kecil pada inputan
   database yang caseSensitif untuk memaksimalkan indexing, memastikan nilai yang di input array<T> apabila array nil.
+- Api (folder client) merupakan aplikasi pihak luar. aplikasi bisa berkomunikasi dengan api pihak luar menggunakan rest api.
