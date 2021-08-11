@@ -1,7 +1,7 @@
 # RISA_RESTFULL
 
-RestfulApi Backend for Risa Aplication Pelindo III using Golang (Fiber) and MongoDB
-
+RestfulApi Backend for Risa Aplication Pelindo III using Golang (Fiber) and MongoDB.  
+Source Code Front-End menggunakan Flutter bisa diakses di [Risa Flutter](https://github.com/muchlist/risa2)
 ## Fitur
 - riwayat pemeliharaan
 - penarikan laporan
