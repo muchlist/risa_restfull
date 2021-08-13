@@ -76,7 +76,7 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 			FilterCategory:       "",
 			FilterCompleteStatus: "1,2,3",
 		}, dto.FilterTimeRangeLimit{
-			FilterStart: end - (3 * 30 * 24 * 60 * 60), // 3 bulan,
+			FilterStart: start - (3 * 30 * 24 * 60 * 60), // 3 bulan,
 			FilterEnd:   end,
 			Limit:       300,
 		},
