@@ -117,9 +117,13 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 	currentTime := time.Now().Unix()
 	lastPDF, err := r.daoP.FindLastPdf(branch, pdftype.Laporan)
 	if err != nil {
-		return nil, rest_err.NewBadRequestError("gagal mendapatkan data laporan sebelumnya")
+		return nil, rest_err.NewBadRequestError("Gagal mendapatkan data laporan sebelumnya")
 	}
 	lastPDFCreated := lastPDF.CreatedAt
+
+	if currentTime-lastPDFCreated < 60*2 {
+		return nil, rest_err.NewBadRequestError("Gagal. Jarak pembuatan laporan tidak boleh kurang dari 2 menit!")
+	}
 
 	// GET HISTORIES 0, 4 sesuai start end inputan
 	historyList04, err := r.daoH.UnwindHistory(
@@ -255,6 +259,10 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 		return nil, rest_err.NewBadRequestError("gagal mendapatkan data laporan sebelumnya")
 	}
 	lastPDFCreated := lastPDF.CreatedAt
+
+	if currentTime-lastPDFCreated < 60*2 {
+		return nil, rest_err.NewBadRequestError("Gagal. Jarak pembuatan laporan tidak boleh kurang dari 2 menit!")
+	}
 
 	// GET HISTORIES 0, 4 sesuai start end inputan
 	historyList04, err := r.daoH.UnwindHistory(
