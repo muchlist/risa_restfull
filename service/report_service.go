@@ -119,9 +119,9 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 	if err != nil {
 		return nil, rest_err.NewBadRequestError("Gagal mendapatkan data laporan sebelumnya")
 	}
-	lastPDFCreated := lastPDF.CreatedAt
+	lastPDFEndTime := lastPDF.EndReportTime
 
-	if currentTime-lastPDFCreated < 60*2 {
+	if currentTime-lastPDFEndTime < 60*2 {
 		return nil, rest_err.NewBadRequestError("Gagal. Jarak pembuatan laporan tidak boleh kurang dari 2 menit!")
 	}
 
@@ -132,7 +132,7 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 			FilterCategory:       "",
 			FilterCompleteStatus: "0,4",
 		}, dto.FilterTimeRangeLimit{
-			FilterStart: lastPDFCreated,
+			FilterStart: lastPDFEndTime,
 			FilterEnd:   currentTime,
 			Limit:       300,
 		},
@@ -149,7 +149,7 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 			FilterCategory:       "",
 			FilterCompleteStatus: "1,2,3",
 		}, dto.FilterTimeRangeLimit{
-			FilterStart: lastPDFCreated - (3 * 30 * 24 * 60 * 60), // 3 bulan,
+			FilterStart: lastPDFEndTime - (3 * 30 * 24 * 60 * 60), // 3 bulan,
 			FilterEnd:   currentTime,
 			Limit:       300,
 		},
@@ -159,7 +159,7 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 
 	// GET CHECK LIST
 	checkList, err := r.daoC.FindCheckForReports(branch, dto.FilterTimeRangeLimit{
-		FilterStart: lastPDFCreated,
+		FilterStart: lastPDFEndTime,
 		FilterEnd:   currentTime,
 	})
 	if err != nil {
@@ -170,7 +170,7 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 		Name:        name,
 		HistoryList: historiesCombined,
 		CheckList:   checkList,
-		Start:       lastPDFCreated,
+		Start:       lastPDFEndTime,
 		End:         currentTime,
 	})
 	if errPDF != nil {
@@ -258,9 +258,9 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 	if err != nil {
 		return nil, rest_err.NewBadRequestError("gagal mendapatkan data laporan sebelumnya")
 	}
-	lastPDFCreated := lastPDF.CreatedAt
+	lastPDFEndTime := lastPDF.EndReportTime
 
-	if currentTime-lastPDFCreated < 60*2 {
+	if currentTime-lastPDFEndTime < 60*2 {
 		return nil, rest_err.NewBadRequestError("Gagal. Jarak pembuatan laporan tidak boleh kurang dari 2 menit!")
 	}
 
@@ -271,7 +271,7 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
 			FilterCompleteStatus: "0,4",
 		}, dto.FilterTimeRangeLimit{
-			FilterStart: lastPDFCreated,
+			FilterStart: lastPDFEndTime,
 			FilterEnd:   currentTime,
 			Limit:       300,
 		},
@@ -288,7 +288,7 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
 			FilterCompleteStatus: "1,2,3",
 		}, dto.FilterTimeRangeLimit{
-			FilterStart: lastPDFCreated - (3 * 30 * 24 * 60 * 60), // 3 bulan,
+			FilterStart: lastPDFEndTime - (3 * 30 * 24 * 60 * 60), // 3 bulan,
 			FilterEnd:   currentTime,
 			Limit:       300,
 		},
@@ -301,7 +301,7 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 	historiesCombined := append(historyList04, historyList123...)
 
 	vendorCheckList, err := r.daoCV.FindCheck(branch, dto.FilterTimeRangeLimit{
-		FilterStart: lastPDFCreated - (2 * 30 * 24 * 60 * 60), // batas awalnya di kurangi 2 bulan
+		FilterStart: lastPDFEndTime - (2 * 30 * 24 * 60 * 60), // batas awalnya di kurangi 2 bulan
 		FilterEnd:   currentTime,
 		Limit:       20,
 	}, true)
@@ -313,7 +313,7 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 		Name:            name,
 		HistoryList:     historiesCombined,
 		VendorCheckList: vendorCheckList,
-		Start:           lastPDFCreated,
+		Start:           lastPDFEndTime,
 		End:             currentTime,
 	})
 	if errPDF != nil {
@@ -324,6 +324,11 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 }
 
 func (r *reportService) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
+	currentTime := time.Now().Unix()
+	if input.EndReportTime > currentTime {
+		input.EndReportTime = currentTime
+	}
+
 	return r.daoP.InsertPdf(input)
 }
 

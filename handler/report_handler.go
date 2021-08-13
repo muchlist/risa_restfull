@@ -49,12 +49,13 @@ func (h *reportHandler) GeneratePDF(c *fiber.Ctx) error {
 
 	// simpan pdf ke database
 	_, apiErr = h.service.InsertPdf(dto.PdfFile{
-		CreatedAt: time.Now().Unix(),
-		CreatedBy: claims.Name,
-		Branch:    branch,
-		Name:      pdfName,
-		Type:      "LAPORAN",
-		FileName:  fmt.Sprintf("pdf/%s.pdf", pdfName),
+		CreatedAt:     time.Now().Unix(),
+		CreatedBy:     claims.Name,
+		Branch:        branch,
+		Name:          pdfName,
+		Type:          "LAPORAN",
+		FileName:      fmt.Sprintf("pdf/%s.pdf", pdfName),
+		EndReportTime: int64(end),
 	})
 
 	if apiErr != nil {
@@ -89,12 +90,13 @@ func (h *reportHandler) GeneratePDFStartFromLast(c *fiber.Ctx) error {
 
 	// simpan pdf ke database
 	_, apiErr = h.service.InsertPdf(dto.PdfFile{
-		CreatedAt: time.Now().Unix(),
-		CreatedBy: claims.Name,
-		Branch:    branch,
-		Name:      pdfName,
-		Type:      pdftype.Laporan,
-		FileName:  fmt.Sprintf("pdf/%s.pdf", pdfName),
+		CreatedAt:     currentTime,
+		CreatedBy:     claims.Name,
+		Branch:        branch,
+		Name:          pdfName,
+		Type:          pdftype.Laporan,
+		FileName:      fmt.Sprintf("pdf/%s.pdf", pdfName),
+		EndReportTime: currentTime,
 	})
 
 	if apiErr != nil {
@@ -130,12 +132,13 @@ func (h *reportHandler) GeneratePDFVendor(c *fiber.Ctx) error {
 
 	// simpan pdf ke database
 	_, apiErr = h.service.InsertPdf(dto.PdfFile{
-		CreatedAt: time.Now().Unix(),
-		CreatedBy: claims.Name,
-		Branch:    branch,
-		Name:      pdfName,
-		Type:      "VENDOR",
-		FileName:  fmt.Sprintf("pdf-vendor/%s.pdf", pdfName),
+		CreatedAt:     time.Now().Unix(),
+		CreatedBy:     claims.Name,
+		Branch:        branch,
+		Name:          pdfName,
+		Type:          "VENDOR",
+		FileName:      fmt.Sprintf("pdf-vendor/%s.pdf", pdfName),
+		EndReportTime: int64(end),
 	})
 
 	if apiErr != nil {
@@ -171,12 +174,13 @@ func (h *reportHandler) GeneratePDFVendorStartFromLast(c *fiber.Ctx) error {
 
 	// simpan pdf ke database
 	_, apiErr = h.service.InsertPdf(dto.PdfFile{
-		CreatedAt: time.Now().Unix(),
-		CreatedBy: claims.Name,
-		Branch:    branch,
-		Name:      pdfName,
-		Type:      pdftype.Vendor,
-		FileName:  fmt.Sprintf("pdf-vendor/%s.pdf", pdfName),
+		CreatedAt:     currentTime,
+		CreatedBy:     claims.Name,
+		Branch:        branch,
+		Name:          pdfName,
+		Type:          pdftype.Vendor,
+		FileName:      fmt.Sprintf("pdf-vendor/%s.pdf", pdfName),
+		EndReportTime: currentTime,
 	})
 
 	if apiErr != nil {
