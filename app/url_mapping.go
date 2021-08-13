@@ -143,7 +143,9 @@ func mapUrls(app *fiber.App) {
 
 	// REPORT
 	api.Get("/generate-pdf", middleware.NormalAuth(), reportHandler.GeneratePDF)
+	api.Get("/generate-pdf-auto", middleware.NormalAuth(), reportHandler.GeneratePDFStartFromLast)
 	api.Get("/generate-pdf-vendor", middleware.NormalAuth(), reportHandler.GeneratePDFVendor)
+	api.Get("/generate-pdf-vendor-auto", middleware.NormalAuth(), reportHandler.GeneratePDFVendorStartFromLast)
 	api.Get("/list-pdf", middleware.NormalAuth(), reportHandler.FindPDF)
 
 	// Option

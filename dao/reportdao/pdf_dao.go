@@ -32,6 +32,7 @@ type pdfDao struct {
 type PdfDaoAssumer interface {
 	InsertPdf(input dto.PdfFile) (*string, rest_err.APIError)
 	FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
+	FindLastPdf(branch string, typePdf string) (*dto.PdfFile, rest_err.APIError)
 }
 
 func (c *pdfDao) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
@@ -91,4 +92,34 @@ func (c *pdfDao) FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err
 	}
 
 	return pdfList, nil
+}
+
+func (c *pdfDao) FindLastPdf(branch string, typePdf string) (*dto.PdfFile, rest_err.APIError) {
+	coll := db.DB.Collection(keyPdfCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	branch = strings.ToUpper(branch)
+
+	// filter
+	filter := bson.M{
+		keyPdfBranch: branch,
+	}
+
+	if typePdf != "" {
+		filter[keyPdftype] = strings.ToUpper(typePdf)
+	}
+
+	opts := options.FindOne()
+	opts.SetSort(bson.D{{keyPdfCreatedAt, -1}}) //nolint:govet
+
+	var lastPdf dto.PdfFile
+	err := coll.FindOne(ctx, filter, opts).Decode(&lastPdf)
+	if err != nil {
+		logger.Error("Gagal decode objek lastPdf (FindLastPdf)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
+
+	return &lastPdf, nil
 }

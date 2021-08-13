@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
+	"github.com/muchlist/risa_restfull/constants/pdftype"
 	"github.com/muchlist/risa_restfull/dao/checkdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/reportdao"
@@ -37,7 +38,9 @@ type reportService struct {
 type ReportServiceAssumer interface {
 	InsertPdf(input dto.PdfFile) (*string, rest_err.APIError)
 	GenerateReportPDF(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
+	GenerateReportPDFStartFromLast(name string, branch string) (*string, rest_err.APIError)
 	GenerateReportPDFVendor(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
+	GenerateReportPDFVendorStartFromLast(name string, branch string) (*string, rest_err.APIError)
 	FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
 }
 
@@ -108,6 +111,71 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 	return &name, nil
 }
 
+// GenerateReportPDF membuat laporan untuk it support
+func (r *reportService) GenerateReportPDFStartFromLast(name string, branch string) (*string, rest_err.APIError) {
+
+	currentTime := time.Now().Unix()
+	lastPDF, err := r.daoP.FindLastPdf(branch, pdftype.Laporan)
+	if err != nil {
+		return nil, rest_err.NewBadRequestError("gagal mendapatkan data laporan sebelumnya")
+	}
+	lastPDFCreated := lastPDF.CreatedAt
+
+	// GET HISTORIES 0, 4 sesuai start end inputan
+	historyList04, err := r.daoH.UnwindHistory(
+		dto.FilterBranchCatInCompleteIn{
+			FilterBranch:         branch,
+			FilterCategory:       "",
+			FilterCompleteStatus: "0,4",
+		}, dto.FilterTimeRangeLimit{
+			FilterStart: lastPDFCreated,
+			FilterEnd:   currentTime,
+			Limit:       300,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
+	historyList123, err := r.daoH.UnwindHistory(
+		dto.FilterBranchCatInCompleteIn{
+			FilterBranch:         branch,
+			FilterCategory:       "",
+			FilterCompleteStatus: "1,2,3",
+		}, dto.FilterTimeRangeLimit{
+			FilterStart: lastPDFCreated - (3 * 30 * 24 * 60 * 60), // 3 bulan,
+			FilterEnd:   currentTime,
+			Limit:       300,
+		},
+	)
+
+	historiesCombined := append(historyList04, historyList123...)
+
+	// GET CHECK LIST
+	checkList, err := r.daoC.FindCheckForReports(branch, dto.FilterTimeRangeLimit{
+		FilterStart: lastPDFCreated,
+		FilterEnd:   currentTime,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	errPDF := pdfgen.GeneratePDF(pdfgen.PDFReq{
+		Name:        name,
+		HistoryList: historiesCombined,
+		CheckList:   checkList,
+		Start:       lastPDFCreated,
+		End:         currentTime,
+	})
+	if errPDF != nil {
+		return nil, rest_err.NewInternalServerError("gagal membuat pdf", errPDF)
+	}
+
+	return &name, nil
+}
+
 // GenerateReportPDFVendor membuat pdf untuk vendor multinet
 func (r *reportService) GenerateReportPDFVendor(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
@@ -170,6 +238,75 @@ func (r *reportService) GenerateReportPDFVendor(name string, branch string, star
 		VendorCheckList: vendorCheckList,
 		Start:           start,
 		End:             end,
+	})
+	if errPDF != nil {
+		return nil, rest_err.NewInternalServerError("gagal membuat pdf", errPDF)
+	}
+
+	return &name, nil
+}
+
+// GenerateReportPDFVendor membuat pdf untuk vendor multinet
+func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch string) (*string, rest_err.APIError) {
+
+	currentTime := time.Now().Unix()
+	lastPDF, err := r.daoP.FindLastPdf(branch, pdftype.Vendor)
+	if err != nil {
+		return nil, rest_err.NewBadRequestError("gagal mendapatkan data laporan sebelumnya")
+	}
+	lastPDFCreated := lastPDF.CreatedAt
+
+	// GET HISTORIES 0, 4 sesuai start end inputan
+	historyList04, err := r.daoH.UnwindHistory(
+		dto.FilterBranchCatInCompleteIn{
+			FilterBranch:         branch,
+			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
+			FilterCompleteStatus: "0,4",
+		}, dto.FilterTimeRangeLimit{
+			FilterStart: lastPDFCreated,
+			FilterEnd:   currentTime,
+			Limit:       300,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
+	historyList123, err := r.daoH.UnwindHistory(
+		dto.FilterBranchCatInCompleteIn{
+			FilterBranch:         branch,
+			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
+			FilterCompleteStatus: "1,2,3",
+		}, dto.FilterTimeRangeLimit{
+			FilterStart: lastPDFCreated - (3 * 30 * 24 * 60 * 60), // 3 bulan,
+			FilterEnd:   currentTime,
+			Limit:       300,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	historiesCombined := append(historyList04, historyList123...)
+
+	vendorCheckList, err := r.daoCV.FindCheck(branch, dto.FilterTimeRangeLimit{
+		FilterStart: lastPDFCreated - (2 * 30 * 24 * 60 * 60), // batas awalnya di kurangi 2 bulan
+		FilterEnd:   currentTime,
+		Limit:       20,
+	}, true)
+	if err != nil {
+		return nil, err
+	}
+
+	errPDF := pdfgen.GeneratePDFVendor(pdfgen.PDFVendorReq{
+		Name:            name,
+		HistoryList:     historiesCombined,
+		VendorCheckList: vendorCheckList,
+		Start:           lastPDFCreated,
+		End:             currentTime,
 	})
 	if errPDF != nil {
 		return nil, rest_err.NewInternalServerError("gagal membuat pdf", errPDF)
