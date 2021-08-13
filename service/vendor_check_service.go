@@ -278,7 +278,7 @@ func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 					Status:         "",
 					Problem:        "Display CCTV buram #isBlur",
 					ProblemResolve: "",
-					CompleteStatus: enum.HProgress,
+					CompleteStatus: enum.HPending,
 					DateStart:      timeNow,
 					DateEnd:        0,
 					Tag:            []string{},
