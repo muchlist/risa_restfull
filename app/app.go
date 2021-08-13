@@ -21,8 +21,8 @@ func RunApp() {
 	// memenuhi dependency, mapping url
 	mapUrls(app)
 
-	// menjalankan job scheduller speedTest Internet dan cek cctv
-	scheduller.RunScheduler(genUnitService, reportService)
+	// menjalankan job scheduller cctv
+	scheduller.RunScheduler(genUnitService)
 
 	if err := app.Listen(":3500"); err != nil {
 		logger.Error("error fiber listen", err)

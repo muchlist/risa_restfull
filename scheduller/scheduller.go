@@ -1,19 +1,16 @@
 package scheduller
 
 import (
-	"fmt"
 	"github.com/go-co-op/gocron"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/risa_restfull/constants/category"
-	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
-	"github.com/muchlist/risa_restfull/utils/timegen"
 	"time"
 )
 
 func RunScheduler(
 	genUnitService service.GenUnitServiceAssumer,
-	reportService service.ReportServiceAssumer,
+	//reportService service.ReportServiceAssumer,
 ) {
 	witaTimeZone, err := time.LoadLocation("Asia/Makassar")
 	if err != nil {
@@ -32,9 +29,9 @@ func RunScheduler(
 	})
 
 	// run report vendor
-	_, _ = s.Every(1).Days().At("17:00").Do(func() {
+	/*_, _ = s.Every(1).Days().At("17:00").Do(func() {
 		runReportGeneratorVendorBanjarmasin(reportService)
-	})
+	})*/
 
 	// run report generator
 	/*	_, _ = s.Every(1).Days().At("08:00").Do(func() {
@@ -55,7 +52,7 @@ func runCctvCheckBanjarmasin(genUnitService service.GenUnitServiceAssumer) {
 	_ = genUnitService.CheckHardwareDownAndSendNotif("BANJARMASIN", category.Cctv)
 }
 
-func runReportGeneratorVendorBanjarmasin(reportService service.ReportServiceAssumer) {
+/*func runReportGeneratorVendorBanjarmasin(reportService service.ReportServiceAssumer) {
 	timeNow := time.Now().Unix()
 	timePast := timeNow - (60 * 60 * 24) // minus 24 jam
 
@@ -83,7 +80,7 @@ func runReportGeneratorVendorBanjarmasin(reportService service.ReportServiceAssu
 	if apiErr != nil {
 		logger.Error("gagal membuat pdf otomatis", err)
 	}
-}
+}*/
 
 /*
 func runReportGeneratorBanjarmasin(reportService service.ReportServiceAssumer) {

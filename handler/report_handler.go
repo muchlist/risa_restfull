@@ -40,7 +40,7 @@ func (h *reportHandler) GeneratePDF(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
 	}
-	pdfName = fmt.Sprintf("manual-support-%s", pdfName)
+	pdfName = fmt.Sprintf("support-%s", pdfName)
 
 	_, apiErr := h.service.GenerateReportPDF(pdfName, branch, int64(start), int64(end))
 	if apiErr != nil {
@@ -80,7 +80,7 @@ func (h *reportHandler) GeneratePDFStartFromLast(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
 	}
-	pdfName = fmt.Sprintf("manual-support-%s", pdfName)
+	pdfName = fmt.Sprintf("support-%s", pdfName)
 
 	_, apiErr := h.service.GenerateReportPDFStartFromLast(pdfName, branch)
 	if apiErr != nil {
@@ -121,7 +121,7 @@ func (h *reportHandler) GeneratePDFVendor(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
 	}
-	pdfName = fmt.Sprintf("manual-vendor-%s", pdfName)
+	pdfName = fmt.Sprintf("vendor-%s", pdfName)
 
 	_, apiErr := h.service.GenerateReportPDFVendor(pdfName, branch, int64(start), int64(end))
 	if apiErr != nil {
@@ -162,7 +162,7 @@ func (h *reportHandler) GeneratePDFVendorStartFromLast(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
 	}
-	pdfName = fmt.Sprintf("manual-vendor-%s", pdfName)
+	pdfName = fmt.Sprintf("vendor-%s", pdfName)
 
 	_, apiErr := h.service.GenerateReportPDFVendorStartFromLast(pdfName, branch)
 	if apiErr != nil {
