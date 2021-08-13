@@ -294,9 +294,14 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 
 		var tokens []string
 		for _, u := range users {
-			if u.ID != user.Identity {
-				tokens = append(tokens, u.FcmToken)
+			if u.ID == user.Identity {
+				continue
 			}
+			// tidak dikirimkan ke user vendor
+			if sfunc.InSlice(roles.RoleVendor, u.Roles) {
+				continue
+			}
+			tokens = append(tokens, u.FcmToken)
 		}
 		// firebase
 		s.fcmClient.SendMessage(fcm.Payload{
