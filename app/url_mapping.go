@@ -138,7 +138,7 @@ func mapUrls(app *fiber.App) {
 	api.Post("/bulk-altai-update", middleware.NormalAuth(), altaiCheckHandler.BulkUpdateCheckItem)
 	api.Get("/altai-check-finish/:id", middleware.NormalAuth(), altaiCheckHandler.Finish)
 
-	// VENDOR CHECK FISIK
+	// CCTV CHECK FISIK
 	api.Post("/phy-check", middleware.NormalAuth(), venPhyCheckHandler.Insert)
 	api.Post("/phy-check-quarter", middleware.NormalAuth(), venPhyCheckHandler.InsertQuarter)
 	api.Delete("/phy-check/:id", middleware.NormalAuth(), venPhyCheckHandler.Delete)
@@ -147,6 +147,16 @@ func mapUrls(app *fiber.App) {
 	api.Post("/phy-check-update", middleware.NormalAuth(roles.RoleVendor), venPhyCheckHandler.UpdateCheckItem)
 	api.Post("/bulk-phy-update", middleware.NormalAuth(roles.RoleVendor), venPhyCheckHandler.BulkUpdateCheckItem)
 	api.Get("/phy-check-finish/:id", middleware.NormalAuth(), venPhyCheckHandler.Finish)
+
+	// ALTAI CHECK FISIK
+	api.Post("/altai-phy-check", middleware.NormalAuth(), altaiPhyCheckHandler.Insert)
+	api.Post("/altai-phy-check-quarter", middleware.NormalAuth(), altaiPhyCheckHandler.InsertQuarter)
+	api.Delete("/altai-phy-check/:id", middleware.NormalAuth(), altaiPhyCheckHandler.Delete)
+	api.Get("/altai-phy-check/:id", middleware.NormalAuth(), altaiPhyCheckHandler.Get)
+	api.Get("/altai-phy-check", middleware.NormalAuth(), altaiPhyCheckHandler.Find)
+	api.Post("/altai-phy-check-update", middleware.NormalAuth(roles.RoleVendor), altaiPhyCheckHandler.UpdateCheckItem)
+	api.Post("/altai-bulk-phy-update", middleware.NormalAuth(roles.RoleVendor), altaiPhyCheckHandler.BulkUpdateCheckItem)
+	api.Get("/altai-phy-check-finish/:id", middleware.NormalAuth(), altaiPhyCheckHandler.Finish)
 
 	// IMPROVE
 	api.Post("/improve", middleware.NormalAuth(), improveHandler.Insert)
