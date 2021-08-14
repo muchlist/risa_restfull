@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/muchlist/risa_restfull/clients/fcm"
+	"github.com/muchlist/risa_restfull/dao/altaicheckdao"
 	"github.com/muchlist/risa_restfull/dao/cctvdao"
 	"github.com/muchlist/risa_restfull/dao/checkdao"
 	"github.com/muchlist/risa_restfull/dao/checkitemdao"
@@ -39,6 +40,7 @@ var (
 	computerDao    = computerdao.NewComputerDao()
 	otherDao       = otherdao.NewOtherDao()
 	vendorCheckDao = vendorcheckdao.NewVendorCheckDao()
+	altaiCheckDao  = altaicheckdao.NewAltaiCheckDao()
 	venPhyCheckDao = venphycheckdao.NewVenPhyCheckDao()
 	speedDao       = speedtestdao.NewSpeedTestDao()
 	pdfDao         = reportdao.NewPdfDao()
@@ -58,6 +60,7 @@ var (
 	computerService    = service.NewComputerService(computerDao, historyDao, genUnitDao)
 	otherService       = service.NewOtherService(otherDao, historyDao, genUnitDao)
 	vendorCheckService = service.NewVendorCheckService(vendorCheckDao, genUnitDao, cctvDao, historyService)
+	altaiCheckService  = service.NewAltaiCheckService(altaiCheckDao, genUnitDao, otherDao, historyService)
 	venPhyCheckService = service.NewVenPhyCheckService(venPhyCheckDao, genUnitDao, cctvDao, historyService)
 	speedService       = service.NewSpeedTestService(speedDao)
 	reportService      = service.NewReportService(historyDao, checkDao, vendorCheckDao, pdfDao)
@@ -76,6 +79,7 @@ var (
 	computerHandler    = handler.NewComputerHandler(computerService)
 	otherHandler       = handler.NewOtherHandler(otherService)
 	vendorCheckHandler = handler.NewVendorCheckHandler(vendorCheckService)
+	altaiCheckHandler  = handler.NewAltaiCheckHandler(altaiCheckService)
 	venPhyCheckHandler = handler.NewVenPhyCheckHandler(venPhyCheckService)
 	speedHandler       = handler.NewSpeedHandler(speedService)
 	reportHandler      = handler.NewReportHandler(reportService)
