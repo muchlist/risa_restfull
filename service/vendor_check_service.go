@@ -5,6 +5,7 @@ import (
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/enum"
+	"github.com/muchlist/risa_restfull/constants/roles"
 	"github.com/muchlist/risa_restfull/dao/cctvdao"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/vendorcheckdao"
@@ -127,6 +128,7 @@ func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim, isVirtualC
 		TimeEnded:        0,
 		IsVirtualCheck:   isVirtualCheck,
 		IsFinish:         false,
+		IsCheckByVendor:  sfunc.InSlice(roles.RoleVendor, user.Roles),
 		VendorCheckItems: vendorCheckItems,
 		Note:             "",
 	}
