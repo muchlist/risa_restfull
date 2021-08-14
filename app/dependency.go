@@ -15,6 +15,7 @@ import (
 	"github.com/muchlist/risa_restfull/dao/stockdao"
 	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/dao/vendorcheckdao"
+	"github.com/muchlist/risa_restfull/dao/venphycheckdao"
 	"github.com/muchlist/risa_restfull/handler"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/crypt"
@@ -38,6 +39,7 @@ var (
 	computerDao    = computerdao.NewComputerDao()
 	otherDao       = otherdao.NewOtherDao()
 	vendorCheckDao = vendorcheckdao.NewVendorCheckDao()
+	venPhyCheckDao = venphycheckdao.NewVenPhyCheckDao()
 	speedDao       = speedtestdao.NewSpeedTestDao()
 	pdfDao         = reportdao.NewPdfDao()
 
@@ -56,6 +58,7 @@ var (
 	computerService    = service.NewComputerService(computerDao, historyDao, genUnitDao)
 	otherService       = service.NewOtherService(otherDao, historyDao, genUnitDao)
 	vendorCheckService = service.NewVendorCheckService(vendorCheckDao, genUnitDao, cctvDao, historyService)
+	venPhyCheckService = service.NewVenPhyCheckService(venPhyCheckDao, genUnitDao, cctvDao, historyService)
 	speedService       = service.NewSpeedTestService(speedDao)
 	reportService      = service.NewReportService(historyDao, checkDao, vendorCheckDao, pdfDao)
 
@@ -73,6 +76,7 @@ var (
 	computerHandler    = handler.NewComputerHandler(computerService)
 	otherHandler       = handler.NewOtherHandler(otherService)
 	vendorCheckHandler = handler.NewVendorCheckHandler(vendorCheckService)
+	venPhyCheckHandler = handler.NewVenPhyCheckHandler(venPhyCheckService)
 	speedHandler       = handler.NewSpeedHandler(speedService)
 	reportHandler      = handler.NewReportHandler(reportService)
 )
