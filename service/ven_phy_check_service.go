@@ -36,7 +36,7 @@ type venPhyCheckService struct {
 	servHistory HistoryServiceAssumer
 }
 type VenPhyCheckServiceAssumer interface {
-	InsertVenPhyCheck(user mjwt.CustomClaim, isVirtualCheck bool) (*string, rest_err.APIError)
+	InsertVenPhyCheck(user mjwt.CustomClaim, isQuarterMode bool) (*string, rest_err.APIError)
 	DeleteVenPhyCheck(user mjwt.CustomClaim, id string) rest_err.APIError
 	GetVenPhyCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VenPhyCheck, rest_err.APIError)
 	FindVenPhyCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VenPhyCheck, rest_err.APIError)
