@@ -28,6 +28,7 @@ type History struct {
 	Tag            []string           `json:"tag" bson:"tag"`
 	Image          string             `json:"image" bson:"image"`
 	Updates        []HistoryUpdate    `json:"updates" bson:"updates"`
+	Link           string             `json:"link" bson:"link"`
 }
 
 type HistoryUpdate struct {
@@ -52,6 +53,7 @@ type HistoryRequest struct {
 	DateEnd        int64    `json:"date_end" bson:"date_end"`
 	Tag            []string `json:"tag" bson:"tag"`
 	Image          string   `json:"image" bson:"image"`
+	Link           string   `json:"link" bson:"link"`
 }
 
 type HistoryResponse struct {
@@ -74,6 +76,7 @@ type HistoryResponse struct {
 	Tag            []string           `json:"tag" bson:"tag"`
 	Image          string             `json:"image" bson:"image"`
 	Updates        []HistoryUpdate    `json:"updates" bson:"updates"`
+	Link           string             `json:"link" bson:"link"`
 }
 
 type HistoryUnwindResponseList []HistoryUnwindResponse

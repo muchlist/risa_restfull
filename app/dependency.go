@@ -2,6 +2,8 @@ package app
 
 import (
 	"github.com/muchlist/risa_restfull/clients/fcm"
+	"github.com/muchlist/risa_restfull/dao/altaicheckdao"
+	"github.com/muchlist/risa_restfull/dao/altaiphycheckdao"
 	"github.com/muchlist/risa_restfull/dao/cctvdao"
 	"github.com/muchlist/risa_restfull/dao/checkdao"
 	"github.com/muchlist/risa_restfull/dao/checkitemdao"
@@ -15,6 +17,7 @@ import (
 	"github.com/muchlist/risa_restfull/dao/stockdao"
 	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/dao/vendorcheckdao"
+	"github.com/muchlist/risa_restfull/dao/venphycheckdao"
 	"github.com/muchlist/risa_restfull/handler"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/crypt"
@@ -27,52 +30,61 @@ var (
 	jwt         = mjwt.NewJwt()
 
 	// Dao
-	userDao        = userdao.NewUserDao()
-	genUnitDao     = genunitdao.NewGenUnitDao()
-	historyDao     = historydao.NewHistoryDao()
-	cctvDao        = cctvdao.NewCctvDao()
-	stockDao       = stockdao.NewStockDao()
-	checkItemDao   = checkitemdao.NewCheckItemDao()
-	checkDao       = checkdao.NewCheckDao()
-	improveDao     = improvedao.NewImproveDao()
-	computerDao    = computerdao.NewComputerDao()
-	otherDao       = otherdao.NewOtherDao()
-	vendorCheckDao = vendorcheckdao.NewVendorCheckDao()
-	speedDao       = speedtestdao.NewSpeedTestDao()
-	pdfDao         = reportdao.NewPdfDao()
+	userDao          = userdao.NewUserDao()
+	genUnitDao       = genunitdao.NewGenUnitDao()
+	historyDao       = historydao.NewHistoryDao()
+	cctvDao          = cctvdao.NewCctvDao()
+	stockDao         = stockdao.NewStockDao()
+	checkItemDao     = checkitemdao.NewCheckItemDao()
+	checkDao         = checkdao.NewCheckDao()
+	improveDao       = improvedao.NewImproveDao()
+	computerDao      = computerdao.NewComputerDao()
+	otherDao         = otherdao.NewOtherDao()
+	vendorCheckDao   = vendorcheckdao.NewVendorCheckDao()
+	altaiCheckDao    = altaicheckdao.NewAltaiCheckDao()
+	venPhyCheckDao   = venphycheckdao.NewVenPhyCheckDao()
+	altaiPhyCheckDao = altaiphycheckdao.NewAltaiPhyCheckDao()
+	speedDao         = speedtestdao.NewSpeedTestDao()
+	pdfDao           = reportdao.NewPdfDao()
 
 	// api client
 	fcmClient = fcm.NewFcmClient()
 
 	// Service
-	userService        = service.NewUserService(userDao, cryptoUtils, jwt)
-	genUnitService     = service.NewGenUnitService(genUnitDao, userDao, fcmClient)
-	historyService     = service.NewHistoryService(historyDao, genUnitDao, userDao, fcmClient)
-	cctvService        = service.NewCctvService(cctvDao, historyDao, genUnitDao)
-	stockService       = service.NewStockService(stockDao, historyDao, userDao, fcmClient)
-	checkItemService   = service.NewCheckItemService(checkItemDao)
-	checkService       = service.NewCheckService(checkDao, checkItemDao, genUnitDao, historyService)
-	improveService     = service.NewImproveService(improveDao)
-	computerService    = service.NewComputerService(computerDao, historyDao, genUnitDao)
-	otherService       = service.NewOtherService(otherDao, historyDao, genUnitDao)
-	vendorCheckService = service.NewVendorCheckService(vendorCheckDao, genUnitDao, cctvDao, historyService)
-	speedService       = service.NewSpeedTestService(speedDao)
-	reportService      = service.NewReportService(historyDao, checkDao, vendorCheckDao, pdfDao)
+	userService          = service.NewUserService(userDao, cryptoUtils, jwt)
+	genUnitService       = service.NewGenUnitService(genUnitDao, userDao, fcmClient)
+	historyService       = service.NewHistoryService(historyDao, genUnitDao, userDao, fcmClient)
+	cctvService          = service.NewCctvService(cctvDao, historyDao, genUnitDao)
+	stockService         = service.NewStockService(stockDao, historyDao, userDao, fcmClient)
+	checkItemService     = service.NewCheckItemService(checkItemDao)
+	checkService         = service.NewCheckService(checkDao, checkItemDao, genUnitDao, historyService)
+	improveService       = service.NewImproveService(improveDao)
+	computerService      = service.NewComputerService(computerDao, historyDao, genUnitDao)
+	otherService         = service.NewOtherService(otherDao, historyDao, genUnitDao)
+	vendorCheckService   = service.NewVendorCheckService(vendorCheckDao, genUnitDao, cctvDao, historyService)
+	altaiCheckService    = service.NewAltaiCheckService(altaiCheckDao, genUnitDao, otherDao, historyService)
+	venPhyCheckService   = service.NewVenPhyCheckService(venPhyCheckDao, genUnitDao, cctvDao, historyService)
+	altaiPhyCheckService = service.NewAltaiPhyCheckService(altaiPhyCheckDao, genUnitDao, otherDao, historyService)
+	speedService         = service.NewSpeedTestService(speedDao)
+	reportService        = service.NewReportService(historyDao, checkDao, vendorCheckDao, pdfDao)
 
 	// Controller or Handler
-	pingHandler        = handler.NewPingHandler()
-	optionHandler      = handler.NewOptionHandler()
-	userHandler        = handler.NewUserHandler(userService)
-	genUnitHandler     = handler.NewGenUnitHandler(genUnitService)
-	historyHandler     = handler.NewHistoryHandler(historyService)
-	cctvHandler        = handler.NewCctvHandler(cctvService)
-	stockHandler       = handler.NewStockHandler(stockService)
-	checkItemHandler   = handler.NewCheckItemHandler(checkItemService)
-	checkHandler       = handler.NewCheckHandler(checkService)
-	improveHandler     = handler.NewImproveHandler(improveService)
-	computerHandler    = handler.NewComputerHandler(computerService)
-	otherHandler       = handler.NewOtherHandler(otherService)
-	vendorCheckHandler = handler.NewVendorCheckHandler(vendorCheckService)
-	speedHandler       = handler.NewSpeedHandler(speedService)
-	reportHandler      = handler.NewReportHandler(reportService)
+	pingHandler          = handler.NewPingHandler()
+	optionHandler        = handler.NewOptionHandler()
+	userHandler          = handler.NewUserHandler(userService)
+	genUnitHandler       = handler.NewGenUnitHandler(genUnitService)
+	historyHandler       = handler.NewHistoryHandler(historyService)
+	cctvHandler          = handler.NewCctvHandler(cctvService)
+	stockHandler         = handler.NewStockHandler(stockService)
+	checkItemHandler     = handler.NewCheckItemHandler(checkItemService)
+	checkHandler         = handler.NewCheckHandler(checkService)
+	improveHandler       = handler.NewImproveHandler(improveService)
+	computerHandler      = handler.NewComputerHandler(computerService)
+	otherHandler         = handler.NewOtherHandler(otherService)
+	vendorCheckHandler   = handler.NewVendorCheckHandler(vendorCheckService)
+	altaiCheckHandler    = handler.NewAltaiCheckHandler(altaiCheckService)
+	venPhyCheckHandler   = handler.NewVenPhyCheckHandler(venPhyCheckService)
+	altaiPhyCheckHandler = handler.NewAltaiPhyCheckHandler(altaiPhyCheckService)
+	speedHandler         = handler.NewSpeedHandler(speedService)
+	reportHandler        = handler.NewReportHandler(reportService)
 )
