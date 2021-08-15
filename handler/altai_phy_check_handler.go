@@ -23,7 +23,16 @@ type altaiPhyCheckHandler struct {
 func (vc *altaiPhyCheckHandler) Insert(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	insertID, apiErr := vc.service.InsertAltaiPhyCheck(*claims, false)
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	insertID, apiErr := vc.service.InsertAltaiPhyCheck(*claims, req.Name, false)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -34,7 +43,15 @@ func (vc *altaiPhyCheckHandler) Insert(c *fiber.Ctx) error {
 func (vc *altaiPhyCheckHandler) InsertQuarter(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	insertID, apiErr := vc.service.InsertAltaiPhyCheck(*claims, true)
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	insertID, apiErr := vc.service.InsertAltaiPhyCheck(*claims, req.Name, true)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

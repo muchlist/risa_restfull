@@ -5,6 +5,7 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 type AltaiPhyCheck struct {
 	ID                 primitive.ObjectID       `json:"id,omitempty" bson:"_id,omitempty"`
 	QuarterlyMode      bool                     `json:"quarterly_mode" bson:"quarterly_mode"`
+	Name               string                   `json:"name" bson:"name"`
 	CreatedAt          int64                    `json:"created_at" bson:"created_at"`
 	CreatedBy          string                   `json:"created_by" bson:"created_by"`
 	CreatedByID        string                   `json:"created_by_id" bson:"created_by_id"`
@@ -33,6 +34,7 @@ type AltaiPhyCheckItemEmbed struct {
 
 type AltaiPhyCheckEdit struct {
 	FilterIDBranch
+	Name        string
 	UpdatedAt   int64
 	UpdatedBy   string
 	UpdatedByID string

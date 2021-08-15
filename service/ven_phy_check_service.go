@@ -36,7 +36,7 @@ type venPhyCheckService struct {
 	servHistory HistoryServiceAssumer
 }
 type VenPhyCheckServiceAssumer interface {
-	InsertVenPhyCheck(user mjwt.CustomClaim, isQuarterMode bool) (*string, rest_err.APIError)
+	InsertVenPhyCheck(user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError)
 	DeleteVenPhyCheck(user mjwt.CustomClaim, id string) rest_err.APIError
 	GetVenPhyCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VenPhyCheck, rest_err.APIError)
 	FindVenPhyCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VenPhyCheck, rest_err.APIError)
@@ -45,7 +45,7 @@ type VenPhyCheckServiceAssumer interface {
 	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError)
 }
 
-func (vc *venPhyCheckService) InsertVenPhyCheck(user mjwt.CustomClaim, isQuarterMode bool) (*string, rest_err.APIError) {
+func (vc *venPhyCheckService) InsertVenPhyCheck(user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError) {
 	timeNow := time.Now().Unix()
 
 	// ambil cctv genUnit item berdasarkan cabang yang di input
@@ -103,6 +103,7 @@ func (vc *venPhyCheckService) InsertVenPhyCheck(user mjwt.CustomClaim, isQuarter
 
 	data := dto.VenPhyCheck{
 		QuarterlyMode:    isQuarterMode,
+		Name:             name,
 		CreatedAt:        timeNow,
 		CreatedBy:        user.Name,
 		CreatedByID:      user.Identity,

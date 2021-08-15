@@ -20,6 +20,7 @@ const (
 	connectTimeout = 3
 	keyCollection  = "venPhyCheck"
 	keyID          = "_id"
+	keyName        = "name"
 	keyCreatedAt   = "created_at"
 	keyUpdatedAt   = "updated_at"
 	keyUpdatedBy   = "updated_by"
@@ -102,6 +103,7 @@ func (c *checkVenPhyDao) EditCheck(input dto.VenPhyCheckEdit) (*dto.VenPhyCheck,
 
 	update := bson.M{
 		"$set": bson.M{
+			keyName:        input.Name,
 			keyUpdatedAt:   input.UpdatedAt,
 			keyUpdatedBy:   input.UpdatedBy,
 			keyUpdatedByID: input.UpdatedByID,

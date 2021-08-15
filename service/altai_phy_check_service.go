@@ -36,7 +36,7 @@ type altaiPhyCheckService struct {
 	servHistory HistoryServiceAssumer
 }
 type AltaiPhyCheckServiceAssumer interface {
-	InsertAltaiPhyCheck(user mjwt.CustomClaim, isQuarterMode bool) (*string, rest_err.APIError)
+	InsertAltaiPhyCheck(user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError)
 	DeleteAltaiPhyCheck(user mjwt.CustomClaim, id string) rest_err.APIError
 	GetAltaiPhyCheckByID(altaiCheckID string, branchIfSpecific string) (*dto.AltaiPhyCheck, rest_err.APIError)
 	FindAltaiPhyCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.AltaiPhyCheck, rest_err.APIError)
@@ -45,7 +45,7 @@ type AltaiPhyCheckServiceAssumer interface {
 	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.AltaiPhyCheck, rest_err.APIError)
 }
 
-func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(user mjwt.CustomClaim, isQuarterMode bool) (*string, rest_err.APIError) {
+func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError) {
 	timeNow := time.Now().Unix()
 
 	// ambil altai genUnit item berdasarkan cabang yang di input
@@ -103,6 +103,7 @@ func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(user mjwt.CustomClaim, isQua
 
 	data := dto.AltaiPhyCheck{
 		QuarterlyMode:      isQuarterMode,
+		Name:               name,
 		CreatedAt:          timeNow,
 		CreatedBy:          user.Name,
 		CreatedByID:        user.Identity,
