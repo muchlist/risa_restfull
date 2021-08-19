@@ -29,6 +29,7 @@ const (
 	keyTimeStarted      = "time_started"
 	keyTimeEnded        = "time_ended"
 	keyIsFinish         = "is_finish"
+	keyIsCheckByVendor  = "is_check_by_vendor"
 	keyVendorCheckItems = "vendor_check_items"
 	keyNote             = "note"
 
@@ -352,7 +353,9 @@ func (c *checkVendorDao) GetLastCheckCreateRange(start, end int64, branch string
 	defer cancel()
 
 	// filter
-	filter := bson.M{}
+	filter := bson.M{
+		keyIsCheckByVendor: true,
+	}
 	// filter condition
 	if branch != "" {
 		filter[keyBranch] = strings.ToUpper(branch)

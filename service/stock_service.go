@@ -113,7 +113,7 @@ func (s *stockService) InsertStock(user mjwt.CustomClaim, input dto.StockRequest
 		Image:          "",
 	}, isVendor)
 	if err != nil {
-		logger.Error("Berhasil membuat stock namun gagal membuat history (InsertStock)", err)
+		logger.Error("Berhasil membuat stock namun gagal membuat History (InsertStock)", err)
 		errPlus := rest_err.NewInternalServerError(fmt.Sprintf("galat : stock berhasil ditambahkan -> %s", err.Message()), err)
 		return nil, errPlus
 	}
@@ -234,7 +234,7 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 		return nil, err
 	}
 
-	// Filling Data history
+	// Filling Data History
 	history := dto.History{
 		ID:             primitive.NewObjectID(),
 		CreatedAt:      timeNow,
@@ -281,7 +281,7 @@ func (s *stockService) ChangeQtyStock(user mjwt.CustomClaim, stockID string, dat
 	// DB
 	_, err = s.daoH.InsertHistory(history, isVendor)
 	if err != nil {
-		logger.Error("Berhasil membuat stock namun gagal membuat history (ChangeQtyStock)", err)
+		logger.Error("Berhasil membuat stock namun gagal membuat History (ChangeQtyStock)", err)
 		errPlus := rest_err.NewInternalServerError(fmt.Sprintf("galat : stock berhasil diuubah -> %s", err.Message()), err)
 		return nil, errPlus
 	}

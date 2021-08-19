@@ -71,7 +71,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	}
 
 	// Mengambil gen_unit
-	// Tambahkan Case jika history status bukan Complete atau bukan info, akan gagal jika ID dan Cabang tidak sesuai
+	// Tambahkan Case jika History status bukan Complete atau bukan info, akan gagal jika ID dan Cabang tidak sesuai
 	// jika complete gunakan GetUnitByID untuk memastikan ID dan Cabang sesuai
 	var parent *dto.GenUnitResponse
 	var err rest_err.APIError
@@ -82,7 +82,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		parent, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
 			UnitID:       input.ParentID,
 			FilterBranch: user.Branch,
-			CaseID:       generatedID.Hex(), // gunakan history id sebagai caseID
+			CaseID:       generatedID.Hex(), // gunakan History id sebagai caseID
 			CaseNote:     fmt.Sprintf("#%s# %s : %s", enum.GetProgressString(input.CompleteStatus), input.Status, input.Problem),
 		})
 	} else {
@@ -207,7 +207,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 		_, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
 			UnitID:       historyEdited.ParentID,
 			FilterBranch: user.Branch,
-			CaseID:       historyID, // gunakan history id sebagai caseID
+			CaseID:       historyID, // gunakan History id sebagai caseID
 			CaseNote:     fmt.Sprintf("#%s# %s : %s", enum.GetProgressString(input.CompleteStatus), input.Status, input.Problem),
 		})
 		if err != nil {
@@ -264,7 +264,7 @@ func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_er
 		return err
 	}
 
-	// Jika history yang dihapus tidak complete, berarti harus dihapus di parentnya karena masih ada sebagai case
+	// Jika History yang dihapus tidak complete, berarti harus dihapus di parentnya karena masih ada sebagai case
 	if history.CompleteStatus != enum.HComplete {
 		// DB
 		_, err = h.daoG.DeleteCase(dto.GenUnitCaseRequest{
@@ -334,7 +334,7 @@ func (h *historyService) GetHistoryCount(branchIfSpecific string, statusComplete
 	return historyCountList, nil
 }
 
-// PutImage memasukkan lokasi file (path) ke dalam database history dengan mengecek kesesuaian branch
+// PutImage memasukkan lokasi file (path) ke dalam database History dengan mengecek kesesuaian branch
 func (h *historyService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {

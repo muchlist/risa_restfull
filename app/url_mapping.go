@@ -176,6 +176,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/generate-pdf-vendor", middleware.NormalAuth(), reportHandler.GeneratePDFVendor)
 	api.Get("/generate-pdf-vendor-auto", middleware.NormalAuth(), reportHandler.GeneratePDFVendorStartFromLast)
 	api.Get("/list-pdf", middleware.NormalAuth(), reportHandler.FindPDF)
+	api.Get("/daily-vendor", middleware.NormalAuth(), reportHandler.GetDataDailyReport)
 
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)

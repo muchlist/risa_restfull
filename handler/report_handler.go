@@ -207,3 +207,8 @@ func (h *reportHandler) FindPDF(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"error": nil, "data": pdfList})
 }
+
+func (h *reportHandler) GetDataDailyReport(c *fiber.Ctx) error {
+	res, _ := h.service.GenerateReportVendorDaily("Test", "", time.Now().Unix())
+	return c.JSON(fiber.Map{"error": nil, "data": res})
+}
