@@ -388,3 +388,35 @@ func (c *checkVenPhyDao) FindCheckStillOpen(branch string, detail bool) ([]dto.V
 
 	return checkList, nil
 }
+
+func (c *checkVenPhyDao) GetLastCheckCreateRange(start, end int64, branch string) (*dto.VenPhyCheck, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	// filter
+	filter := bson.M{}
+	// filter condition
+	if branch != "" {
+		filter[keyBranch] = strings.ToUpper(branch)
+	}
+	filter[keyCreatedAt] = bson.M{"$gte": start}
+	filter[keyCreatedAt] = bson.M{"$lte": end}
+
+	opts := options.FindOne()
+	opts.SetSort(bson.D{{Key: keyCreatedAt, Value: -1}})
+
+	var check dto.VenPhyCheck
+	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			apiErr := rest_err.NewNotFoundError("tidak ada data yang bisa diambil")
+			return nil, apiErr
+		}
+
+		logger.Error("gagal mendapatkan cctv check cctv fisik dari database (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan check cctv fisik dari database", err)
+		return nil, apiErr
+	}
+
+	return &check, nil
+}

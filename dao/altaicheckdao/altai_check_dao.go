@@ -57,6 +57,7 @@ type CheckAltaiDaoAssumer interface {
 
 	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.AltaiCheck, rest_err.APIError)
 	FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.AltaiCheck, rest_err.APIError)
+	GetLastCheckCreateRange(start, end int64, branch string) (*dto.AltaiCheck, rest_err.APIError)
 }
 
 func (c *checkAltaiDao) InsertCheck(input dto.AltaiCheck) (*string, rest_err.APIError) {
@@ -340,4 +341,36 @@ func (c *checkAltaiDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimi
 	}
 
 	return checkList, nil
+}
+
+func (c *checkAltaiDao) GetLastCheckCreateRange(start, end int64, branch string) (*dto.AltaiCheck, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	// filter
+	filter := bson.M{}
+	// filter condition
+	if branch != "" {
+		filter[keyBranch] = strings.ToUpper(branch)
+	}
+	filter[keyCreatedAt] = bson.M{"$gte": start}
+	filter[keyCreatedAt] = bson.M{"$lte": end}
+
+	opts := options.FindOne()
+	opts.SetSort(bson.D{{Key: keyCreatedAt, Value: -1}})
+
+	var check dto.AltaiCheck
+	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			apiErr := rest_err.NewNotFoundError("tidak ada data yang bisa diambil")
+			return nil, apiErr
+		}
+
+		logger.Error("gagal mendapatkan altai check virtual dari database (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan altai check virtual dari database", err)
+		return nil, apiErr
+	}
+
+	return &check, nil
 }
