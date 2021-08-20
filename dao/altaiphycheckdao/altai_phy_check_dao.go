@@ -29,6 +29,7 @@ const (
 
 	keyTimeEnded          = "time_ended"
 	keyIsFinish           = "is_finish"
+	keyIsQuarterly        = "quarterly_mode"
 	keyAltaiPhyCheckItems = "altai_phy_check_items"
 	keyNote               = "note"
 
@@ -59,6 +60,7 @@ type CheckAltaiPhyDaoAssumer interface {
 	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.AltaiPhyCheck, rest_err.APIError)
 	FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.AltaiPhyCheck, rest_err.APIError)
 	FindCheckStillOpen(branch string, detail bool) ([]dto.AltaiPhyCheck, rest_err.APIError)
+	GetLastCheckCreateRange(start, end int64, branch string, isQuarter bool) (*dto.AltaiPhyCheck, rest_err.APIError)
 }
 
 func (c *checkAltaiPhyDao) InsertCheck(input dto.AltaiPhyCheck) (*string, rest_err.APIError) {
@@ -385,4 +387,47 @@ func (c *checkAltaiPhyDao) FindCheckStillOpen(branch string, detail bool) ([]dto
 	}
 
 	return checkList, nil
+}
+
+func (c *checkAltaiPhyDao) GetLastCheckCreateRange(start, end int64, branch string, isQuarter bool) (*dto.AltaiPhyCheck, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	// filter
+	filter := bson.M{
+		keyIsQuarterly: isQuarter,
+	}
+	// filter condition
+	if branch != "" {
+		filter[keyBranch] = strings.ToUpper(branch)
+	}
+	filter[keyCreatedAt] = bson.M{"$gte": start}
+	filter[keyCreatedAt] = bson.M{"$lte": end}
+
+	opts := options.Find()
+	opts.SetSort(bson.D{{Key: keyCreatedAt, Value: -1}})
+	opts.SetLimit(1)
+
+	cursor, err := coll.Find(ctx, filter, opts)
+	if err != nil {
+		logger.Error("gagal mendapatkan daftar altai check dari database (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
+
+	var checkList []dto.AltaiPhyCheck
+	if err = cursor.All(ctx, &checkList); err != nil {
+		logger.Error("Gagal decode checkList cursor ke objek slice (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
+
+	var check dto.AltaiPhyCheck
+
+	if len(checkList) != 0 {
+		check = checkList[0]
+	}
+
+	return &check, nil
 }

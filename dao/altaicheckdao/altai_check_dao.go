@@ -57,6 +57,7 @@ type CheckAltaiDaoAssumer interface {
 
 	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.AltaiCheck, rest_err.APIError)
 	FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.AltaiCheck, rest_err.APIError)
+	GetLastCheckCreateRange(start, end int64, branch string) (*dto.AltaiCheck, rest_err.APIError)
 }
 
 func (c *checkAltaiDao) InsertCheck(input dto.AltaiCheck) (*string, rest_err.APIError) {
@@ -340,4 +341,44 @@ func (c *checkAltaiDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimi
 	}
 
 	return checkList, nil
+}
+
+func (c *checkAltaiDao) GetLastCheckCreateRange(start, end int64, branch string) (*dto.AltaiCheck, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	// filter
+	filter := bson.M{}
+	// filter condition
+	if branch != "" {
+		filter[keyBranch] = strings.ToUpper(branch)
+	}
+	filter[keyCreatedAt] = bson.M{"$gte": start}
+	filter[keyCreatedAt] = bson.M{"$lte": end}
+
+	opts := options.Find()
+	opts.SetSort(bson.D{{Key: keyCreatedAt, Value: -1}})
+	opts.SetLimit(1)
+
+	cursor, err := coll.Find(ctx, filter, opts)
+	if err != nil {
+		logger.Error("gagal mendapatkan daftar altai check dari database (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
+
+	var checkList []dto.AltaiCheck
+	if err = cursor.All(ctx, &checkList); err != nil {
+		logger.Error("Gagal decode checkList cursor ke objek slice (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
+
+	var check dto.AltaiCheck
+	if len(checkList) != 0 {
+		check = checkList[0]
+	}
+
+	return &check, nil
 }

@@ -29,6 +29,7 @@ const (
 	keyTimeStarted      = "time_started"
 	keyTimeEnded        = "time_ended"
 	keyIsFinish         = "is_finish"
+	keyIsCheckByVendor  = "is_check_by_vendor"
 	keyVendorCheckItems = "vendor_check_items"
 	keyNote             = "note"
 
@@ -58,6 +59,7 @@ type CheckVendorDaoAssumer interface {
 
 	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError)
 	FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.VendorCheck, rest_err.APIError)
+	GetLastCheckCreateRange(start, end int64, branch string) (*dto.VendorCheck, rest_err.APIError)
 }
 
 func (c *checkVendorDao) InsertCheck(input dto.VendorCheck) (*string, rest_err.APIError) {
@@ -343,4 +345,46 @@ func (c *checkVendorDao) FindCheck(branch string, filterA dto.FilterTimeRangeLim
 	}
 
 	return checkList, nil
+}
+
+func (c *checkVendorDao) GetLastCheckCreateRange(start, end int64, branch string) (*dto.VendorCheck, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	// filter
+	filter := bson.M{
+		keyIsCheckByVendor: true,
+	}
+	// filter condition
+	if branch != "" {
+		filter[keyBranch] = strings.ToUpper(branch)
+	}
+	filter[keyCreatedAt] = bson.M{"$gte": start}
+	filter[keyCreatedAt] = bson.M{"$lte": end}
+
+	opts := options.Find()
+	opts.SetSort(bson.D{{Key: keyCreatedAt, Value: -1}})
+	opts.SetLimit(1)
+
+	cursor, err := coll.Find(ctx, filter, opts)
+	if err != nil {
+		logger.Error("gagal mendapatkan daftar cctv check dari database (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
+
+	var checkList []dto.VendorCheck
+	if err = cursor.All(ctx, &checkList); err != nil {
+		logger.Error("Gagal decode cctv virtual ke objek slice (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
+
+	var check dto.VendorCheck
+	if len(checkList) != 0 {
+		check = checkList[0]
+	}
+
+	return &check, nil
 }

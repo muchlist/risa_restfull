@@ -190,6 +190,53 @@ func (h *reportHandler) GeneratePDFVendorStartFromLast(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("pdf-vendor/%s.pdf", pdfName)})
 }
 
+func (h *reportHandler) GeneratePDFDailyReportVendor(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	branch := c.Query("branch")
+	if branch == "" {
+		branch = claims.Branch
+	}
+	target := int64(stringToInt(c.Query("target")))
+	currentTime := time.Now().Unix()
+	if target > currentTime {
+		target = currentTime
+	}
+
+	if target == 0 {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": rest_err.NewBadRequestError("target waktu pdf harus ditentukan (target=12345678)"), "data": nil})
+	}
+
+	pdfName, err2 := timegen.GetTimeAsName(target)
+	if err2 != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
+	}
+	pdfName = fmt.Sprintf("daily-vendor-%s", pdfName)
+
+	_, apiErr := h.service.GenerateReportVendorDaily(pdfName, branch, target)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	// simpan pdf ke database
+	_, apiErr = h.service.InsertPdf(dto.PdfFile{
+		CreatedAt:     currentTime,
+		CreatedBy:     claims.Name,
+		Branch:        branch,
+		Name:          pdfName,
+		Type:          pdftype.Vendor,
+		FileName:      fmt.Sprintf("pdf-vendor/%s.pdf", pdfName),
+		EndReportTime: currentTime,
+	})
+
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("pdf-vendor/%s.pdf", pdfName)})
+}
+
 func (h *reportHandler) FindPDF(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	branch := c.Query("branch")

@@ -66,7 +66,15 @@ var (
 	venPhyCheckService   = service.NewVenPhyCheckService(venPhyCheckDao, genUnitDao, cctvDao, historyService)
 	altaiPhyCheckService = service.NewAltaiPhyCheckService(altaiPhyCheckDao, genUnitDao, otherDao, historyService)
 	speedService         = service.NewSpeedTestService(speedDao)
-	reportService        = service.NewReportService(historyDao, checkDao, vendorCheckDao, pdfDao)
+	reportService        = service.NewReportService(service.ReportParams{
+		History:       historyDao,
+		CheckIT:       checkDao,
+		CheckCCTV:     vendorCheckDao,
+		CheckCCTVPhy:  venPhyCheckDao,
+		CheckAltai:    altaiCheckDao,
+		CheckAltaiPhy: altaiPhyCheckDao,
+		Pdf:           pdfDao,
+	})
 
 	// Controller or Handler
 	pingHandler          = handler.NewPingHandler()

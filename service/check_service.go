@@ -176,9 +176,9 @@ func (c *checkService) EditCheck(user mjwt.CustomClaim, checkID string, input dt
 		return nil, err
 	}
 
-	// IMPROVEMENT : make looping insert history to use goroutine
+	// IMPROVEMENT : make looping insert History to use goroutine
 	// Jika isFinish true , maka masukkan semua checkItem yang bertipe cctv
-	// looping ke insert history
+	// looping ke insert History
 	var errorList []rest_err.APIError
 	if checkEdited.IsFinish {
 		for _, checkItem := range checkEdited.CheckItems {
@@ -209,14 +209,14 @@ func (c *checkService) EditCheck(user mjwt.CustomClaim, checkID string, input dt
 		}
 	}
 
-	// mengkoleksi semua error hasil looping insert history
+	// mengkoleksi semua error hasil looping insert History
 	errMessage := ""
 	if len(errorList) != 0 {
 		for _, err := range errorList {
 			errMessage = errMessage + ". " + err.Message()
 		}
-		logger.Error(fmt.Sprintf("Check berhasil diubah namun menambahkan history cctv gagal (EditCheck isFinish) : %s", errMessage), errors.New("internal error"))
-		return nil, rest_err.NewInternalServerError("Check berhasil diubah namun menambahkan history cctv gagal", errors.New("internal error"))
+		logger.Error(fmt.Sprintf("Check berhasil diubah namun menambahkan History cctv gagal (EditCheck isFinish) : %s", errMessage), errors.New("internal error"))
+		return nil, rest_err.NewInternalServerError("Check berhasil diubah namun menambahkan History cctv gagal", errors.New("internal error"))
 	}
 
 	return checkEdited, nil
