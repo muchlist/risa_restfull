@@ -74,6 +74,7 @@ func (c *checkVendorDao) InsertCheck(input dto.VendorCheck) (*string, rest_err.A
 	}
 
 	result, err := coll.InsertOne(ctx, input)
+
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan cctv check ke database", err)
 		logger.Error("Gagal menyimpan cctv check ke database, (VendorInsertCheck)", err)
