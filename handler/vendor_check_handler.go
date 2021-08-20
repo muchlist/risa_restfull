@@ -22,9 +22,8 @@ type vendorCheckHandler struct {
 
 func (vc *vendorCheckHandler) Insert(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
-	isVirtualCheck := len(c.Query("virtual")) != 0
 
-	insertID, apiErr := vc.service.InsertVendorCheck(*claims, isVirtualCheck)
+	insertID, apiErr := vc.service.InsertVendorCheck(*claims, true)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
