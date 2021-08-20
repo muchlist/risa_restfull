@@ -405,19 +405,28 @@ func (c *checkAltaiPhyDao) GetLastCheckCreateRange(start, end int64, branch stri
 	filter[keyCreatedAt] = bson.M{"$gte": start}
 	filter[keyCreatedAt] = bson.M{"$lte": end}
 
-	opts := options.FindOne()
+	opts := options.Find()
 	opts.SetSort(bson.D{{Key: keyCreatedAt, Value: -1}})
+	opts.SetLimit(1)
+
+	cursor, err := coll.Find(ctx, filter, opts)
+	if err != nil {
+		logger.Error("gagal mendapatkan daftar altai check dari database (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
+
+	var checkList []dto.AltaiPhyCheck
+	if err = cursor.All(ctx, &checkList); err != nil {
+		logger.Error("Gagal decode checkList cursor ke objek slice (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
 
 	var check dto.AltaiPhyCheck
-	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			apiErr := rest_err.NewNotFoundError("tidak ada data yang bisa diambil")
-			return nil, apiErr
-		}
 
-		logger.Error("gagal mendapatkan altai check fisik dari database (GetLastCheckCreateRange)", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan altai check fisik dari database", err)
-		return nil, apiErr
+	if len(checkList) != 0 {
+		check = checkList[0]
 	}
 
 	return &check, nil

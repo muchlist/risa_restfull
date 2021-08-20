@@ -19,6 +19,45 @@ func textH1(m pdf.Maroto, text string) {
 
 }
 
+func textH2(m pdf.Maroto, text string, top float64) {
+	m.Text(text, props.Text{
+		Top:         top,
+		Extrapolate: false,
+		Style:       consts.Bold,
+		Size:        14,
+		Color:       getDarkGreyColor(),
+	})
+
+}
+func textH3(m pdf.Maroto, text string, top float64) {
+	m.Text(text, props.Text{
+		Top:         top,
+		Extrapolate: false,
+		Style:       consts.Bold,
+		Size:        11,
+		Color:       getDarkColor(),
+	})
+
+}
+
+func textBody(m pdf.Maroto, text string, top float64) {
+	m.Text(text, props.Text{
+		Top:         top,
+		Extrapolate: false,
+		//Color:       getDarkGreyColor(),
+	})
+
+}
+func textBodyItalic(m pdf.Maroto, text string, top float64) {
+	m.Text(text, props.Text{
+		Top:         top,
+		Extrapolate: false,
+		Style:       consts.Italic,
+		Color:       getDarkGreyColorLight(),
+	})
+
+}
+
 func textBodyCenter(m pdf.Maroto, text string, top float64) {
 
 	m.Text(text, props.Text{
@@ -35,6 +74,14 @@ func getTealColor() color.Color {
 		Red:   3,
 		Green: 166,
 		Blue:  166,
+	}
+}
+
+func getPastelColor() color.Color {
+	return color.Color{
+		Red:   255,
+		Green: 255,
+		Blue:  225,
 	}
 }
 
@@ -67,6 +114,14 @@ func getDarkGreyColor() color.Color {
 		Red:   83,
 		Green: 83,
 		Blue:  83,
+	}
+}
+
+func getDarkGreyColorLight() color.Color {
+	return color.Color{
+		Red:   120,
+		Green: 120,
+		Blue:  120,
 	}
 }
 

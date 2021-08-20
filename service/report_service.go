@@ -28,15 +28,6 @@ type ReportParams struct {
 	Pdf           reportdao.PdfDaoAssumer
 }
 
-type ReportResponse struct {
-	CctvDaily      *dto.VendorCheck   `json:"cctv_daily"`
-	CctvMonthly    *dto.VenPhyCheck   `json:"cctv_monthly"`
-	CctvQuarterly  *dto.VenPhyCheck   `json:"cctv_quarterly"`
-	AltaiDaily     *dto.AltaiCheck    `json:"altai_daily"`
-	AltaiMonthly   *dto.AltaiPhyCheck `json:"altai_monthly"`
-	AltaiQuarterly *dto.AltaiPhyCheck `json:"altai_quarterly"`
-}
-
 func NewReportService(dao ReportParams) ReportServiceAssumer {
 	return &reportService{dao: dao}
 }
@@ -52,7 +43,7 @@ type ReportServiceAssumer interface {
 	GenerateReportPDFVendor(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
 	GenerateReportPDFVendorStartFromLast(name string, branch string) (*string, rest_err.APIError)
 	FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
-	GenerateReportVendorDaily(name string, branch string, target int64) (ReportResponse, rest_err.APIError)
+	GenerateReportVendorDaily(name string, branch string, target int64) (*string, rest_err.APIError)
 }
 
 // GenerateReportPDF membuat laporan untuk it support
@@ -347,7 +338,12 @@ func (r *reportService) FindPdf(branch string, typePdf string) ([]dto.PdfFile, r
 	return r.dao.Pdf.FindPdf(branch, typePdf)
 }
 
-func (r *reportService) GenerateReportVendorDaily(name string, branch string, target int64) (ReportResponse, rest_err.APIError) {
+func (r *reportService) GenerateReportVendorDaily(name string, branch string, target int64) (*string, rest_err.APIError) {
+	currentTime := time.Now().Unix()
+	if target > currentTime {
+		target = currentTime
+	}
+
 	targetMinDaily := target - 60*60*24       // -1 hari
 	targetMinMonthly := target - 60*60*24*60  // -2 bulan
 	targetMinQuarter := target - 60*60*24*150 // -5 bulan
@@ -370,13 +366,60 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, ta
 	// cek fisik altai 3 bulanan
 	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, target, branch, true)
 
-	return ReportResponse{
+	// GET HISTORIES 0, 4 sesuai start end inputan
+	historyList04, err := r.dao.History.UnwindHistory(
+		dto.FilterBranchCatInCompleteIn{
+			FilterBranch:         branch,
+			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
+			FilterCompleteStatus: "0,4",
+		}, dto.FilterTimeRangeLimit{
+			FilterStart: targetMinDaily,
+			FilterEnd:   target,
+			Limit:       300,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
+	historyList123, err := r.dao.History.UnwindHistory(
+		dto.FilterBranchCatInCompleteIn{
+			FilterBranch:         branch,
+			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
+			FilterCompleteStatus: "1,2,3",
+		}, dto.FilterTimeRangeLimit{
+			FilterStart: target - (3 * 30 * 24 * 60 * 60), // 3 bulan,
+			FilterEnd:   target,
+			Limit:       300,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	historiesCombined := append(historyList04, historyList123...)
+
+	errPDF := pdfgen.GeneratePDFVendorDaily(name, dto.ReportResponse{
+		TargetTime:     target,
 		CctvDaily:      cctvVirtual,
 		CctvMonthly:    cctvMonthly,
 		CctvQuarterly:  cctvQuarter,
 		AltaiDaily:     altaiVirtual,
 		AltaiMonthly:   altaiMonthly,
 		AltaiQuarterly: altaiQuarter,
-	}, nil
+	}, pdfgen.PDFVendorReq{
+		Name:        name,
+		HistoryList: historiesCombined,
+		Start:       targetMinDaily,
+		End:         target,
+	})
 
+	if errPDF != nil {
+		return nil, rest_err.NewInternalServerError("gagal membuat Pdf", errPDF)
+	}
+
+	return &name, nil
 }

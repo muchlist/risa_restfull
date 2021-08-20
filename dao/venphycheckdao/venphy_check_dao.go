@@ -407,19 +407,27 @@ func (c *checkVenPhyDao) GetLastCheckCreateRange(start, end int64, branch string
 	filter[keyCreatedAt] = bson.M{"$gte": start}
 	filter[keyCreatedAt] = bson.M{"$lte": end}
 
-	opts := options.FindOne()
+	opts := options.Find()
 	opts.SetSort(bson.D{{Key: keyCreatedAt, Value: -1}})
+	opts.SetLimit(1)
+
+	cursor, err := coll.Find(ctx, filter, opts)
+	if err != nil {
+		logger.Error("gagal mendapatkan daftar cctv dari database (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
+
+	var checkList []dto.VenPhyCheck
+	if err = cursor.All(ctx, &checkList); err != nil {
+		logger.Error("Gagal decode checkList cursor ke objek slice (GetLastCheckCreateRange)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return nil, apiErr
+	}
 
 	var check dto.VenPhyCheck
-	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			apiErr := rest_err.NewNotFoundError("tidak ada data yang bisa diambil")
-			return nil, apiErr
-		}
-
-		logger.Error("gagal mendapatkan cctv check cctv fisik dari database (GetLastCheckCreateRange)", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan check cctv fisik dari database", err)
-		return nil, apiErr
+	if len(checkList) != 0 {
+		check = checkList[0]
 	}
 
 	return &check, nil

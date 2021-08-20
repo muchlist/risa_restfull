@@ -41,6 +41,9 @@ func GeneratePDFVendor(
 
 		// blok if yang dijalankan jika historynya sama
 		if idTemp == history.ID.Hex() {
+			if allListComputed == nil {
+				continue
+			}
 			// menambahkan nama pengupdate
 			updatedByExisting := allListComputed[len(allListComputed)-1].UpdatedBy
 			updatedByCurrent := strings.Split(history.Updates.UpdatedBy, " ")[0]
