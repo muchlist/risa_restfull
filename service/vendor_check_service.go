@@ -38,7 +38,7 @@ type vendorCheckService struct {
 	servHistory HistoryServiceAssumer
 }
 type VendorCheckServiceAssumer interface {
-	InsertVendorCheck(user mjwt.CustomClaim, isVirtualCheck bool) (*string, rest_err.APIError)
+	InsertVendorCheck(user mjwt.CustomClaim) (*string, rest_err.APIError)
 	DeleteVendorCheck(user mjwt.CustomClaim, id string) rest_err.APIError
 	GetVendorCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError)
 	FindVendorCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError)
@@ -47,7 +47,7 @@ type VendorCheckServiceAssumer interface {
 	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError)
 }
 
-func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim, isVirtualCheck bool) (*string, rest_err.APIError) {
+func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim) (*string, rest_err.APIError) {
 	timeNow := time.Now().Unix()
 
 	// ambil cctv genUnit item berdasarkan cabang yang di input
@@ -90,30 +90,17 @@ func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim, isVirtualC
 			isOffline = false
 		}
 
-		if isVirtualCheck {
-			// pengecekan secara virtual default sudah tercek semua di waktu pembuatan
-			vendorCheckItems = append(vendorCheckItems, dto.VendorCheckItemEmbed{
-				ID:        v.ID.Hex(),
-				Name:      v.Name,
-				Location:  v.Location,
-				CheckedAt: timeNow,
-				CheckedBy: user.Name,
-				IsChecked: true,
-				IsBlur:    isBlur,
-				IsOffline: isOffline,
-			})
-		} else {
-			vendorCheckItems = append(vendorCheckItems, dto.VendorCheckItemEmbed{
-				ID:        v.ID.Hex(),
-				Name:      v.Name,
-				Location:  v.Location,
-				CheckedAt: 0,
-				CheckedBy: "",
-				IsChecked: false,
-				IsBlur:    isBlur,
-				IsOffline: isOffline,
-			})
-		}
+		// pengecekan secara virtual default sudah tercek semua di waktu pembuatan
+		vendorCheckItems = append(vendorCheckItems, dto.VendorCheckItemEmbed{
+			ID:        v.ID.Hex(),
+			Name:      v.Name,
+			Location:  v.Location,
+			CheckedAt: timeNow,
+			CheckedBy: user.Name,
+			IsChecked: true,
+			IsBlur:    isBlur,
+			IsOffline: isOffline,
+		})
 	}
 
 	data := dto.VendorCheck{
@@ -126,7 +113,7 @@ func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim, isVirtualC
 		Branch:           user.Branch,
 		TimeStarted:      timeNow,
 		TimeEnded:        0,
-		IsVirtualCheck:   isVirtualCheck,
+		IsVirtualCheck:   true,
 		IsFinish:         false,
 		IsCheckByVendor:  sfunc.InSlice(roles.RoleVendor, user.Roles),
 		VendorCheckItems: vendorCheckItems,
