@@ -24,21 +24,18 @@ const (
 )
 
 var (
-	JwtObj JWTAssumer
 	secret []byte
 )
 
 func NewJwt() JWTAssumer {
-	return JwtObj
+	return &jwtUtils{}
 }
 
-func init() {
+func Init() {
 	secret = []byte(os.Getenv(secretKey))
 	if string(secret) == "" {
 		log.Fatal("Secret key tidak boleh kosong, ENV : SECRET_KEY")
 	}
-
-	JwtObj = &jwtUtils{}
 }
 
 type JWTAssumer interface {
