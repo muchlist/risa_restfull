@@ -228,17 +228,20 @@ func (vc *venPhyCheckService) BulkUpdateVenPhyItem(user mjwt.CustomClaim, inputs
 		return "", rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
 	}
 
-	timeNow := time.Now().Unix()
-
 	inputDatas := make([]dto.VenPhyCheckItemUpdate, len(inputs))
 	for i, input := range inputs {
+		timeInput := time.Now().Unix()
+		if input.CheckedAt != 0 {
+			timeInput = input.CheckedAt
+		}
+
 		inputDatas[i] = dto.VenPhyCheckItemUpdate{
 			FilterParentIDChildIDBranch: dto.FilterParentIDChildIDBranch{
 				FilterParentID: parentOid,
 				FilterChildID:  input.ChildID,
 				FilterBranch:   user.Branch,
 			},
-			CheckedAt:    timeNow,
+			CheckedAt:    timeInput,
 			CheckedBy:    user.Name,
 			IsChecked:    input.IsChecked,
 			IsMaintained: input.IsMaintained,

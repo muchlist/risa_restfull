@@ -52,6 +52,7 @@ type VenPhyCheckItemUpdateRequest struct {
 	IsMaintained bool   `json:"is_maintained"`
 	IsBlur       bool   `json:"is_blur"`
 	IsOffline    bool   `json:"is_offline"`
+	CheckedAt    int64  `json:"checked_at"`
 }
 
 type VenPhyCheckItemUpdate struct {
