@@ -1,6 +1,7 @@
 package pdfgen
 
 import (
+	"github.com/muchlist/risa_restfull/constants/location"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/timegen"
 	"strconv"
@@ -119,17 +120,21 @@ type summaryMonthlyData struct {
 func convertMonthlyViewData(cctv *dto.VenPhyCheck, altai *dto.AltaiPhyCheck) (cctvRes summaryMonthlyData, altaiRes summaryMonthlyData) {
 	if cctv != nil {
 		checkedTemp := 0
+		totalTemp := 0
 
 		for _, check := range cctv.VenPhyCheckItems {
+			if check.Location != location.Pulpis {
+				totalTemp++
+			}
 			if check.IsChecked {
 				checkedTemp++
 			}
 		}
 
 		cctvRes.created, _ = timegen.GetTimeWithYearWITA(cctv.CreatedAt)
-		cctvRes.total = strconv.Itoa(len(cctv.VenPhyCheckItems))
+		cctvRes.total = strconv.Itoa(totalTemp)
 		cctvRes.checked = strconv.Itoa(checkedTemp)
-		cctvRes.notChecked = strconv.Itoa(len(cctv.VenPhyCheckItems) - checkedTemp)
+		cctvRes.notChecked = strconv.Itoa(totalTemp - checkedTemp)
 	}
 
 	if altai != nil {
