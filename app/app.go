@@ -6,6 +6,7 @@ import (
 	"github.com/muchlist/risa_restfull/clients/fcm"
 	"github.com/muchlist/risa_restfull/db"
 	"github.com/muchlist/risa_restfull/scheduller"
+	"github.com/muchlist/risa_restfull/utils/mjwt"
 )
 
 func RunApp() {
@@ -16,6 +17,9 @@ func RunApp() {
 
 	// inisasi firebase app
 	_ = fcm.Init()
+
+	// inisiasi jwt
+	mjwt.Init()
 
 	app := fiber.New()
 	// memenuhi dependency, mapping url
