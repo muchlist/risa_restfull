@@ -13,6 +13,9 @@ func GetTimeWITA(timestampSec int64) (string, error) {
 }
 
 func GetTimeWithYearWITA(timestampSec int64) (string, error) {
+	if timestampSec == 0 {
+		return "", nil
+	}
 	witaTimeZone, err := time.LoadLocation("Asia/Makassar")
 	if err != nil {
 		return "", err
