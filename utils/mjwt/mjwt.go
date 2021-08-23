@@ -4,6 +4,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"github.com/spf13/cast"
 	"log"
 	"net/http"
 	"os"
@@ -82,27 +83,26 @@ func (j *jwtUtils) ReadToken(token *jwt.Token) (*CustomClaim, rest_err.APIError)
 	}
 
 	customClaim := CustomClaim{
-		Identity: claims[identityKey].(string),
-		Name:     claims[nameKey].(string),
-		Exp:      int64(claims[expKey].(float64)),
-		Roles:    iToSliceString(claims[rolesKey]),
-		Branch:   claims[branchKey].(string),
-		Type:     int(claims[tokenTypeKey].(float64)),
-		Fresh:    claims[freshKey].(bool),
+		Identity: cast.ToString(claims[identityKey]),
+		Name:     cast.ToString(claims[nameKey]),
+		Exp:      cast.ToInt64(claims[expKey]),
+		Roles:    cast.ToStringSlice(claims[rolesKey]),
+		Branch:   cast.ToString(claims[branchKey]),
+		Type:     cast.ToInt(claims[tokenTypeKey]),
+		Fresh:    cast.ToBool(claims[freshKey]),
 	}
-
 	return &customClaim, nil
 }
 
-func iToSliceString(assumedSliceInterface interface{}) []string {
-	sliceInterface := assumedSliceInterface.([]interface{})
-	sliceString := make([]string, len(sliceInterface))
-	for i, v := range sliceInterface {
-		sliceString[i] = v.(string)
-	}
-
-	return sliceString
-}
+//func iToSliceString(assumedSliceInterface interface{}) []string {
+//	sliceInterface := assumedSliceInterface.([]interface{})
+//	sliceString := make([]string, len(sliceInterface))
+//	for i, v := range sliceInterface {
+//		sliceString[i] = v.(string)
+//	}
+//
+//	return sliceString
+//}
 
 // ValidateToken memvalidasi apakah token string masukan valid, termasuk memvalidasi apabila field exp nya kadaluarsa
 func (j *jwtUtils) ValidateToken(tokenString string) (*jwt.Token, rest_err.APIError) {

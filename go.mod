@@ -14,7 +14,7 @@ require (
 	github.com/klauspost/compress v1.11.7 // indirect
 	github.com/muchlist/erru_utils_go v1.0.4
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/showwin/speedtest-go v1.1.2
+	github.com/spf13/cast v1.4.1 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/valyala/fasthttp v1.21.0 // indirect
 	go.mongodb.org/mongo-driver v1.4.6
