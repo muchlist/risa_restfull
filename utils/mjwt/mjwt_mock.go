@@ -1,7 +1,7 @@
 package mjwt
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/stretchr/testify/mock"
 )

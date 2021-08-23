@@ -166,33 +166,33 @@ type summaryQuarterlyData struct {
 
 func convertQuarterlyViewData(cctv *dto.VenPhyCheck, altai *dto.AltaiPhyCheck) (cctvRes summaryQuarterlyData, altaiRes summaryQuarterlyData) {
 	if cctv != nil {
-		checkedTemp := 0
+		maintainTemp := 0
 
 		for _, check := range cctv.VenPhyCheckItems {
-			if check.IsChecked {
-				checkedTemp++
+			if check.IsMaintained {
+				maintainTemp++
 			}
 		}
 
 		cctvRes.created, _ = timegen.GetTimeWithYearWITA(cctv.CreatedAt)
 		cctvRes.total = strconv.Itoa(len(cctv.VenPhyCheckItems))
-		cctvRes.maintained = strconv.Itoa(checkedTemp)
-		cctvRes.notMaintained = strconv.Itoa(len(cctv.VenPhyCheckItems) - checkedTemp)
+		cctvRes.maintained = strconv.Itoa(maintainTemp)
+		cctvRes.notMaintained = strconv.Itoa(len(cctv.VenPhyCheckItems) - maintainTemp)
 	}
 
 	if altai != nil {
-		checkedTemp := 0
+		maintainTemp := 0
 
 		for _, check := range altai.AltaiPhyCheckItems {
-			if check.IsChecked {
-				checkedTemp++
+			if check.IsMaintained {
+				maintainTemp++
 			}
 		}
 
 		altaiRes.created, _ = timegen.GetTimeWithYearWITA(altai.CreatedAt)
 		altaiRes.total = strconv.Itoa(len(altai.AltaiPhyCheckItems))
-		altaiRes.maintained = strconv.Itoa(checkedTemp)
-		altaiRes.notMaintained = strconv.Itoa(len(altai.AltaiPhyCheckItems) - checkedTemp)
+		altaiRes.maintained = strconv.Itoa(maintainTemp)
+		altaiRes.notMaintained = strconv.Itoa(len(altai.AltaiPhyCheckItems) - maintainTemp)
 	}
 
 	return
