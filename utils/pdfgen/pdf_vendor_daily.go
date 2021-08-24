@@ -152,7 +152,7 @@ func GeneratePDFVendorDaily(name string, data dto.ReportResponse, pdfVendorStruc
 	subtitle = fmt.Sprintf("Tanggal %s sd %s", startWita, endWita)
 
 	if len(completeList) != 0 {
-		buildTitleHeadingHistoryDailyView(m, " Pekerjaan Selesai 24 Jam Terakhir", getTealColor())
+		buildTitleHeadingHistoryDailyView(m, " Pekerjaan Selesai", getTealColor())
 		buildDailyHistoryVendorList(m, completeList)
 	}
 
