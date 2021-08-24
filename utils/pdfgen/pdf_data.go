@@ -164,21 +164,43 @@ type summaryQuarterlyData struct {
 	notMaintained string
 }
 
-func convertQuarterlyViewData(cctv *dto.VenPhyCheck, altai *dto.AltaiPhyCheck) (cctvRes summaryQuarterlyData, altaiRes summaryQuarterlyData) {
+func convertQuarterlyViewDataCctv(cctv *dto.VenPhyCheck) (cctvReg summaryQuarterlyData, cctvPulpis summaryQuarterlyData) {
 	if cctv != nil {
-		maintainTemp := 0
+		regTotal := 0
+		pulpisTotal := 0
+		regMaintTemp := 0
+		pulpisMaintTemp := 0
 
 		for _, check := range cctv.VenPhyCheckItems {
-			if check.IsMaintained {
-				maintainTemp++
+			// cek puplis
+			if check.Location == location.Pulpis {
+				pulpisTotal++
+				if check.IsMaintained {
+					pulpisMaintTemp++
+				}
+			} else { //  cek selain puplis
+				regTotal++
+				if check.IsMaintained {
+					regMaintTemp++
+				}
 			}
 		}
 
-		cctvRes.created, _ = timegen.GetTimeWithYearWITA(cctv.CreatedAt)
-		cctvRes.total = strconv.Itoa(len(cctv.VenPhyCheckItems))
-		cctvRes.maintained = strconv.Itoa(maintainTemp)
-		cctvRes.notMaintained = strconv.Itoa(len(cctv.VenPhyCheckItems) - maintainTemp)
+		cctvReg.created, _ = timegen.GetTimeWithYearWITA(cctv.CreatedAt)
+		cctvReg.total = strconv.Itoa(regTotal)
+		cctvReg.maintained = strconv.Itoa(regMaintTemp)
+		cctvReg.notMaintained = strconv.Itoa(regTotal - regMaintTemp)
+
+		cctvPulpis.created, _ = timegen.GetTimeWithYearWITA(cctv.CreatedAt)
+		cctvPulpis.total = strconv.Itoa(pulpisTotal)
+		cctvPulpis.maintained = strconv.Itoa(pulpisMaintTemp)
+		cctvPulpis.notMaintained = strconv.Itoa(pulpisTotal - pulpisMaintTemp)
 	}
+	return
+}
+
+func convertQuarterlyViewDataAltai(altai *dto.AltaiPhyCheck) summaryQuarterlyData {
+	altaiRes := summaryQuarterlyData{}
 
 	if altai != nil {
 		maintainTemp := 0
@@ -195,5 +217,5 @@ func convertQuarterlyViewData(cctv *dto.VenPhyCheck, altai *dto.AltaiPhyCheck) (
 		altaiRes.notMaintained = strconv.Itoa(len(altai.AltaiPhyCheckItems) - maintainTemp)
 	}
 
-	return
+	return altaiRes
 }

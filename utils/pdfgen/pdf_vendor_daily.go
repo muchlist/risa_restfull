@@ -18,10 +18,10 @@ func GeneratePDFVendorDaily(name string, data dto.ReportResponse, pdfVendorStruc
 	m := pdf.NewMaroto(consts.Portrait, consts.A4)
 	m.SetPageMargins(10, 10, 10)
 
-	timeString, _ := timegen.GetTimeWithYearWITA(data.TargetTime)
-
 	// HEADING =============================================================================================
-	subtitle := fmt.Sprintf("Per Tanggal %s", timeString)
+	startWita, _ := timegen.GetTimeWithYearWITA(pdfVendorStruct.Start)
+	endWita, _ := timegen.GetTimeWithYearWITA(pdfVendorStruct.End)
+	subtitle := fmt.Sprintf("Tanggal %s sd %s", startWita, endWita)
 	err := buildHeadingVendorDaily(m, subtitle)
 	if err != nil {
 		return err
@@ -59,9 +59,19 @@ func GeneratePDFVendorDaily(name string, data dto.ReportResponse, pdfVendorStruc
 
 	// QUARTERLY
 	//----------convert data
-	cctvQuarterlyViewData, altaiQuarterlyViewData := convertQuarterlyViewData(data.CctvQuarterly, data.AltaiQuarterly)
-	buildTitleHeadingView(m, " Cek Fisik 3 Bulanan", getPinkColor())
-	buildCCTVQuarterlyView(m, cctvQuarterlyViewData, altaiQuarterlyViewData)
+	regCctvQuarterlyViewData, pulpisCctvQuarterlyViewData := convertQuarterlyViewDataCctv(data.CctvQuarterly)
+	altaiQuarterlyViewData := convertQuarterlyViewDataAltai(data.AltaiQuarterly)
+	buildTitleHeadingView(m, " Cek Fisik Triwulan", getPinkColor())
+	buildCCTVQuarterlyView(m, regCctvQuarterlyViewData, altaiQuarterlyViewData)
+
+	// SPACE
+	m.Row(5, func() {
+		m.Col(0, func() {
+		})
+	})
+
+	buildTitleHeadingView(m, " Cek Fisik Triwulan Pulpis", getPinkColor())
+	buildCCTVQuarterlyViewNoAltai(m, pulpisCctvQuarterlyViewData)
 
 	// NEW PAGE ================================================================= \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	m.AddPage()
@@ -137,8 +147,8 @@ func GeneratePDFVendorDaily(name string, data dto.ReportResponse, pdfVendorStruc
 		}
 	}
 
-	startWita, _ := timegen.GetTimeWithYearWITA(pdfVendorStruct.Start)
-	endWita, _ := timegen.GetTimeWithYearWITA(pdfVendorStruct.End)
+	startWita, _ = timegen.GetTimeWithYearWITA(pdfVendorStruct.Start)
+	endWita, _ = timegen.GetTimeWithYearWITA(pdfVendorStruct.End)
 	subtitle = fmt.Sprintf("Tanggal %s sd %s", startWita, endWita)
 
 	if len(completeList) != 0 {
@@ -408,6 +418,38 @@ func buildCCTVQuarterlyView(m pdf.Maroto, cctv summaryQuarterlyData, altai summa
 		})
 
 		m.ColSpace(1)
+
+	})
+
+}
+
+func buildCCTVQuarterlyViewNoAltai(m pdf.Maroto, cctv summaryQuarterlyData) {
+
+	// CCTV VIRTUAL
+	m.Row(15, func() {
+		m.Col(6, func() {
+			textH3(m, "CCTV", 3)
+			textBodyItalic(m, fmt.Sprintf(" dimulai dari %s", cctv.created), 8)
+		})
+		m.ColSpace(6)
+	})
+
+	// DATA 3-2-1
+	m.Row(20, func() {
+
+		m.Col(3, func() {
+			textBody(m, "- Total CCTV", 0)
+			textBody(m, "- Sudah di maintenance", 5)
+			textBody(m, "- Belum di maintenance", 10)
+		})
+
+		m.Col(2, func() {
+			textBody(m, cctv.total, 0)
+			textBody(m, cctv.maintained, 5)
+			textBody(m, cctv.notMaintained, 10)
+		})
+
+		m.ColSpace(7)
 
 	})
 

@@ -136,7 +136,7 @@ func (h *reportHandler) GeneratePDFVendor(c *fiber.Ctx) error {
 		CreatedBy:     claims.Name,
 		Branch:        branch,
 		Name:          pdfName,
-		Type:          "VENDOR",
+		Type:          pdftype.VendorSum,
 		FileName:      fmt.Sprintf("pdf-vendor/%s.pdf", pdfName),
 		EndReportTime: int64(end),
 	})
@@ -178,7 +178,7 @@ func (h *reportHandler) GeneratePDFVendorStartFromLast(c *fiber.Ctx) error {
 		CreatedBy:     claims.Name,
 		Branch:        branch,
 		Name:          pdfName,
-		Type:          pdftype.Vendor,
+		Type:          pdftype.VendorSum,
 		FileName:      fmt.Sprintf("pdf-vendor/%s.pdf", pdfName),
 		EndReportTime: currentTime,
 	})
@@ -196,25 +196,77 @@ func (h *reportHandler) GeneratePDFDailyReportVendor(c *fiber.Ctx) error {
 	if branch == "" {
 		branch = claims.Branch
 	}
+
+	start := int64(stringToInt(c.Query("start")))
+	end := int64(stringToInt(c.Query("end")))
+
 	target := int64(stringToInt(c.Query("target")))
-	currentTime := time.Now().Unix()
-	if target > currentTime {
-		target = currentTime
+	if target != 0 {
+		end = target
 	}
 
-	if target == 0 {
+	currentTime := time.Now().Unix()
+	if end > currentTime {
+		end = currentTime
+	}
+
+	fmt.Printf("start : %d, end : %d\n", start, end)
+
+	if end == 0 {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": rest_err.NewBadRequestError("target waktu pdf harus ditentukan (target=12345678)"), "data": nil})
 	}
 
-	pdfName, err2 := timegen.GetTimeAsName(target)
+	pdfName, err2 := timegen.GetTimeAsName(end)
 	if err2 != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
 	}
 	pdfName = fmt.Sprintf("daily-vendor-%s", pdfName)
 
-	_, apiErr := h.service.GenerateReportVendorDaily(pdfName, branch, target)
+	_, apiErr := h.service.GenerateReportVendorDaily(pdfName, branch, start, end)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	// simpan pdf ke database
+	_, apiErr = h.service.InsertPdf(dto.PdfFile{
+		CreatedAt:     currentTime,
+		CreatedBy:     claims.Name,
+		Branch:        branch,
+		Name:          pdfName,
+		Type:          pdftype.Vendor,
+		FileName:      fmt.Sprintf("pdf-vendor/%s.pdf", pdfName),
+		EndReportTime: currentTime,
+	})
+
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("pdf-vendor/%s.pdf", pdfName)})
+}
+
+// GeneratePDFVendorDailyStartFromLast membuat pdf berdasarkan tanggal pdf sebelumnya dijadikan awal
+// dan tanggal saat ini dijadikan akhir
+// Query [branch]
+func (h *reportHandler) GeneratePDFVendorDailyStartFromLast(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	branch := c.Query("branch")
+	if branch == "" {
+		branch = claims.Branch
+	}
+
+	currentTime := time.Now().Unix()
+
+	pdfName, err2 := timegen.GetTimeAsName(currentTime)
+	if err2 != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
+	}
+	pdfName = fmt.Sprintf("daily-vendor-%s", pdfName)
+
+	_, apiErr := h.service.GenerateReportVendorDailyStartFromLast(pdfName, branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

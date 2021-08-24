@@ -43,7 +43,8 @@ type ReportServiceAssumer interface {
 	GenerateReportPDFVendor(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
 	GenerateReportPDFVendorStartFromLast(name string, branch string) (*string, rest_err.APIError)
 	FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
-	GenerateReportVendorDaily(name string, branch string, target int64) (*string, rest_err.APIError)
+	GenerateReportVendorDaily(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
+	GenerateReportVendorDailyStartFromLast(name string, branch string) (*string, rest_err.APIError)
 }
 
 // GenerateReportPDF membuat laporan untuk it support
@@ -338,33 +339,41 @@ func (r *reportService) FindPdf(branch string, typePdf string) ([]dto.PdfFile, r
 	return r.dao.Pdf.FindPdf(branch, typePdf)
 }
 
-func (r *reportService) GenerateReportVendorDaily(name string, branch string, target int64) (*string, rest_err.APIError) {
-	currentTime := time.Now().Unix()
-	if target > currentTime {
-		target = currentTime
+func (r *reportService) GenerateReportVendorDaily(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
+	if start > end {
+		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
 	}
 
-	targetMinDaily := target - 60*60*24       // -1 hari
-	targetMinMonthly := target - 60*60*24*60  // -2 bulan
-	targetMinQuarter := target - 60*60*24*150 // -5 bulan
+	currentTime := time.Now().Unix()
+	if end > currentTime {
+		end = currentTime
+	}
+
+	targetMinDaily := end - 60*60*24       // -1 hari
+	targetMinMonthly := end - 60*60*24*60  // -2 bulan
+	targetMinQuarter := end - 60*60*24*150 // -5 bulan
+
+	if start > 0 {
+		targetMinDaily = start
+	}
 
 	// cek virtual cctv
-	cctvVirtual, _ := r.dao.CheckCCTV.GetLastCheckCreateRange(targetMinDaily, target, branch)
+	cctvVirtual, _ := r.dao.CheckCCTV.GetLastCheckCreateRange(targetMinDaily, end, branch)
 
 	// cek fisik cctv bulanan
-	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinMonthly, target, branch, false)
+	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinMonthly, end, branch, false)
 
 	// cek fisik cctv 3 bulanan
-	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinQuarter, target, branch, true)
+	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinQuarter, end, branch, true)
 
 	// cek virtual altai
-	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(targetMinDaily, target, branch)
+	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(targetMinDaily, end, branch)
 
 	// cek fisik altai bulanan
-	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, target, branch, false)
+	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, end, branch, false)
 
 	// cek fisik altai 3 bulanan
-	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, target, branch, true)
+	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, end, branch, true)
 
 	// GET HISTORIES 0, 4 sesuai start end inputan
 	historyList04, err := r.dao.History.UnwindHistory(
@@ -374,7 +383,7 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, ta
 			FilterCompleteStatus: "0,4",
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: targetMinDaily,
-			FilterEnd:   target,
+			FilterEnd:   end,
 			Limit:       300,
 		},
 	)
@@ -390,8 +399,8 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, ta
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
 			FilterCompleteStatus: "1,2,3",
 		}, dto.FilterTimeRangeLimit{
-			FilterStart: target - (3 * 30 * 24 * 60 * 60), // 3 bulan,
-			FilterEnd:   target,
+			FilterStart: end - (3 * 30 * 24 * 60 * 60), // 3 bulan,
+			FilterEnd:   end,
 			Limit:       300,
 		},
 	)
@@ -403,7 +412,7 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, ta
 	historiesCombined := append(historyList04, historyList123...)
 
 	errPDF := pdfgen.GeneratePDFVendorDaily(name, dto.ReportResponse{
-		TargetTime:     target,
+		TargetTime:     end,
 		CctvDaily:      cctvVirtual,
 		CctvMonthly:    cctvMonthly,
 		CctvQuarterly:  cctvQuarter,
@@ -414,7 +423,99 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, ta
 		Name:        name,
 		HistoryList: historiesCombined,
 		Start:       targetMinDaily,
-		End:         target,
+		End:         end,
+	})
+
+	if errPDF != nil {
+		return nil, rest_err.NewInternalServerError("gagal membuat Pdf", errPDF)
+	}
+
+	return &name, nil
+}
+
+func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, branch string) (*string, rest_err.APIError) {
+	currentTime := time.Now().Unix()
+	lastPDF, err := r.dao.Pdf.FindLastPdf(branch, pdftype.Vendor)
+	if err != nil {
+		return nil, rest_err.NewBadRequestError("gagal mendapatkan data laporan sebelumnya")
+	}
+	lastPDFEndTime := lastPDF.EndReportTime
+
+	if currentTime-lastPDFEndTime < 60*2 {
+		return nil, rest_err.NewBadRequestError("Gagal. Jarak pembuatan laporan tidak boleh kurang dari 2 menit!")
+	}
+
+	targetMinDaily := currentTime - 60*60*24       // -1 hari
+	targetMinMonthly := currentTime - 60*60*24*60  // -2 bulan
+	targetMinQuarter := currentTime - 60*60*24*150 // -5 bulan
+
+	// cek virtual cctv
+	cctvVirtual, _ := r.dao.CheckCCTV.GetLastCheckCreateRange(targetMinDaily, currentTime, branch)
+
+	// cek fisik cctv bulanan
+	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)
+
+	// cek fisik cctv 3 bulanan
+	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
+
+	// cek virtual altai
+	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(targetMinDaily, currentTime, branch)
+
+	// cek fisik altai bulanan
+	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)
+
+	// cek fisik altai 3 bulanan
+	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
+
+	// GET HISTORIES 0, 4 sesuai start end inputan
+	historyList04, err := r.dao.History.UnwindHistory(
+		dto.FilterBranchCatInCompleteIn{
+			FilterBranch:         branch,
+			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
+			FilterCompleteStatus: "0,4",
+		}, dto.FilterTimeRangeLimit{
+			FilterStart: lastPDFEndTime,
+			FilterEnd:   currentTime,
+			Limit:       300,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
+	historyList123, err := r.dao.History.UnwindHistory(
+		dto.FilterBranchCatInCompleteIn{
+			FilterBranch:         branch,
+			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
+			FilterCompleteStatus: "1,2,3",
+		}, dto.FilterTimeRangeLimit{
+			FilterStart: currentTime - (3 * 30 * 24 * 60 * 60), // 3 bulan,
+			FilterEnd:   currentTime,
+			Limit:       300,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	historiesCombined := append(historyList04, historyList123...)
+
+	errPDF := pdfgen.GeneratePDFVendorDaily(name, dto.ReportResponse{
+		TargetTime:     currentTime,
+		CctvDaily:      cctvVirtual,
+		CctvMonthly:    cctvMonthly,
+		CctvQuarterly:  cctvQuarter,
+		AltaiDaily:     altaiVirtual,
+		AltaiMonthly:   altaiMonthly,
+		AltaiQuarterly: altaiQuarter,
+	}, pdfgen.PDFVendorReq{
+		Name:        name,
+		HistoryList: historiesCombined,
+		Start:       lastPDFEndTime,
+		End:         currentTime,
 	})
 
 	if errPDF != nil {
