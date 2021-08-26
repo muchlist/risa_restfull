@@ -379,7 +379,7 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, st
 	historyList04, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
-			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
+			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
 			FilterCompleteStatus: "0,4",
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: targetMinDaily,
@@ -396,7 +396,7 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, st
 	historyList123, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
-			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
+			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
 			FilterCompleteStatus: "1,2,3",
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: end - (3 * 30 * 24 * 60 * 60), // 3 bulan,
@@ -471,7 +471,7 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, bran
 	historyList04, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
-			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
+			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
 			FilterCompleteStatus: "0,4",
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: lastPDFEndTime,
@@ -488,7 +488,7 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, bran
 	historyList123, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
-			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
+			FilterCategory:       fmt.Sprintf("%s,%s, %s", category.Cctv, category.Altai, category.OtherV),
 			FilterCompleteStatus: "1,2,3",
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: currentTime - (3 * 30 * 24 * 60 * 60), // 3 bulan,

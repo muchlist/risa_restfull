@@ -14,6 +14,7 @@ const (
 	Gate        = "GATE"
 	Ups         = "UPS"
 	Other       = "OTHER"
+	OtherV      = "OTHER-V"
 )
 
 func GetCategoryAvailable() []string {
@@ -31,5 +32,6 @@ func GetSubCategoryAvailable() []string {
 		Gate,
 		Ups,
 		Other,
+		OtherV,
 	}
 }
