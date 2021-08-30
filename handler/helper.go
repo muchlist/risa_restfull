@@ -6,7 +6,8 @@ import (
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
-	"github.com/nfnt/resize"
+	//"github.com/nfnt/resize"
+	"github.com/disintegration/imaging"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -97,7 +98,10 @@ func generateThumbnail(path string, fileName string, fileExtension, folder strin
 	}
 
 	// resize to width 200 using Lanczos resampling
-	m := resize.Thumbnail(300, 300, img, resize.Lanczos3)
+	//m := resize.Thumbnail(300, 300, img, resize.Lanczos3)
+
+	// crop image
+	m := imaging.Thumbnail(img, 300, 300, imaging.Lanczos)
 
 	thumbnailPath := fmt.Sprintf("static/image/%s/%s", folder, "thumb_"+fileName+fileExtension)
 	out, err := os.Create(thumbnailPath)
