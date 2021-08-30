@@ -46,8 +46,25 @@ func textBody(m pdf.Maroto, text string, top float64) {
 		Extrapolate: false,
 		//Color:       getDarkGreyColor(),
 	})
-
 }
+
+func textList(m pdf.Maroto, text string, top float64) {
+	m.Text(text, props.Text{
+		Top:             top,
+		Size:            9,
+		Extrapolate:     false,
+	})
+}
+
+func textListB(m pdf.Maroto, text string, top float64) {
+	m.Text(text, props.Text{
+		Top:             top,
+		Size:            9,
+		Style:       consts.Bold,
+		Extrapolate:     true,
+	})
+}
+
 func textBodyItalic(m pdf.Maroto, text string, top float64) {
 	m.Text(text, props.Text{
 		Top:         top,
