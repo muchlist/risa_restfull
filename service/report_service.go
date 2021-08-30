@@ -327,9 +327,6 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 	return &name, nil
 }
 
-
-
-
 func (r *reportService) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
 	currentTime := time.Now().Unix()
 	if input.EndReportTime > currentTime {
@@ -529,7 +526,6 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, bran
 	return &name, nil
 }
 
-
 // GenerateReportPDFVendorMonthly membuat Pdf untuk vendor multinet
 func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
@@ -541,12 +537,12 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 		end = currentTime
 	}
 
-	// GET HISTORIES 0, 4 sesuai start end inputan
+	// GET HISTORIES 4 sesuai start end inputan
 	historyList04, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
-			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai, category.OtherV),
-			FilterCompleteStatus: "0,4",
+			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
+			FilterCompleteStatus: "4",
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: start,
 			FilterEnd:   end,
@@ -562,7 +558,7 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 	historyList123, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
-			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai, category.OtherV),
+			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
 			FilterCompleteStatus: "1,2,3",
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: end - (3 * 30 * 24 * 60 * 60), // 3 bulan,
@@ -577,23 +573,23 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 
 	historiesCombined := append(historyList04, historyList123...)
 
-	cctvCek, _ := r.dao.CheckCCTVPhy.FindCheck( branch,dto.FilterTimeRangeLimit{
+	cctvCek, _ := r.dao.CheckCCTVPhy.FindCheck(branch, dto.FilterTimeRangeLimit{
 		FilterStart: start,
 		FilterEnd:   end,
 		Limit:       10,
-	},true )
+	}, true)
 
-	altaiCek, _ := r.dao.CheckAltaiPhy.FindCheck( branch,dto.FilterTimeRangeLimit{
+	altaiCek, _ := r.dao.CheckAltaiPhy.FindCheck(branch, dto.FilterTimeRangeLimit{
 		FilterStart: start,
 		FilterEnd:   end,
 		Limit:       10,
-	},true )
+	}, true)
 
 	errPDF := pdfgen.GeneratePDFVendorMonthly(pdfgen.PDFReqMonth{
-		Name:            name,
-		HistoryList:     historiesCombined,
-		Start:           start,
-		End:             end,
+		Name:        name,
+		HistoryList: historiesCombined,
+		Start:       start,
+		End:         end,
 	}, cctvCek, altaiCek)
 	if errPDF != nil {
 		return nil, rest_err.NewInternalServerError("gagal membuat Pdf", errPDF)
