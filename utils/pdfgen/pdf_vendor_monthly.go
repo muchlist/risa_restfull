@@ -94,7 +94,7 @@ func GeneratePDFVendorMonthly(
 	}
 
 	m := pdf.NewMaroto(consts.Landscape, consts.A4)
-	m.SetPageMargins(20, 10, 20)
+	m.SetPageMargins(10, 10, 10)
 
 	startWita, _ := timegen.GetTimeWithYearWITA(data.Start)
 	endWita, _ := timegen.GetTimeWithYearWITA(data.End)
@@ -113,8 +113,8 @@ func GeneratePDFVendorMonthly(
 	// MONTHLY
 	//----------convert data
 	cctvMonthlyViewData, altaiMonthlyViewData := convertMonthlyViewData(dataMaint.CctvMonthly, dataMaint.AltaiMonthly)
-	buildTitleHeadingView(m, " Cek Fisik Bulanan", getOrangeColor())
-	buildCCTVMonthlyView(m, cctvMonthlyViewData, altaiMonthlyViewData)
+	buildTitleHeadingView(m, " Cek Fisik Bulanan", getTealColor())
+	buildCCTVMonthlyViewLand(m, cctvMonthlyViewData, altaiMonthlyViewData)
 
 	// SPACE
 	m.Row(5, func() {
@@ -126,8 +126,8 @@ func GeneratePDFVendorMonthly(
 	//----------convert data
 	regCctvQuarterlyViewData, pulpisCctvQuarterlyViewData := convertQuarterlyViewDataCctv(dataMaint.CctvQuarterly)
 	altaiQuarterlyViewData := convertQuarterlyViewDataAltai(dataMaint.AltaiQuarterly)
-	buildTitleHeadingView(m, " Cek Fisik Triwulan", getPinkColor())
-	buildCCTVQuarterlyView(m, regCctvQuarterlyViewData, altaiQuarterlyViewData)
+	buildTitleHeadingView(m, " Cek Fisik Triwulan", getOrangeColor())
+	buildCCTVQuarterlyViewLand(m, regCctvQuarterlyViewData, altaiQuarterlyViewData)
 
 	// SPACE
 	m.Row(5, func() {
@@ -135,8 +135,8 @@ func GeneratePDFVendorMonthly(
 		})
 	})
 
-	buildTitleHeadingView(m, " Cek Fisik Triwulan Pulpis", getPinkColor())
-	buildCCTVQuarterlyViewNoAltai(m, pulpisCctvQuarterlyViewData)
+	buildTitleHeadingView(m, " Cek Fisik Triwulan Pulpis", getOrangeColor())
+	buildCCTVQuarterlyViewNoAltaiLand(m, pulpisCctvQuarterlyViewData)
 
 	// NEW PAGE ================================================================= \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	m.AddPage()
@@ -386,4 +386,124 @@ func addList(m pdf.Maroto, data dto.HistoryUnwindResponse, i int) {
 		}
 
 	})
+}
+
+func buildCCTVMonthlyViewLand(m pdf.Maroto, cctv summaryMonthlyData, altai summaryMonthlyData) {
+
+	// CCTV VIRTUAL ----- ALTAI VIRTUAL
+	m.Row(15, func() {
+		m.Col(5, func() {
+			textH3(m, "CCTV", 3)
+			textBodyItalic(m, fmt.Sprintf(" dimulai dari %s", cctv.created), 8)
+		})
+		m.Col(5, func() {
+			textH3(m, "ALTAI", 3)
+			textBodyItalic(m, fmt.Sprintf(" dimulai dari %s", altai.created), 8)
+		})
+	})
+
+	// DATA 3-2-1     ------     DATA 3-2-1
+	m.Row(20, func() {
+		m.Col(3, func() {
+			textBody(m, "- Total CCTV", 0)
+			textBody(m, "- Sudah di cek", 5)
+			textBody(m, "- Belum di cek", 10)
+		})
+
+		m.Col(2, func() {
+			textBody(m, cctv.total, 0)
+			textBody(m, cctv.checked, 5)
+			textBody(m, cctv.notChecked, 10)
+		})
+
+		m.Col(3, func() {
+			textBody(m, "- Total Altai", 0)
+			textBody(m, "- Sudah di cek", 5)
+			textBody(m, "- Belum di cek", 10)
+		})
+
+		m.Col(2, func() {
+			textBody(m, altai.total, 0)
+			textBody(m, altai.checked, 5)
+			textBody(m, altai.notChecked, 10)
+		})
+
+	})
+
+}
+
+func buildCCTVQuarterlyViewLand(m pdf.Maroto, cctv summaryQuarterlyData, altai summaryQuarterlyData) {
+
+	// CCTV  ----- ALTAI
+	m.Row(15, func() {
+		m.Col(5, func() {
+			textH3(m, "CCTV", 3)
+			textBodyItalic(m, fmt.Sprintf(" dimulai dari %s", cctv.created), 8)
+		})
+		m.Col(5, func() {
+			textH3(m, "ALTAI", 3)
+			textBodyItalic(m, fmt.Sprintf(" dimulai dari %s", altai.created), 8)
+		})
+	})
+
+	// DATA 3-2-1     ------     DATA 3-2-1
+	m.Row(20, func() {
+
+		m.Col(3, func() {
+			textBody(m, "- Total CCTV", 0)
+			textBody(m, "- Sudah di maintenance", 5)
+			textBody(m, "- Belum di maintenance", 10)
+		})
+
+		m.Col(2, func() {
+			textBody(m, cctv.total, 0)
+			textBody(m, cctv.maintained, 5)
+			textBody(m, cctv.notMaintained, 10)
+		})
+
+		m.Col(3, func() {
+			textBody(m, "- Total Altai", 0)
+			textBody(m, "- Sudah di maintenance", 5)
+			textBody(m, "- Belum di maintenance", 10)
+		})
+
+		m.Col(2, func() {
+			textBody(m, altai.total, 0)
+			textBody(m, altai.maintained, 5)
+			textBody(m, altai.notMaintained, 10)
+		})
+
+	})
+
+}
+
+func buildCCTVQuarterlyViewNoAltaiLand(m pdf.Maroto, cctv summaryQuarterlyData) {
+
+	// CCTV VIRTUAL
+	m.Row(15, func() {
+		m.Col(5, func() {
+			textH3(m, "CCTV", 3)
+			textBodyItalic(m, fmt.Sprintf(" dimulai dari %s", cctv.created), 8)
+		})
+		m.ColSpace(7)
+	})
+
+	// DATA 3-2-1
+	m.Row(20, func() {
+		m.Col(3, func() {
+			textBody(m, "- Total CCTV", 0)
+			textBody(m, "- Sudah di maintenance", 5)
+			textBody(m, "- Belum di maintenance", 10)
+		})
+
+		m.Col(2, func() {
+			textBody(m, cctv.total, 0)
+			textBody(m, cctv.maintained, 5)
+			textBody(m, cctv.notMaintained, 10)
+		})
+
+		m.ColSpace(7)
+
+	})
+
 }
