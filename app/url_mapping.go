@@ -27,6 +27,7 @@ func mapUrls(app *fiber.App) {
 	app.Static("/pdf", "./static/pdf")
 	app.Static("/pdf-vendor", "./static/pdf-vendor")
 	app.Static("/pdf-v-month", "./static/pdf-v-month")
+	app.Static("/pdf-stock", "./static/pdf-stock")
 
 	api := app.Group("/api/v1")
 
@@ -182,6 +183,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/daily-vendor", middleware.NormalAuth(), reportHandler.GeneratePDFDailyReportVendor)
 	api.Get("/daily-vendor-auto", middleware.NormalAuth(), reportHandler.GeneratePDFVendorDailyStartFromLast)
 	api.Get("/generate-pdf-monthly", middleware.NormalAuth(), reportHandler.GeneratePDFVendorMonthly)
+	api.Get("/generate-pdf-stock", middleware.NormalAuth(), reportHandler.GeneratePDFStock)
 
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)

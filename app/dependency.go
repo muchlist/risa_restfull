@@ -73,6 +73,7 @@ var (
 		CheckCCTVPhy:  venPhyCheckDao,
 		CheckAltai:    altaiCheckDao,
 		CheckAltaiPhy: altaiPhyCheckDao,
+		Stock:         stockDao,
 		Pdf:           pdfDao,
 	})
 

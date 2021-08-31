@@ -59,7 +59,7 @@ type StockDaoAssumer interface {
 
 	GetStockByID(stockID primitive.ObjectID, branchIfSpecific string) (*dto.Stock, rest_err.APIError)
 	FindStock(filterA dto.FilterBranchNameCatDisable) (dto.StockResponseMinList, rest_err.APIError)
-	FindStockNeedRestock(filterA dto.FilterBranchCatDisable) (dto.StockResponseMinList, rest_err.APIError)
+	FindStockNeedRestock(filterA dto.FilterBranchCatDisable) ([]dto.Stock, rest_err.APIError)
 }
 
 func (s *stockDao) InsertStock(input dto.Stock) (*string, rest_err.APIError) {
@@ -305,7 +305,7 @@ func (s *stockDao) FindStock(filterA dto.FilterBranchNameCatDisable) (dto.StockR
 	return stockList, nil
 }
 
-func (s *stockDao) FindStockNeedRestock(filterA dto.FilterBranchCatDisable) (dto.StockResponseMinList, rest_err.APIError) {
+func (s *stockDao) FindStockNeedRestock(filterA dto.FilterBranchCatDisable) ([]dto.Stock, rest_err.APIError) {
 	coll := db.DB.Collection(keyStoCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -369,14 +369,14 @@ func (s *stockDao) FindStockNeedRestock(filterA dto.FilterBranchCatDisable) (dto
 	if err != nil {
 		logger.Error("Gagal mendapatkan stock dari database (FindStockNeedRestock)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
-		return dto.StockResponseMinList{}, apiErr
+		return []dto.Stock{}, apiErr
 	}
 
-	stockList := dto.StockResponseMinList{}
+	stockList := make([]dto.Stock, 0)
 	if err = cursor.All(ctx, &stockList); err != nil {
 		logger.Error("Gagal decode stockList cursor ke objek slice (FindStock)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
-		return dto.StockResponseMinList{}, apiErr
+		return []dto.Stock{}, apiErr
 	}
 
 	return stockList, nil

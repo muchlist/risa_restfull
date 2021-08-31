@@ -10,10 +10,12 @@ import (
 	"github.com/muchlist/risa_restfull/dao/checkdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/reportdao"
+	"github.com/muchlist/risa_restfull/dao/stockdao"
 	"github.com/muchlist/risa_restfull/dao/vendorcheckdao"
 	"github.com/muchlist/risa_restfull/dao/venphycheckdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/pdfgen"
+	"github.com/muchlist/risa_restfull/utils/pdfgen/stockpdf"
 	"time"
 )
 
@@ -25,6 +27,7 @@ type ReportParams struct {
 	CheckCCTVPhy  venphycheckdao.CheckVenPhyDaoAssumer
 	CheckAltai    altaicheckdao.CheckAltaiDaoAssumer
 	CheckAltaiPhy altaiphycheckdao.CheckAltaiPhyDaoAssumer
+	Stock         stockdao.StockDaoAssumer
 	Pdf           reportdao.PdfDaoAssumer
 }
 
@@ -46,6 +49,7 @@ type ReportServiceAssumer interface {
 	GenerateReportVendorDaily(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
 	GenerateReportVendorDailyStartFromLast(name string, branch string) (*string, rest_err.APIError)
 	GenerateReportPDFVendorMonthly(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
+	GenerateStockReportRestock(name, branch, category string, start, end int64) (*string, rest_err.APIError)
 }
 
 // GenerateReportPDF membuat laporan untuk it support
@@ -599,6 +603,42 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 		CctvQuarterly:  cctvQuarter,
 		AltaiMonthly:   altaiMonthly,
 		AltaiQuarterly: altaiQuarter,
+	})
+	if errPDF != nil {
+		return nil, rest_err.NewInternalServerError("gagal membuat Pdf", errPDF)
+	}
+
+	return &name, nil
+}
+
+// GenerateStockReportRestock membuat Pdf untuk stock yang perlu diisi ulang
+func (r *reportService) GenerateStockReportRestock(name, branch, category string, start, end int64) (*string, rest_err.APIError) {
+	if start > end && start < 0 {
+		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
+	}
+
+	currentTime := time.Now().Unix()
+	if end > currentTime {
+		end = currentTime
+	}
+
+	// GET Stock need Restock
+	stockList, err := r.dao.Stock.FindStockNeedRestock(
+		dto.FilterBranchCatDisable{
+			FilterBranch:   branch,
+			FilterCategory: category,
+			FilterDisable:  false,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	errPDF := stockpdf.GenerateStockPDF(stockpdf.PDFReq{
+		Name:      name,
+		StockList: stockList,
+		Start:     start,
+		End:       end,
 	})
 	if errPDF != nil {
 		return nil, rest_err.NewInternalServerError("gagal membuat Pdf", errPDF)

@@ -289,8 +289,6 @@ func (h *reportHandler) GeneratePDFVendorDailyStartFromLast(c *fiber.Ctx) error 
 	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("pdf-vendor/%s.pdf", pdfName)})
 }
 
-
-
 // GeneratePDFVendorMonthly membuat pdf
 // Query [branch, start, end]
 func (h *reportHandler) GeneratePDFVendorMonthly(c *fiber.Ctx) error {
@@ -331,6 +329,49 @@ func (h *reportHandler) GeneratePDFVendorMonthly(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("pdf-v-month/%s.pdf", pdfName)})
+}
+
+// GeneratePDFStock membuat pdf
+// Query [branch, start, end]
+func (h *reportHandler) GeneratePDFStock(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	branch := c.Query("branch")
+	if branch == "" {
+		branch = claims.Branch
+	}
+
+	category := c.Query("category")
+	start := stringToInt(c.Query("start"))
+	end := stringToInt(c.Query("end"))
+
+	pdfName, err2 := timegen.GetTimeAsName(int64(end))
+	if err2 != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
+	}
+	pdfName = fmt.Sprintf("stock-%s", pdfName)
+
+	_, apiErr := h.service.GenerateStockReportRestock(pdfName, branch, category, int64(start), int64(end))
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	// simpan pdf ke database
+	_, apiErr = h.service.InsertPdf(dto.PdfFile{
+		CreatedAt:     time.Now().Unix(),
+		CreatedBy:     claims.Name,
+		Branch:        branch,
+		Name:          pdfName,
+		Type:          pdftype.Stock,
+		FileName:      fmt.Sprintf("pdf-stock/%s.pdf", pdfName),
+		EndReportTime: int64(end),
+	})
+
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": fmt.Sprintf("pdf-stock/%s.pdf", pdfName)})
 }
 
 func (h *reportHandler) FindPDF(c *fiber.Ctx) error {
