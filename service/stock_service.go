@@ -45,6 +45,7 @@ type StockServiceAssumer interface {
 	GetStockByID(stockID string, branchIfSpecific string) (*dto.Stock, rest_err.APIError)
 	FindStock(filter dto.FilterBranchNameCatDisable) (dto.StockResponseMinList, rest_err.APIError)
 	FindNeedReStock(branch string) (dto.StockResponseMinList, rest_err.APIError)
+	FindNeedReStock2(filter dto.FilterBranchCatDisable) (dto.StockResponseMinList, rest_err.APIError)
 }
 
 func (s *stockService) InsertStock(user mjwt.CustomClaim, input dto.StockRequest) (*string, rest_err.APIError) {
@@ -354,4 +355,12 @@ func (s *stockService) FindNeedReStock(branch string) (dto.StockResponseMinList,
 	}
 
 	return needRestockList, nil
+}
+
+func (s *stockService) FindNeedReStock2(filter dto.FilterBranchCatDisable) (dto.StockResponseMinList, rest_err.APIError) {
+	stockList, err := s.daoS.FindStockNeedRestock(filter)
+	if err != nil {
+		return nil, err
+	}
+	return stockList, nil
 }

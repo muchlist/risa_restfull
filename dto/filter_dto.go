@@ -35,6 +35,12 @@ type FilterBranchNameCatDisable struct {
 	FilterDisable  bool
 }
 
+type FilterBranchCatDisable struct {
+	FilterBranch   string
+	FilterCategory string
+	FilterDisable  bool
+}
+
 // FilterIDBranchCreateGte
 // field FilterCreateGTE digunakan untuk memberikan batas waktu, misalnya saat akan menghapus dokumen
 // maka FilterCreateGTE di isi dengan tanggal sekarang kurang sekian waktu (misalnya 1 hari)

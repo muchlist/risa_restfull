@@ -101,6 +101,8 @@ func mapUrls(app *fiber.App) {
 	api.Delete("/stock/:id", middleware.NormalAuth(), stockHandler.Delete)
 	api.Post("/stock-change/:id", middleware.NormalAuth(), stockHandler.ChangeQty)
 	api.Get("/stock", middleware.NormalAuth(), stockHandler.Find)
+	api.Get("/restock", middleware.NormalAuth(), stockHandler.FindNeedRestock1)
+	api.Get("/restock-2", middleware.NormalAuth(), stockHandler.FindNeedRestock2)
 	api.Get("/stock-avail/:id/:status", middleware.NormalAuth(), stockHandler.DisableStock)
 	api.Post("/stock-image/:id", middleware.NormalAuth(), stockHandler.UploadImage)
 

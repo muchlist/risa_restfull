@@ -133,6 +133,43 @@ func (s *stockHandler) Find(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": stockList})
 }
 
+// FindNeedRestock1 menampilkan list stock
+// Query [branch, category, disable]
+func (s *stockHandler) FindNeedRestock1(c *fiber.Ctx) error {
+	branch := c.Query("branch")
+
+	stockList, apiErr := s.service.FindNeedReStock(branch)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": stockList})
+}
+
+// FindNeedRestock2 menampilkan list stock
+// Query [branch, category, disable]
+func (s *stockHandler) FindNeedRestock2(c *fiber.Ctx) error {
+	branch := c.Query("branch")
+	category := c.Query("category")
+	var disable bool
+	if c.Query("disable") != "" {
+		disable = true
+	}
+
+	filterA := dto.FilterBranchCatDisable{
+		FilterBranch:   branch,
+		FilterCategory: category,
+		FilterDisable:  disable,
+	}
+
+	stockList, apiErr := s.service.FindNeedReStock2(filterA)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": stockList})
+}
+
 // DisableStock menghilangkan stock dari list
 // Param status [enable, disable]
 func (s *stockHandler) DisableStock(c *fiber.Ctx) error {

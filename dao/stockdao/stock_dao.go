@@ -30,17 +30,16 @@ const (
 	keyStoUpdatedByID = "updated_by_id"
 	keyStoBranch      = "branch"
 	keyStoDisable     = "disable"
-
-	keyStoCategory  = "stock_category"
-	keyStoUnit      = "unit"
-	keyStoQty       = "qty"
-	keyStoThreshold = "threshold"
-	keyStoIncrement = "increment"
-	keyStoDecrement = "decrement"
-	keyStoLocation  = "location"
-	keyStoTag       = "tag"
-	keyStoImage     = "image"
-	keyStoNote      = "note"
+	keyStoCategory    = "stock_category"
+	keyStoUnit        = "unit"
+	keyStoQty         = "qty"
+	keyStoThreshold   = "threshold"
+	keyStoIncrement   = "increment"
+	keyStoDecrement   = "decrement"
+	keyStoLocation    = "location"
+	keyStoTag         = "tag"
+	keyStoImage       = "image"
+	keyStoNote        = "note"
 )
 
 func NewStockDao() StockDaoAssumer {
@@ -60,6 +59,7 @@ type StockDaoAssumer interface {
 
 	GetStockByID(stockID primitive.ObjectID, branchIfSpecific string) (*dto.Stock, rest_err.APIError)
 	FindStock(filterA dto.FilterBranchNameCatDisable) (dto.StockResponseMinList, rest_err.APIError)
+	FindStockNeedRestock(filterA dto.FilterBranchCatDisable) (dto.StockResponseMinList, rest_err.APIError)
 }
 
 func (s *stockDao) InsertStock(input dto.Stock) (*string, rest_err.APIError) {
@@ -291,6 +291,83 @@ func (s *stockDao) FindStock(filterA dto.FilterBranchNameCatDisable) (dto.StockR
 	cursor, err := coll.Find(ctx, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar stock dari database (FindStock)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.StockResponseMinList{}, apiErr
+	}
+
+	stockList := dto.StockResponseMinList{}
+	if err = cursor.All(ctx, &stockList); err != nil {
+		logger.Error("Gagal decode stockList cursor ke objek slice (FindStock)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.StockResponseMinList{}, apiErr
+	}
+
+	return stockList, nil
+}
+
+func (s *stockDao) FindStockNeedRestock(filterA dto.FilterBranchCatDisable) (dto.StockResponseMinList, rest_err.APIError) {
+	coll := db.DB.Collection(keyStoCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
+
+	// filter
+	filter := bson.M{
+		keyStoDisable: filterA.FilterDisable,
+	}
+
+	// filter condition
+	if filterA.FilterBranch != "" {
+		filter[keyStoBranch] = filterA.FilterBranch
+	}
+	if filterA.FilterCategory != "" {
+		filter[keyStoCategory] = filterA.FilterCategory
+	}
+
+	matchStage := bson.D{
+		{Key: "$match", Value: filter},
+	}
+
+	projectStage := bson.D{
+		// { item: 1, total: { $subtract: [ { $add: [ "$price", "$fee" ] }, "$discount" ] } }
+		{Key: "$project", Value: bson.M{
+			keyStoID:          1,
+			keyStoName:        1,
+			keyStoCreatedAt:   1,
+			keyStoUpdatedAt:   1,
+			keyStoUpdatedBy:   1,
+			keyStoUpdatedByID: 1,
+			keyStoBranch:      1,
+			keyStoDisable:     1,
+			keyStoCategory:    1,
+			keyStoUnit:        1,
+			keyStoQty:         1,
+			keyStoThreshold:   1,
+			keyStoIncrement:   1,
+			keyStoDecrement:   1,
+			keyStoLocation:    1,
+			keyStoTag:         1,
+			keyStoImage:       1,
+			keyStoNote:        1,
+			"result": bson.D{
+				{Key: "$subtract", Value: bson.A{"$qty", "$threshold"}},
+			},
+		}},
+	}
+	matchStage2 := bson.D{
+		{Key: "$match", Value: bson.M{
+			"result": bson.M{"$lte": 0},
+		}},
+	}
+
+	sortStage := bson.D{
+		{Key: "$sort", Value: bson.D{{Key: keyStoCategory, Value: 1}}},
+	}
+
+	cursor, err := coll.Aggregate(ctx, mongo.Pipeline{matchStage, projectStage, matchStage2, sortStage})
+	if err != nil {
+		logger.Error("Gagal mendapatkan stock dari database (FindStockNeedRestock)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.StockResponseMinList{}, apiErr
 	}
