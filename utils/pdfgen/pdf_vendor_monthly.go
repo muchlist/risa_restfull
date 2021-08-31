@@ -7,12 +7,10 @@ import (
 	"github.com/johnfercher/maroto/pkg/pdf"
 	"github.com/johnfercher/maroto/pkg/props"
 	"github.com/muchlist/risa_restfull/constants/enum"
-	"github.com/muchlist/risa_restfull/constants/location"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"github.com/muchlist/risa_restfull/utils/timegen"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -24,7 +22,7 @@ type PDFReqMonth struct {
 }
 
 func GeneratePDFVendorMonthly(
-	data PDFReqMonth, cekCCTV []dto.VenPhyCheck, cekAltai []dto.AltaiPhyCheck,
+	data PDFReqMonth, dataMaint dto.ReportResponse,
 ) error {
 	// slice yang sudah di filter dan dimodifikasi isinya
 	var allListComputed []dto.HistoryUnwindResponse
@@ -96,7 +94,7 @@ func GeneratePDFVendorMonthly(
 	}
 
 	m := pdf.NewMaroto(consts.Landscape, consts.A4)
-	m.SetPageMargins(5, 10, 5)
+	m.SetPageMargins(20, 10, 20)
 
 	startWita, _ := timegen.GetTimeWithYearWITA(data.Start)
 	endWita, _ := timegen.GetTimeWithYearWITA(data.End)
@@ -105,6 +103,44 @@ func GeneratePDFVendorMonthly(
 	if err != nil {
 		return err
 	}
+
+	// SPACE
+	m.Row(5, func() {
+		m.Col(0, func() {
+		})
+	})
+
+	// MONTHLY
+	//----------convert data
+	cctvMonthlyViewData, altaiMonthlyViewData := convertMonthlyViewData(dataMaint.CctvMonthly, dataMaint.AltaiMonthly)
+	buildTitleHeadingView(m, " Cek Fisik Bulanan", getOrangeColor())
+	buildCCTVMonthlyView(m, cctvMonthlyViewData, altaiMonthlyViewData)
+
+	// SPACE
+	m.Row(5, func() {
+		m.Col(0, func() {
+		})
+	})
+
+	// QUARTERLY
+	//----------convert data
+	regCctvQuarterlyViewData, pulpisCctvQuarterlyViewData := convertQuarterlyViewDataCctv(dataMaint.CctvQuarterly)
+	altaiQuarterlyViewData := convertQuarterlyViewDataAltai(dataMaint.AltaiQuarterly)
+	buildTitleHeadingView(m, " Cek Fisik Triwulan", getPinkColor())
+	buildCCTVQuarterlyView(m, regCctvQuarterlyViewData, altaiQuarterlyViewData)
+
+	// SPACE
+	m.Row(5, func() {
+		m.Col(0, func() {
+		})
+	})
+
+	buildTitleHeadingView(m, " Cek Fisik Triwulan Pulpis", getPinkColor())
+	buildCCTVQuarterlyViewNoAltai(m, pulpisCctvQuarterlyViewData)
+
+	// NEW PAGE ================================================================= \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	m.AddPage()
+	m.SetPageMargins(5, 10, 5)
 
 	if len(completeList) != 0 {
 		buildHistoryVendorListMonth(m, completeList, " Completed", getTealColor())
@@ -126,9 +162,6 @@ func GeneratePDFVendorMonthly(
 		}
 		buildHistoryVendorIncident(m, completeListNoMaint, " Insiden", getTealColor())
 	}
-
-	m.AddPage()
-	buildCekVendorListMonth(m, cekCCTV, cekAltai, " Cek Bulanan", getPinkColor())
 
 	err = m.OutputFileAndClose(fmt.Sprintf("static/pdf-v-month/%s.pdf", data.Name))
 	if err != nil {
@@ -216,151 +249,6 @@ func buildHistoryVendorListMonth(m pdf.Maroto, dataList []dto.HistoryUnwindRespo
 	})
 }
 
-func buildCekVendorListMonth(m pdf.Maroto, cctvCekList []dto.VenPhyCheck, altaiCekList []dto.AltaiPhyCheck, title string, customColor color.Color) {
-	tableHeading := []string{"Nama", "Jenis", "Total", "Dicek", "Belum Cek", "Di MT", "Belum MT", "Dimulai", "Selesai"}
-
-	// 2 , 1,1,  1, 1, 1, 1, 2, 2
-	var contents [][]string
-	for _, data := range cctvCekList {
-		counts := countCekCctv(data)
-		updatedAt, _ := timegen.GetTimeWithYearWITA(data.TimeEnded)
-		startAt, _ := timegen.GetTimeWithYearWITA(data.TimeStarted)
-
-		contents = append(contents, []string{
-			data.Name,
-			"CCTV",
-			strconv.Itoa(counts.total),
-			strconv.Itoa(counts.checked),
-			strconv.Itoa(counts.notChecked),
-			strconv.Itoa(counts.maintained),
-			strconv.Itoa(counts.notMaintained),
-			startAt,
-			updatedAt},
-		)
-	}
-
-	for _, data := range altaiCekList {
-		counts := countCekAltai(data)
-		updatedAt, _ := timegen.GetTimeWithYearWITA(data.TimeEnded)
-		startAt, _ := timegen.GetTimeWithYearWITA(data.TimeStarted)
-
-		contents = append(contents, []string{
-			data.Name,
-			"ALTAI",
-			strconv.Itoa(counts.total),
-			strconv.Itoa(counts.checked),
-			strconv.Itoa(counts.notChecked),
-			strconv.Itoa(counts.maintained),
-			strconv.Itoa(counts.notMaintained),
-			startAt,
-			updatedAt},
-		)
-	}
-
-	lightPurpleColor := getLightPurpleColor()
-
-	m.SetBackgroundColor(customColor)
-	m.Row(9, func() {
-		m.Col(12, func() {
-			m.Text(title, props.Text{
-				Top:             2,
-				Family:          consts.Courier,
-				Style:           consts.Bold,
-				Size:            12,
-				Align:           consts.Left,
-				VerticalPadding: 0,
-				Color:           color.NewWhite(),
-			})
-		})
-	})
-	m.SetBackgroundColor(color.NewWhite())
-	m.TableList(tableHeading, contents, props.TableList{
-		HeaderProp: props.TableListContent{
-			Size:      9,
-			GridSizes: []uint{2, 1, 1, 1, 1, 1, 1, 2, 2},
-		},
-		ContentProp: props.TableListContent{
-			Size:      9,
-			GridSizes: []uint{2, 1, 1, 1, 1, 1, 1, 2, 2},
-		},
-		Align:                consts.Left,
-		AlternatedBackground: &lightPurpleColor,
-		HeaderContentSpace:   1,
-		Line:                 true,
-	})
-}
-
-type cekData struct {
-	total         int
-	checked       int
-	notChecked    int
-	maintained    int
-	notMaintained int
-}
-
-func countCekCctv(data dto.VenPhyCheck) cekData {
-	total := 0
-	checked := 0
-	notChecked := 0
-	maintained := 0
-	notMaintained := 0
-
-	for _, cctv := range data.VenPhyCheckItems {
-		if !data.QuarterlyMode {
-			if cctv.Location == location.Pulpis {
-				continue
-			}
-		}
-		total++
-		if cctv.IsChecked {
-			checked++
-		} else {
-			notChecked++
-		}
-		if cctv.IsMaintained {
-			maintained++
-		} else {
-			notMaintained++
-		}
-	}
-
-	return cekData{
-		total:         total,
-		checked:       checked,
-		notChecked:    notChecked,
-		maintained:    maintained,
-		notMaintained: notMaintained,
-	}
-}
-
-func countCekAltai(data dto.AltaiPhyCheck) cekData {
-	checked := 0
-	notChecked := 0
-	maintained := 0
-	notMaintained := 0
-
-	for _, altai := range data.AltaiPhyCheckItems {
-		if altai.IsChecked {
-			checked++
-		} else {
-			notChecked++
-		}
-		if altai.IsMaintained {
-			maintained++
-		} else {
-			notMaintained++
-		}
-	}
-
-	return cekData{
-		total:         len(data.AltaiPhyCheckItems),
-		checked:       checked,
-		notChecked:    notChecked,
-		maintained:    maintained,
-		notMaintained: notMaintained,
-	}
-}
-
 func buildHistoryVendorIncident(m pdf.Maroto, dataList []dto.HistoryUnwindResponse, title string, customColor color.Color) {
 	//tableHeading := []string{"No.", "Nama", "Keterangan", "Solusi", "Pengerjaan", "Update", "Oleh"}
 	lightPurpleColor := getLightPurpleColor()
@@ -403,7 +291,7 @@ func addListHeader(m pdf.Maroto) {
 		})
 
 		// nama
-		m.Col(1, func() {
+		m.Col(2, func() {
 			textListB(m, "Nama", 0)
 		})
 		// keterangan
@@ -427,7 +315,7 @@ func addListHeader(m pdf.Maroto) {
 		})
 
 		// gambar
-		m.Col(2, func() {
+		m.Col(1, func() {
 			textListB(m, "Gambar", 0)
 		})
 
@@ -439,6 +327,7 @@ func addList(m pdf.Maroto, data dto.HistoryUnwindResponse, i int) {
 	if data.Image != "" {
 		split := strings.Split(data.Image, "/")
 		imageFile = fmt.Sprintf("static/image/history/thumb_%s", split[len(split)-1])
+		// cek apakah gambar exist
 		if _, err := os.Stat(imageFile); os.IsNotExist(err) {
 			imageFile = ""
 		}
@@ -457,7 +346,7 @@ func addList(m pdf.Maroto, data dto.HistoryUnwindResponse, i int) {
 		})
 
 		// nama
-		m.Col(1, func() {
+		m.Col(2, func() {
 			textList(m, data.ParentName, 0)
 		})
 		// keterangan
@@ -482,7 +371,7 @@ func addList(m pdf.Maroto, data dto.HistoryUnwindResponse, i int) {
 
 		// gambar
 		if imageFile != "" {
-			m.Col(2, func() {
+			m.Col(1, func() {
 				_ = m.FileImage(imageFile, props.Rect{
 					Left:    0,
 					Top:     0,

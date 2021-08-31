@@ -537,6 +537,9 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 		end = currentTime
 	}
 
+	targetMinMonthly := end - 60*60*24*60  // -2 bulan
+	targetMinQuarter := end - 60*60*24*150 // -5 bulan
+
 	// GET HISTORIES 4 sesuai start end inputan
 	historyList04, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
@@ -573,24 +576,30 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 
 	historiesCombined := append(historyList04, historyList123...)
 
-	cctvCek, _ := r.dao.CheckCCTVPhy.FindCheck(branch, dto.FilterTimeRangeLimit{
-		FilterStart: start,
-		FilterEnd:   end,
-		Limit:       10,
-	}, true)
+	// cek fisik cctv bulanan
+	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)
 
-	altaiCek, _ := r.dao.CheckAltaiPhy.FindCheck(branch, dto.FilterTimeRangeLimit{
-		FilterStart: start,
-		FilterEnd:   end,
-		Limit:       10,
-	}, true)
+	// cek fisik cctv 3 bulanan
+	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
+
+	// cek fisik altai bulanan
+	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)
+
+	// cek fisik altai 3 bulanan
+	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
 
 	errPDF := pdfgen.GeneratePDFVendorMonthly(pdfgen.PDFReqMonth{
 		Name:        name,
 		HistoryList: historiesCombined,
 		Start:       start,
 		End:         end,
-	}, cctvCek, altaiCek)
+	}, dto.ReportResponse{
+		TargetTime:     end,
+		CctvMonthly:    cctvMonthly,
+		CctvQuarterly:  cctvQuarter,
+		AltaiMonthly:   altaiMonthly,
+		AltaiQuarterly: altaiQuarter,
+	})
 	if errPDF != nil {
 		return nil, rest_err.NewInternalServerError("gagal membuat Pdf", errPDF)
 	}
