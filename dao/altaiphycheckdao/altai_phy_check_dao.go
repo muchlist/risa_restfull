@@ -102,17 +102,20 @@ func (c *checkAltaiPhyDao) EditCheck(input dto.AltaiPhyCheckEdit) (*dto.AltaiPhy
 		keyIsFinish: false,
 	}
 
-	update := bson.M{
-		"$set": bson.M{
+	set := bson.M{
+		keyUpdatedAt:   input.UpdatedAt,
+		keyUpdatedBy:   input.UpdatedBy,
+		keyUpdatedByID: input.UpdatedByID,
+		keyTimeEnded:   input.TimeEnded,
+		keyIsFinish:    input.IsFinish,
+		keyNote:        input.Note,
+	}
+	if input.Name != "" {
+		set[keyName] = input.Name
+	}
 
-			keyName:        input.Name,
-			keyUpdatedAt:   input.UpdatedAt,
-			keyUpdatedBy:   input.UpdatedBy,
-			keyUpdatedByID: input.UpdatedByID,
-			keyTimeEnded:   input.TimeEnded,
-			keyIsFinish:    input.IsFinish,
-			keyNote:        input.Note,
-		},
+	update := bson.M{
+		"$set": set,
 	}
 
 	var check dto.AltaiPhyCheck

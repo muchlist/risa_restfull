@@ -103,16 +103,20 @@ func (c *checkVenPhyDao) EditCheck(input dto.VenPhyCheckEdit) (*dto.VenPhyCheck,
 		keyIsFinish: false,
 	}
 
+	set := bson.M{
+		keyUpdatedAt:   input.UpdatedAt,
+		keyUpdatedBy:   input.UpdatedBy,
+		keyUpdatedByID: input.UpdatedByID,
+		keyTimeEnded:   input.TimeEnded,
+		keyIsFinish:    input.IsFinish,
+		keyNote:        input.Note,
+	}
+	if input.Name != "" {
+		set[keyName] = input.Name
+	}
+
 	update := bson.M{
-		"$set": bson.M{
-			keyName:        input.Name,
-			keyUpdatedAt:   input.UpdatedAt,
-			keyUpdatedBy:   input.UpdatedBy,
-			keyUpdatedByID: input.UpdatedByID,
-			keyTimeEnded:   input.TimeEnded,
-			keyIsFinish:    input.IsFinish,
-			keyNote:        input.Note,
-		},
+		"$set": set,
 	}
 
 	var check dto.VenPhyCheck
