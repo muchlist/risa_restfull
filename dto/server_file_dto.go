@@ -12,3 +12,11 @@ type ServerFile struct {
 	Diff      string             `json:"diff" bson:"diff"`
 	Image     string             `json:"image" bson:"image"`
 }
+
+type ServerFileReq struct {
+	Branch string `json:"branch" bson:"branch"`
+	Title  string `json:"title" bson:"title"`
+	Note   string `json:"note" bson:"note"`
+	Diff   string `json:"diff" bson:"diff"`
+	Image  string `json:"image" bson:"image"`
+}

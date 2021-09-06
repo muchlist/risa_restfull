@@ -40,12 +40,12 @@ type serverFileDao struct {
 type ServerFileAssumer interface {
 	Insert(input dto.ServerFile) (*string, rest_err.APIError)
 	Delete(input dto.FilterIDBranchCreateGte) (*dto.ServerFile, rest_err.APIError)
-	UploadImage(stockID primitive.ObjectID, imagePath string, filterBranch string) (*dto.ServerFile, rest_err.APIError)
-	GetByID(stockID primitive.ObjectID, branchIfSpecific string) (*dto.ServerFile, rest_err.APIError)
+	UploadImage(itemID primitive.ObjectID, imagePath string, filterBranch string) (*dto.ServerFile, rest_err.APIError)
+	GetByID(itemID primitive.ObjectID, branchIfSpecific string) (*dto.ServerFile, rest_err.APIError)
 	Find(branch string, start int64, end int64) ([]dto.ServerFile, rest_err.APIError)
 }
 
-func (s serverFileDao) Insert(input dto.ServerFile) (*string, rest_err.APIError) {
+func (s *serverFileDao) Insert(input dto.ServerFile) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -65,7 +65,7 @@ func (s serverFileDao) Insert(input dto.ServerFile) (*string, rest_err.APIError)
 	return &insertID, nil
 }
 
-func (s serverFileDao) Delete(input dto.FilterIDBranchCreateGte) (*dto.ServerFile, rest_err.APIError) {
+func (s *serverFileDao) Delete(input dto.FilterIDBranchCreateGte) (*dto.ServerFile, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -91,7 +91,7 @@ func (s serverFileDao) Delete(input dto.FilterIDBranchCreateGte) (*dto.ServerFil
 	return &sf, nil
 }
 
-func (s serverFileDao) UploadImage(fileID primitive.ObjectID, imagePath string, filterBranch string) (*dto.ServerFile, rest_err.APIError) {
+func (s *serverFileDao) UploadImage(fileID primitive.ObjectID, imagePath string, filterBranch string) (*dto.ServerFile, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -123,7 +123,7 @@ func (s serverFileDao) UploadImage(fileID primitive.ObjectID, imagePath string, 
 	return &sf, nil
 }
 
-func (s serverFileDao) GetByID(fileID primitive.ObjectID, branchIfSpecific string) (*dto.ServerFile, rest_err.APIError) {
+func (s *serverFileDao) GetByID(fileID primitive.ObjectID, branchIfSpecific string) (*dto.ServerFile, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
@@ -148,7 +148,7 @@ func (s serverFileDao) GetByID(fileID primitive.ObjectID, branchIfSpecific strin
 	return &sf, nil
 }
 
-func (s serverFileDao) Find(branch string, start int64, end int64) ([]dto.ServerFile, rest_err.APIError) {
+func (s *serverFileDao) Find(branch string, start int64, end int64) ([]dto.ServerFile, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
