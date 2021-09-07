@@ -23,7 +23,7 @@ type serverFileService struct {
 type ServerFileServiceAssumer interface {
 	Insert(user mjwt.CustomClaim, input dto.ServerFileReq) (*string, rest_err.APIError)
 	Delete(user mjwt.CustomClaim, inputID string) rest_err.APIError
-	UploadImage(user mjwt.CustomClaim, stockID string, imagePath string) (*dto.ServerFile, rest_err.APIError)
+	UploadImage(user mjwt.CustomClaim, inputID string, imagePath string) (*dto.ServerFile, rest_err.APIError)
 	GetByID(stockID string, branchIfSpecific string) (*dto.ServerFile, rest_err.APIError)
 	Find(branch string, start int64, end int64) ([]dto.ServerFile, rest_err.APIError)
 }

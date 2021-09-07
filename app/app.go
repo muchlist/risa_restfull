@@ -17,12 +17,12 @@ func RunApp() {
 
 	// inisasi firebase app
 	_ = fcm.Init()
-
 	// inisiasi jwt
 	mjwt.Init()
 
 	app := fiber.New()
 	// memenuhi dependency, mapping url
+	setupDependency()
 	mapUrls(app)
 
 	// menjalankan job scheduller cctv

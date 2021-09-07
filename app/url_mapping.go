@@ -5,11 +5,34 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/muchlist/risa_restfull/constants/roles"
+	"github.com/muchlist/risa_restfull/handler"
 	"github.com/muchlist/risa_restfull/middleware"
 )
 
 //nolint:funlen
 func mapUrls(app *fiber.App) {
+
+	// Controller or Handler
+	pingHandler := handler.NewPingHandler()
+	optionHandler := handler.NewOptionHandler()
+	userHandler := handler.NewUserHandler(userService)
+	genUnitHandler := handler.NewGenUnitHandler(genUnitService)
+	historyHandler := handler.NewHistoryHandler(historyService)
+	cctvHandler := handler.NewCctvHandler(cctvService)
+	stockHandler := handler.NewStockHandler(stockService)
+	checkItemHandler := handler.NewCheckItemHandler(checkItemService)
+	checkHandler := handler.NewCheckHandler(checkService)
+	improveHandler := handler.NewImproveHandler(improveService)
+	computerHandler := handler.NewComputerHandler(computerService)
+	otherHandler := handler.NewOtherHandler(otherService)
+	vendorCheckHandler := handler.NewVendorCheckHandler(vendorCheckService)
+	altaiCheckHandler := handler.NewAltaiCheckHandler(altaiCheckService)
+	venPhyCheckHandler := handler.NewVenPhyCheckHandler(venPhyCheckService)
+	altaiPhyCheckHandler := handler.NewAltaiPhyCheckHandler(altaiPhyCheckService)
+	speedHandler := handler.NewSpeedHandler(speedService)
+	serverFileHandler := handler.NewServerHandler(serverFileService)
+	reportHandler := handler.NewReportHandler(reportService)
+
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -24,6 +47,7 @@ func mapUrls(app *fiber.App) {
 	app.Static("/image/other", "./static/image/other")
 	app.Static("/image/stock", "./static/image/stock")
 	app.Static("/image/check", "./static/image/check")
+	app.Static("/image/config", "./static/image/config")
 	app.Static("/pdf", "./static/pdf")
 	app.Static("/pdf-vendor", "./static/pdf-vendor")
 	app.Static("/pdf-v-month", "./static/pdf-v-month")
@@ -170,6 +194,14 @@ func mapUrls(app *fiber.App) {
 	api.Post("/improve-change/:id", middleware.NormalAuth(), improveHandler.ChangeImprove)
 	api.Get("/improve", middleware.NormalAuth(), improveHandler.Find)
 	api.Get("/improve-status/:id/:status", middleware.NormalAuth(roles.RoleApprove), improveHandler.ActivateImprove)
+
+	// FILE SERVER
+	api.Post("/config", middleware.NormalAuth(), serverFileHandler.Insert)
+	api.Get("/config/:id", middleware.NormalAuth(), serverFileHandler.GetServer)
+	api.Delete("/config/:id", middleware.NormalAuth(), serverFileHandler.Delete)
+	api.Get("/config", middleware.NormalAuth(), serverFileHandler.Find)
+	api.Post("/config-image/:id", middleware.NormalAuth(), serverFileHandler.UploadImage)
+	api.Post("/config-image-force/", middleware.NormalAuth(), serverFileHandler.UploadImageWithoutParent)
 
 	// speed test inet
 	api.Get("/speed-test", middleware.NormalAuth(), speedHandler.Retrieve)

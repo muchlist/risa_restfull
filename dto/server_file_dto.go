@@ -1,6 +1,9 @@
 package dto
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type ServerFile struct {
 	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
@@ -14,9 +17,18 @@ type ServerFile struct {
 }
 
 type ServerFileReq struct {
-	Branch string `json:"branch" bson:"branch"`
-	Title  string `json:"title" bson:"title"`
-	Note   string `json:"note" bson:"note"`
-	Diff   string `json:"diff" bson:"diff"`
-	Image  string `json:"image" bson:"image"`
+	Title string `json:"title" bson:"title"`
+	Note  string `json:"note" bson:"note"`
+	Diff  string `json:"diff" bson:"diff"`
+	Image string `json:"image" bson:"image"`
+}
+
+func (s ServerFileReq) Validate() error {
+	if err := validation.ValidateStruct(&s,
+		validation.Field(&s.Title, validation.Required),
+	); err != nil {
+		return err
+	}
+
+	return nil
 }

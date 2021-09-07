@@ -21,13 +21,9 @@ const (
 	keyCollection  = "serverConf"
 
 	keyID        = "_id"
-	keyTitle     = "title"
 	keyUpdatedAt = "updated_at"
-	keyUpdatedBy = "updated_by"
 	keyBranch    = "branch"
-	keyDiff      = "diff"
 	keyImage     = "image"
-	keyNote      = "note"
 )
 
 func NewServerFileDao() ServerFileAssumer {
@@ -153,10 +149,11 @@ func (s *serverFileDao) Find(branch string, start int64, end int64) ([]dto.Serve
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
 
-	filter := bson.M{
-		keyBranch: strings.ToUpper(branch),
-	}
+	filter := bson.M{}
 
+	if branch != "" {
+		filter[keyBranch] = strings.ToUpper(branch)
+	}
 	// option range
 	if start != 0 {
 		filter[keyUpdatedAt] = bson.M{"$gte": start}
