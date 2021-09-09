@@ -196,12 +196,12 @@ func mapUrls(app *fiber.App) {
 	api.Get("/improve-status/:id/:status", middleware.NormalAuth(roles.RoleApprove), improveHandler.ActivateImprove)
 
 	// FILE SERVER
-	api.Post("/config", middleware.NormalAuth(), serverFileHandler.Insert)
+	api.Post("/config", middleware.NormalAuth(roles.RoleVendor), serverFileHandler.Insert)
 	api.Get("/config/:id", middleware.NormalAuth(), serverFileHandler.GetServer)
-	api.Delete("/config/:id", middleware.NormalAuth(), serverFileHandler.Delete)
+	api.Delete("/config/:id", middleware.NormalAuth(roles.RoleVendor), serverFileHandler.Delete)
 	api.Get("/config", middleware.NormalAuth(), serverFileHandler.Find)
-	api.Post("/config-image/:id", middleware.NormalAuth(), serverFileHandler.UploadImage)
-	api.Post("/config-image-force/", middleware.NormalAuth(), serverFileHandler.UploadImageWithoutParent)
+	api.Post("/config-image/:id", middleware.NormalAuth(roles.RoleVendor), serverFileHandler.UploadImage)
+	api.Post("/config-image-force/", middleware.NormalAuth(roles.RoleVendor), serverFileHandler.UploadImageWithoutParent)
 
 	// speed test inet
 	api.Get("/speed-test", middleware.NormalAuth(), speedHandler.Retrieve)
