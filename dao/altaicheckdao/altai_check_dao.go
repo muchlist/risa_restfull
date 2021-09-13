@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/db"
@@ -12,8 +15,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strings"
-	"time"
 )
 
 const (
@@ -323,7 +324,7 @@ func (c *checkAltaiDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimi
 			keyAltaiCheckItems: 0,
 		})
 	}
-	opts.SetSort(bson.D{{keyUpdatedAt, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyUpdatedAt, Value: -1}}) //nolint:govet
 	opts.SetLimit(filterA.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
