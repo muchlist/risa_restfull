@@ -1,6 +1,10 @@
 package app
 
 import (
+	"fmt"
+	"os"
+	"os/signal"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/risa_restfull/clients/fcm"
@@ -21,6 +25,16 @@ func RunApp() {
 	mjwt.Init()
 
 	app := fiber.New()
+
+	// gracefully shutdown
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		_ = <-c
+		fmt.Println("Gracefully shutting down...")
+		_ = app.Shutdown()
+	}()
+
 	// memenuhi dependency, mapping url
 	setupDependency()
 	mapUrls(app)
@@ -32,4 +46,7 @@ func RunApp() {
 		logger.Error("error fiber listen", err)
 		return
 	}
+
+	// cleanup app
+	fmt.Println("Running cleanup tasks...")
 }

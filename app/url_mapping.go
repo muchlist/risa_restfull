@@ -30,7 +30,6 @@ func mapUrls(app *fiber.App) {
 	venPhyCheckHandler := handler.NewVenPhyCheckHandler(venPhyCheckService)
 	altaiPhyCheckHandler := handler.NewAltaiPhyCheckHandler(altaiPhyCheckService)
 	speedHandler := handler.NewSpeedHandler(speedService)
-	serverFileHandler := handler.NewServerHandler(serverFileService)
 	reportHandler := handler.NewReportHandler(reportService)
 
 	app.Use(logger.New())
@@ -194,14 +193,6 @@ func mapUrls(app *fiber.App) {
 	api.Post("/improve-change/:id", middleware.NormalAuth(), improveHandler.ChangeImprove)
 	api.Get("/improve", middleware.NormalAuth(), improveHandler.Find)
 	api.Get("/improve-status/:id/:status", middleware.NormalAuth(roles.RoleApprove), improveHandler.ActivateImprove)
-
-	// FILE SERVER
-	api.Post("/config", middleware.NormalAuth(roles.RoleVendor), serverFileHandler.Insert)
-	api.Get("/config/:id", middleware.NormalAuth(), serverFileHandler.GetServer)
-	api.Delete("/config/:id", middleware.NormalAuth(roles.RoleVendor), serverFileHandler.Delete)
-	api.Get("/config", middleware.NormalAuth(), serverFileHandler.Find)
-	api.Post("/config-image/:id", middleware.NormalAuth(roles.RoleVendor), serverFileHandler.UploadImage)
-	api.Post("/config-image-force/", middleware.NormalAuth(roles.RoleVendor), serverFileHandler.UploadImageWithoutParent)
 
 	// speed test inet
 	api.Get("/speed-test", middleware.NormalAuth(), speedHandler.Retrieve)
