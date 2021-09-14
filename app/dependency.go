@@ -13,7 +13,6 @@ import (
 	"github.com/muchlist/risa_restfull/dao/improvedao"
 	"github.com/muchlist/risa_restfull/dao/otherdao"
 	"github.com/muchlist/risa_restfull/dao/reportdao"
-	"github.com/muchlist/risa_restfull/dao/serverfiledao"
 	"github.com/muchlist/risa_restfull/dao/speedtestdao"
 	"github.com/muchlist/risa_restfull/dao/stockdao"
 	"github.com/muchlist/risa_restfull/dao/userdao"
@@ -40,7 +39,6 @@ var (
 	venPhyCheckService   service.VenPhyCheckServiceAssumer
 	altaiPhyCheckService service.AltaiPhyCheckServiceAssumer
 	speedService         service.SpeedTestServiceAssumer
-	serverFileService    service.ServerFileServiceAssumer
 	reportService        service.ReportServiceAssumer
 )
 
@@ -66,7 +64,6 @@ func setupDependency() {
 	altaiPhyCheckDao := altaiphycheckdao.NewAltaiPhyCheckDao()
 	speedDao := speedtestdao.NewSpeedTestDao()
 	pdfDao := reportdao.NewPdfDao()
-	serverFileDao := serverfiledao.NewServerFileDao()
 
 	// api client
 	fcmClient := fcm.NewFcmClient()
@@ -87,7 +84,6 @@ func setupDependency() {
 	venPhyCheckService = service.NewVenPhyCheckService(venPhyCheckDao, genUnitDao, cctvDao, historyService)
 	altaiPhyCheckService = service.NewAltaiPhyCheckService(altaiPhyCheckDao, genUnitDao, otherDao, historyService)
 	speedService = service.NewSpeedTestService(speedDao)
-	serverFileService = service.NewServerFileService(serverFileDao)
 	reportService = service.NewReportService(service.ReportParams{
 		History:       historyDao,
 		CheckIT:       checkDao,

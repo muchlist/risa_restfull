@@ -2,6 +2,9 @@ package reportdao
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/db"
@@ -9,8 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strings"
-	"time"
 )
 
 const (
@@ -74,7 +75,7 @@ func (c *pdfDao) FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyPdfCreatedAt, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyPdfCreatedAt, Value: -1}})
 	opts.SetLimit(10)
 
 	cursor, err := coll.Find(ctx, filter, opts)
@@ -111,7 +112,7 @@ func (c *pdfDao) FindLastPdf(branch string, typePdf string) (*dto.PdfFile, rest_
 	}
 
 	opts := options.FindOne()
-	opts.SetSort(bson.D{{keyPdfCreatedAt, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyPdfCreatedAt, Value: -1}}) //nolint:govet
 
 	var lastPdf dto.PdfFile
 	err := coll.FindOne(ctx, filter, opts).Decode(&lastPdf)
