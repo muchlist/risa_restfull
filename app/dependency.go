@@ -8,6 +8,7 @@ import (
 	"github.com/muchlist/risa_restfull/dao/checkdao"
 	"github.com/muchlist/risa_restfull/dao/checkitemdao"
 	"github.com/muchlist/risa_restfull/dao/computerdao"
+	"github.com/muchlist/risa_restfull/dao/configcheckdao"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/improvedao"
@@ -38,6 +39,7 @@ var (
 	altaiCheckService    service.AltaiCheckServiceAssumer
 	venPhyCheckService   service.VenPhyCheckServiceAssumer
 	altaiPhyCheckService service.AltaiPhyCheckServiceAssumer
+	configCheckService   service.ConfigCheckServiceAssumer
 	speedService         service.SpeedTestServiceAssumer
 	reportService        service.ReportServiceAssumer
 )
@@ -62,6 +64,7 @@ func setupDependency() {
 	altaiCheckDao := altaicheckdao.NewAltaiCheckDao()
 	venPhyCheckDao := venphycheckdao.NewVenPhyCheckDao()
 	altaiPhyCheckDao := altaiphycheckdao.NewAltaiPhyCheckDao()
+	configCheckDao := configcheckdao.NewConfigCheckDao()
 	speedDao := speedtestdao.NewSpeedTestDao()
 	pdfDao := reportdao.NewPdfDao()
 
@@ -83,6 +86,7 @@ func setupDependency() {
 	altaiCheckService = service.NewAltaiCheckService(altaiCheckDao, genUnitDao, otherDao, historyService)
 	venPhyCheckService = service.NewVenPhyCheckService(venPhyCheckDao, genUnitDao, cctvDao, historyService)
 	altaiPhyCheckService = service.NewAltaiPhyCheckService(altaiPhyCheckDao, genUnitDao, otherDao, historyService)
+	configCheckService = service.NewConfigCheckService(configCheckDao, genUnitDao, otherDao, historyService)
 	speedService = service.NewSpeedTestService(speedDao)
 	reportService = service.NewReportService(service.ReportParams{
 		History:       historyDao,
