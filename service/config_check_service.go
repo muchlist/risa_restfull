@@ -67,7 +67,7 @@ func (c *configCheckService) InsertConfigCheck(user mjwt.CustomClaim) (*string, 
 
 	// sorting berdasarkan nama
 	sort.Slice(configCheckItem, func(i, j int) bool {
-		return configCheckItem[i].Name > configCheckItem[j].Name
+		return configCheckItem[i].Name < configCheckItem[j].Name
 	})
 
 	data := dto.ConfigCheck{
