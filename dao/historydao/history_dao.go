@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/enum"
@@ -14,8 +17,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strings"
-	"time"
 )
 
 const (
@@ -306,7 +307,7 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyHistUpdatedAt, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyHistUpdatedAt, Value: -1}}) //nolint:govet
 	opts.SetLimit(filterB.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
@@ -430,7 +431,7 @@ func (h *historyDao) FindHistoryForParent(parentID string) (dto.HistoryResponseM
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyHistID, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyHistID, Value: -1}}) //nolint:govet
 	sortCursor, err := coll.Find(ctx, filter, opts)
 
 	if err != nil {
@@ -476,7 +477,7 @@ func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeR
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyHistID, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyHistID, Value: -1}}) //nolint:govet
 	opts.SetLimit(filterOpt.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
@@ -515,18 +516,18 @@ func (h *historyDao) GetHistoryCount(branchIfSpecific string, statusComplete int
 	}
 
 	matchStage := bson.D{
-		{"$match", filter}, //nolint:govet
+		{Key: "$match", Value: filter},
 	}
 	groupStage := bson.D{
-		{"$group", bson.D{ //nolint:govet
-			{"_id", "$branch"},           //nolint:govet
-			{"count", bson.M{"$sum": 1}}, //nolint:govet
+		{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$branch"},
+			{Key: "count", Value: bson.M{"$sum": 1}},
 		}},
 	}
 	sortStage := bson.D{
-		{"$sort", bson.D{ //nolint:govet
-			{"count", -1}, //nolint:govet
-			{"_id", -1},   //nolint:govet
+		{Key: "$sort", Value: bson.D{
+			{Key: "count", Value: -1},
+			{Key: "_id", Value: -1},
 		}},
 	}
 
@@ -597,7 +598,7 @@ func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, 
 		keyHistUpdatedAt:      bson.M{"$gte": start, "$lte": end},
 	}
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyHistUpdatedAt, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyHistUpdatedAt, Value: -1}}) //nolint:govet
 
 	cursor, err := coll.Find(ctx, filter, opts)
 	if err != nil {

@@ -9,7 +9,7 @@ const (
 	Printer     = "PRINTER"
 	Altai       = "ALTAI"
 	Handheld    = "HANDHELD"
-	RouterSW    = "ROUTER_SWITCH"
+	Network     = "NETWORK"
 	Server      = "SERVER"
 	Gate        = "GATE"
 	Ups         = "UPS"
@@ -27,7 +27,7 @@ func GetSubCategoryAvailable() []string {
 		Printer,
 		Altai,
 		Handheld,
-		RouterSW,
+		Network,
 		Server,
 		Gate,
 		Ups,

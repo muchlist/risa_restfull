@@ -2,6 +2,9 @@ package service
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/clients/fcm"
@@ -15,8 +18,6 @@ import (
 	"github.com/muchlist/risa_restfull/utils/mjwt"
 	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"strings"
-	"time"
 )
 
 func NewHistoryService(
@@ -254,11 +255,18 @@ func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_er
 
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
+	timeUnix := timeMinusOneDay.Unix()
+
+	// if admin can delete history without limit time
+	if sfunc.InSlice(roles.RoleAdmin, user.Roles) {
+		timeUnix = 0
+	}
+
 	// DB
 	history, err := h.daoH.DeleteHistory(dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
-		FilterCreateGTE: timeMinusOneDay.Unix(),
+		FilterCreateGTE: timeUnix,
 	})
 	if err != nil {
 		return err
