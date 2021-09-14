@@ -2,6 +2,8 @@ package service
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
 	"github.com/muchlist/risa_restfull/constants/pdftype"
@@ -16,7 +18,6 @@ import (
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/pdfgen"
 	"github.com/muchlist/risa_restfull/utils/pdfgen/stockpdf"
-	"time"
 )
 
 // ReportParams berisi semua dao yang diperlukan reports service, karena sangat banyak maka dibuat struct
@@ -92,6 +93,9 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 			Limit:       300,
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	historiesCombined := append(historyList04, historyList123...)
 
@@ -162,6 +166,9 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 			Limit:       300,
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	historiesCombined := append(historyList04, historyList123...)
 
