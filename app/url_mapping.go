@@ -29,6 +29,7 @@ func mapUrls(app *fiber.App) {
 	altaiCheckHandler := handler.NewAltaiCheckHandler(altaiCheckService)
 	venPhyCheckHandler := handler.NewVenPhyCheckHandler(venPhyCheckService)
 	altaiPhyCheckHandler := handler.NewAltaiPhyCheckHandler(altaiPhyCheckService)
+	configCheckHandler := handler.NewConfigCheckHandler(configCheckService)
 	speedHandler := handler.NewSpeedHandler(speedService)
 	reportHandler := handler.NewReportHandler(reportService)
 
@@ -184,6 +185,14 @@ func mapUrls(app *fiber.App) {
 	api.Post("/altai-phy-check-update", middleware.NormalAuth(roles.RoleVendor), altaiPhyCheckHandler.UpdateCheckItem)
 	api.Post("/altai-bulk-phy-update", middleware.NormalAuth(roles.RoleVendor), altaiPhyCheckHandler.BulkUpdateCheckItem)
 	api.Get("/altai-phy-check-finish/:id", middleware.NormalAuth(), altaiPhyCheckHandler.Finish)
+
+	// CONFIG CHECK
+	api.Post("/config-check", middleware.NormalAuth(), configCheckHandler.Insert)
+	api.Delete("/config-check/:id", middleware.NormalAuth(), configCheckHandler.Delete)
+	api.Get("/config-check/:id", middleware.NormalAuth(), configCheckHandler.Get)
+	api.Get("/config-check", middleware.NormalAuth(), configCheckHandler.Find)
+	api.Post("/config-check-update", middleware.NormalAuth(), configCheckHandler.UpdateCheckItem)
+	api.Get("/config-check-finish/:id", middleware.NormalAuth(), configCheckHandler.Finish)
 
 	// IMPROVE
 	api.Post("/improve", middleware.NormalAuth(), improveHandler.Insert)

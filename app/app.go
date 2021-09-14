@@ -30,7 +30,7 @@ func RunApp() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
-		_ = <-c
+		<-c
 		fmt.Println("Gracefully shutting down...")
 		_ = app.Shutdown()
 	}()

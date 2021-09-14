@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/db"
@@ -13,8 +16,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strings"
-	"time"
 )
 
 const (
@@ -291,9 +292,18 @@ func (c *otherDao) FindOther(filterA dto.FilterOther) (dto.OtherResponseMinList,
 	if filterA.FilterBranch != "" {
 		filter[keyOtherBranch] = filterA.FilterBranch
 	}
+
+	// sub category
 	if filterA.FilterSubCategory != "" {
-		filter[keyOtherSubCategory] = filterA.FilterSubCategory
+		// cek subkategori jika multi subcategory (pisah dengan koma)
+		if strings.Contains(filterA.FilterSubCategory, ",") {
+			subCategories := strings.Split(filterA.FilterSubCategory, ",")
+			filter[keyOtherSubCategory] = bson.M{"$in": subCategories}
+		} else {
+			filter[keyOtherSubCategory] = filterA.FilterSubCategory
+		}
 	}
+
 	if filterA.FilterName != "" {
 		filter[keyOtherName] = bson.M{
 			"$regex": fmt.Sprintf(".*%s", filterA.FilterName),
@@ -310,7 +320,7 @@ func (c *otherDao) FindOther(filterA dto.FilterOther) (dto.OtherResponseMinList,
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyOtherLocation, -1}, {keyOtherDivision, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyOtherLocation, Value: -1}, {Key: keyOtherDivision, Value: -1}}) //nolint:govet
 	opts.SetLimit(500)
 
 	cursor, err := coll.Find(ctx, filter, opts)
