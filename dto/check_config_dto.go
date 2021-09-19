@@ -50,3 +50,17 @@ type ConfigCheckItemUpdate struct {
 	CheckedBy string
 	IsUpdated bool
 }
+
+type ConfigCheckUpdateManyRequest struct {
+	ParentID       string   `json:"parent_id"`
+	ChildUpdate    []string `json:"child_update"`
+	ChildNotUpdate []string `json:"child_not_update"`
+}
+
+type ConfigCheckUpdateMany struct {
+	ParentID       string
+	ChildIDsUpdate []primitive.ObjectID
+	UpdatedValue   bool
+	Branch         string
+	Updater        string
+}

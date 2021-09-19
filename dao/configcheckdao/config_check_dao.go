@@ -51,10 +51,46 @@ type CheckConfigDaoAssumer interface {
 	EditCheck(input dto.ConfigCheckEdit) (*dto.ConfigCheck, rest_err.APIError)
 	DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.ConfigCheck, rest_err.APIError)
 	UpdateCheckItem(input dto.ConfigCheckItemUpdate) (*dto.ConfigCheck, rest_err.APIError)
+	UpdateManyItem(input dto.ConfigCheckUpdateMany) (int64, rest_err.APIError)
 
 	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError)
 	FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.ConfigCheck, rest_err.APIError)
 	GetLastCheckCreateRange(start, end int64, branch string) (*dto.ConfigCheck, rest_err.APIError)
+}
+
+func (c *checkConfigDao) UpdateManyItem(input dto.ConfigCheckUpdateMany) (int64, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	if len(input.ChildIDsUpdate) == 0 {
+		return 0, nil
+	}
+
+	filter := bson.M{
+		keyID:       input.ParentID,
+		keyChXId:    bson.M{"$in": input.ChildIDsUpdate},
+		keyBranch:   strings.ToUpper(input.Branch),
+		keyIsFinish: false,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			keyChXIsUpdated: input.UpdatedValue,
+			keyChXCheckedAt: time.Now().Unix(),
+			keyChXCheckedBy: input.Updater,
+		},
+	}
+
+	result, err := coll.UpdateMany(ctx, filter, update)
+
+	if err != nil {
+		logger.Error("Gagal update many check config dari database (UpdateManyItem)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return 0, apiErr
+	}
+
+	return result.ModifiedCount, nil
 }
 
 func (c *checkConfigDao) InsertCheck(input dto.ConfigCheck) (*string, rest_err.APIError) {
