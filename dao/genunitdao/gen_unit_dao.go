@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/enum"
@@ -12,8 +15,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strings"
-	"time"
 )
 
 const (
@@ -317,7 +318,7 @@ func (u *genUnitDao) FindUnit(filterInput dto.GenUnitFilter) (dto.GenUnitRespons
 		opts.SetProjection(bson.M{keyGenPingState: 0})
 	}
 
-	opts.SetSort(bson.D{{keyGenName, 1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyGenName, Value: 1}}) //nolint:govet
 	opts.SetLimit(500)
 	cursor, err := coll.Find(ctx, filter, opts)
 
@@ -366,8 +367,8 @@ func (u *genUnitDao) GetIPList(branchIfSpecific string, category string) ([]stri
 	}
 
 	opts := options.Find()
-	opts.SetProjection(bson.D{{keyGenIP, 1}}) //nolint:govet
-	opts.SetSort(bson.D{{keyGenName, 1}})     //nolint:govet
+	opts.SetProjection(bson.D{{Key: keyGenIP, Value: 1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyGenName, Value: 1}})     //nolint:govet
 	opts.SetLimit(200)
 	sortCursor, err := coll.Find(ctx, filter, opts)
 
