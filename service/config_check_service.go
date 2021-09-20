@@ -40,6 +40,7 @@ type ConfigCheckServiceAssumer interface {
 	InsertConfigCheck(user mjwt.CustomClaim) (*string, rest_err.APIError)
 	DeleteConfigCheck(user mjwt.CustomClaim, id string) rest_err.APIError
 	GetConfigCheckByID(configCheckID string, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError)
+	UpdateManyConfigCheckItem(user mjwt.CustomClaim, input dto.ConfigCheckUpdateManyRequest) (*dto.ConfigCheck, rest_err.APIError)
 	FindConfigCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.ConfigCheck, rest_err.APIError)
 	UpdateConfigCheckItem(user mjwt.CustomClaim, input dto.ConfigCheckItemUpdateRequest) (*dto.ConfigCheck, rest_err.APIError)
 	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.ConfigCheck, rest_err.APIError)
@@ -135,6 +136,47 @@ func (c *configCheckService) UpdateConfigCheckItem(user mjwt.CustomClaim, input 
 		IsUpdated: input.IsUpdated,
 	}
 	configCheck, err := c.daoC.UpdateCheckItem(data)
+	if err != nil {
+		return nil, err
+	}
+	return configCheck, nil
+}
+
+func (c *configCheckService) UpdateManyConfigCheckItem(user mjwt.CustomClaim, input dto.ConfigCheckUpdateManyRequest) (*dto.ConfigCheck, rest_err.APIError) {
+	parentOid, errT := primitive.ObjectIDFromHex(input.ParentID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
+	}
+
+	// data fill updatedCheck
+	data := dto.ConfigCheckUpdateMany{
+		ParentID:       parentOid,
+		ChildIDsUpdate: input.ChildUpdate,
+		UpdatedValue:   true,
+		Branch:         user.Branch,
+		Updater:        user.Name,
+	}
+
+	err := c.daoC.UpdateManyItem(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// data fill updatedCheck
+	data = dto.ConfigCheckUpdateMany{
+		ParentID:       parentOid,
+		ChildIDsUpdate: input.ChildNotUpdate,
+		UpdatedValue:   false,
+		Branch:         user.Branch,
+		Updater:        user.Name,
+	}
+
+	err = c.daoC.UpdateManyItem(data)
+	if err != nil {
+		return nil, err
+	}
+
+	configCheck, err := c.daoC.GetCheckByID(parentOid, "")
 	if err != nil {
 		return nil, err
 	}
