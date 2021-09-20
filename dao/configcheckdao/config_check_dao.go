@@ -33,10 +33,13 @@ const (
 	keyConfigCheckItems = "config_check_items"
 	keyNote             = "note"
 
-	keyChXId        = "config_check_items.id"
-	keyChXCheckedAt = "config_check_items.$.checked_at"
-	keyChXCheckedBy = "config_check_items.$.checked_by"
-	keyChXIsUpdated = "config_check_items.$.is_updated"
+	keyChXId            = "config_check_items.id"
+	keyChXCheckedAt     = "config_check_items.$.checked_at"
+	keyChXCheckedBy     = "config_check_items.$.checked_by"
+	keyChXIsUpdated     = "config_check_items.$.is_updated"
+	keyChXElemCheckedAt = "config_check_items.$[elem].checked_at"
+	keyChXElemCheckedBy = "config_check_items.$[elem].checked_by"
+	keyChXElemIsUpdated = "config_check_items.$[elem].is_updated"
 )
 
 func NewConfigCheckDao() CheckConfigDaoAssumer {
@@ -51,46 +54,11 @@ type CheckConfigDaoAssumer interface {
 	EditCheck(input dto.ConfigCheckEdit) (*dto.ConfigCheck, rest_err.APIError)
 	DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.ConfigCheck, rest_err.APIError)
 	UpdateCheckItem(input dto.ConfigCheckItemUpdate) (*dto.ConfigCheck, rest_err.APIError)
-	UpdateManyItem(input dto.ConfigCheckUpdateMany) (int64, rest_err.APIError)
+	UpdateManyItem(input dto.ConfigCheckUpdateMany) rest_err.APIError
 
 	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError)
 	FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.ConfigCheck, rest_err.APIError)
 	GetLastCheckCreateRange(start, end int64, branch string) (*dto.ConfigCheck, rest_err.APIError)
-}
-
-func (c *checkConfigDao) UpdateManyItem(input dto.ConfigCheckUpdateMany) (int64, rest_err.APIError) {
-	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
-	defer cancel()
-
-	if len(input.ChildIDsUpdate) == 0 {
-		return 0, nil
-	}
-
-	filter := bson.M{
-		keyID:       input.ParentID,
-		keyChXId:    bson.M{"$in": input.ChildIDsUpdate},
-		keyBranch:   strings.ToUpper(input.Branch),
-		keyIsFinish: false,
-	}
-
-	update := bson.M{
-		"$set": bson.M{
-			keyChXIsUpdated: input.UpdatedValue,
-			keyChXCheckedAt: time.Now().Unix(),
-			keyChXCheckedBy: input.Updater,
-		},
-	}
-
-	result, err := coll.UpdateMany(ctx, filter, update)
-
-	if err != nil {
-		logger.Error("Gagal update many check config dari database (UpdateManyItem)", err)
-		apiErr := rest_err.NewInternalServerError("Database error", err)
-		return 0, apiErr
-	}
-
-	return result.ModifiedCount, nil
 }
 
 func (c *checkConfigDao) InsertCheck(input dto.ConfigCheck) (*string, rest_err.APIError) {
@@ -220,6 +188,54 @@ func (c *checkConfigDao) UpdateCheckItem(input dto.ConfigCheckItemUpdate) (*dto.
 	}
 
 	return &check, nil
+}
+
+// UpdateManyItem mengupdate list didalam checkConfigDetail
+func (c *checkConfigDao) UpdateManyItem(input dto.ConfigCheckUpdateMany) rest_err.APIError {
+	coll := db.DB.Collection(keyCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	if len(input.ChildIDsUpdate) == 0 || input.ChildIDsUpdate == nil {
+		return nil
+	}
+
+	filter := bson.M{
+		keyID: input.ParentID,
+		keyConfigCheckItems: bson.M{
+			"$elemMatch": bson.M{
+				"id": bson.M{"$in": input.ChildIDsUpdate},
+			},
+		},
+		keyBranch:   strings.ToUpper(input.Branch),
+		keyIsFinish: false,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			keyChXElemIsUpdated: input.UpdatedValue,
+			keyChXElemCheckedAt: time.Now().Unix(),
+			keyChXElemCheckedBy: input.Updater,
+		},
+	}
+
+	opts := options.Update()
+	opts.SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"elem.id": bson.M{"$in": input.ChildIDsUpdate}}},
+	})
+
+	_, err := coll.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return rest_err.NewBadRequestError("config check tidak diupdate : validasi id branch isFinish")
+		}
+
+		logger.Error("Gagal mendapatkan checkItem dari database (UpdateManyItem)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan config check dari database", err)
+		return apiErr
+	}
+
+	return nil
 }
 
 func (c *checkConfigDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError) {

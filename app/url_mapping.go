@@ -192,6 +192,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/config-check/:id", middleware.NormalAuth(), configCheckHandler.Get)
 	api.Get("/config-check", middleware.NormalAuth(), configCheckHandler.Find)
 	api.Post("/config-check-update", middleware.NormalAuth(), configCheckHandler.UpdateCheckItem)
+	api.Post("/config-update-many", middleware.NormalAuth(), configCheckHandler.UpdateManyCheckItem)
 	api.Get("/config-check-finish/:id", middleware.NormalAuth(), configCheckHandler.Finish)
 
 	// IMPROVE

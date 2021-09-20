@@ -9,3 +9,9 @@ func (cc ConfigCheckItemUpdateRequest) Validate() error {
 		validation.Field(&cc.ChildID, validation.Required),
 	)
 }
+
+func (cc ConfigCheckUpdateManyRequest) Validate() error {
+	return validation.ValidateStruct(&cc,
+		validation.Field(&cc.ParentID, validation.Required),
+	)
+}

@@ -58,8 +58,8 @@ type ConfigCheckUpdateManyRequest struct {
 }
 
 type ConfigCheckUpdateMany struct {
-	ParentID       string
-	ChildIDsUpdate []primitive.ObjectID
+	ParentID       primitive.ObjectID
+	ChildIDsUpdate []string
 	UpdatedValue   bool
 	Branch         string
 	Updater        string
