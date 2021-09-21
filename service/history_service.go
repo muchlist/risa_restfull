@@ -1,8 +1,11 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/muchlist/erru_utils_go/logger"
@@ -47,6 +50,7 @@ type HistoryServiceAssumer interface {
 
 	GetHistory(parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
+	FindHistoryForHome(branch string) (dto.HistoryResponseMinList, rest_err.APIError)
 	UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -308,6 +312,88 @@ func (h *historyService) FindHistory(filterA dto.FilterBranchCatComplete, filter
 		return nil, err
 	}
 	return historyList, nil
+}
+
+// FindHistoryForHome get history complete + progress + pending + reqPending
+func (h *historyService) FindHistoryForHome(branch string) (dto.HistoryResponseMinList, rest_err.APIError) {
+
+	// kembalian dari golang channel
+	type result struct {
+		res  dto.HistoryResponseMinList
+		err rest_err.APIError
+	}
+
+	resultChan := make(chan result, 2)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	getCompleteHistory := func() {
+		defer wg.Done()
+		// DB
+		historyListCompleteInfo, err := h.daoH.FindHistory(
+			dto.FilterBranchCatComplete{
+				FilterBranch:         branch,
+				FilterCategory:       "",
+				FilterCompleteStatus: []int{enum.HComplete, enum.HInfo},
+			},
+			dto.FilterTimeRangeLimit{
+				Limit:       50,
+			},
+		)
+		resultChan <- result{
+			res:  historyListCompleteInfo,
+			err: err,
+		}
+	}
+
+	getProgressHistory := func() {
+		defer wg.Done()
+		// DB
+		historyListProgressPending, err := h.daoH.FindHistory(
+			dto.FilterBranchCatComplete{
+				FilterBranch:         branch,
+				FilterCategory:       "",
+				FilterCompleteStatus: []int{enum.HProgress, enum.HRequestPending, enum.HPending},
+			},
+			dto.FilterTimeRangeLimit{
+				Limit:       50,
+			},
+		)
+		resultChan <- result{
+			res:  historyListProgressPending,
+			err: err,
+		}
+	}
+
+	go getCompleteHistory()
+	go getProgressHistory()
+
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	resultTemp := make([]dto.HistoryResponseMin, 0)
+	var errString string
+	for v := range resultChan {
+		if v.err != nil {
+			errString = errString + v.err.Message() + ". "
+		}
+		if len(v.res) != 0 {
+			resultTemp = append(resultTemp, v.res...)
+		}
+	}
+
+	if errString != "" {
+		return nil, rest_err.NewInternalServerError(errString, errors.New("gagal mendapatkan data (Service: FindHistoryForHome)"))
+	}
+
+	// sort
+	sort.Slice(resultTemp, func(i, j int) bool {
+		return resultTemp[i].UpdatedAt > resultTemp[j].UpdatedAt
+	})
+
+	return resultTemp, nil
 }
 
 func (h *historyService) UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError) {
