@@ -80,10 +80,15 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 	end := stringToInt(c.Query("end"))
 	limit := stringToInt(c.Query("limit"))
 
+	filterCompleteStatus := make([]int, 0)
+	if cStatus != 0 {
+		filterCompleteStatus = append(filterCompleteStatus, cStatus)
+	}
+
 	filterA := dto.FilterBranchCatComplete{
 		FilterBranch:         branch,
 		FilterCategory:       category,
-		FilterCompleteStatus: cStatus,
+		FilterCompleteStatus: filterCompleteStatus,
 	}
 
 	filterB := dto.FilterTimeRangeLimit{
@@ -93,6 +98,23 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 	}
 
 	histories, apiErr := h.service.FindHistory(filterA, filterB)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": histories})
+}
+
+// FindForHome menampilkan list history
+// Query [branch]
+func (h *historyHandler) FindForHome(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	branch := c.Query("branch")
+	if branch == "" {
+		branch = claims.Branch
+	}
+
+	histories, apiErr := h.service.FindHistoryForHome(branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

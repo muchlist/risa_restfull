@@ -5,7 +5,7 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 type FilterBranchCatComplete struct {
 	FilterBranch         string
 	FilterCategory       string // ex "CCTV,ALTAI"
-	FilterCompleteStatus int
+	FilterCompleteStatus []int
 }
 
 type FilterBranchCatInCompleteIn struct {

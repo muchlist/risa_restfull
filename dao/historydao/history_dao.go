@@ -294,8 +294,12 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	}
 
 	// complete status
-	if filterA.FilterCompleteStatus != 0 {
-		filter[keyHistCompleteStatus] = filterA.FilterCompleteStatus
+	if filterA.FilterCompleteStatus != nil && len(filterA.FilterCompleteStatus) != 0 {
+		if len(filterA.FilterCompleteStatus) == 1 {
+			filter[keyHistCompleteStatus] = filterA.FilterCompleteStatus[0]
+		} else {
+			filter[keyHistCompleteStatus] = bson.M{"$in": filterA.FilterCompleteStatus}
+		}
 	}
 
 	// option range
