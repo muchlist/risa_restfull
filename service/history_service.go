@@ -82,7 +82,8 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	var err rest_err.APIError
 	historyIsComplete := input.CompleteStatus == enum.HComplete
 	historyIsInfo := input.CompleteStatus == enum.HInfo
-	if !(historyIsComplete || historyIsInfo) {
+	historyIsDataInfo := input.CompleteStatus == enum.HDataInfo
+	if !(historyIsComplete || historyIsInfo || historyIsDataInfo) {
 		// DB
 		parent, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
 			UnitID:       input.ParentID,
@@ -133,7 +134,14 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		return nil, err
 	}
 
+	// goroutine notifikasi
 	go func() {
+
+		// jika status complete datanya adalah dataInfo skip notifikasi
+		if historyIsDataInfo {
+			return
+		}
+
 		users, err := h.daoU.FindUser(user.Branch)
 		if err != nil {
 			logger.Error("mendapatkan user gagal saat menambahkan fcm (INSERT HISTORY)", err)
