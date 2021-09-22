@@ -2,12 +2,12 @@ package service
 
 import (
 	"fmt"
+	"github.com/muchlist/risa_restfull/constants/enum"
 	"sort"
 	"time"
 
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
-	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/configcheckdao"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/otherdao"
@@ -206,7 +206,6 @@ func (c *configCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 
 	// send to background
 	go func() {
-		// Insert History isoffline
 		if len(configUpdatedIDs) != 0 {
 			for _, configID := range configUpdatedIDs {
 				_, _ = c.servHistory.InsertHistory(user, dto.HistoryRequest{
@@ -214,7 +213,7 @@ func (c *configCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 					Status:         "",
 					Problem:        "Pengecekan auto backup",
 					ProblemResolve: "update terkonfirmasi",
-					CompleteStatus: enum.HInfo,
+					CompleteStatus: enum.HDataInfo,
 					DateStart:      timeNow,
 					DateEnd:        0,
 					Tag:            []string{},

@@ -1,7 +1,8 @@
 package enum
 
 const (
-	HInfo = iota
+	HDataInfo = iota - 1
+	HInfo
 	HProgress
 	HRequestPending
 	HPending
@@ -9,7 +10,12 @@ const (
 )
 
 func GetProgressString(status int) string {
-	listCStatus := make([]string, 5)
+
+	if status == HDataInfo {
+		return "Data"
+	}
+
+	listCStatus := make([]string, 6)
 	listCStatus[HInfo] = "Info"
 	listCStatus[HProgress] = "Progress"
 	listCStatus[HRequestPending] = "Pending"
