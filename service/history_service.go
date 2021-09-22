@@ -50,7 +50,7 @@ type HistoryServiceAssumer interface {
 
 	GetHistory(parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
-	FindHistoryForHome(branch string) (dto.HistoryResponseMinList, rest_err.APIError)
+	FindHistoryForHome(filterA dto.FilterBranchCatComplete) (dto.HistoryResponseMinList, rest_err.APIError)
 	UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -315,7 +315,7 @@ func (h *historyService) FindHistory(filterA dto.FilterBranchCatComplete, filter
 }
 
 // FindHistoryForHome get history complete + progress + pending + reqPending
-func (h *historyService) FindHistoryForHome(branch string) (dto.HistoryResponseMinList, rest_err.APIError) {
+func (h *historyService) FindHistoryForHome(filterA dto.FilterBranchCatComplete) (dto.HistoryResponseMinList, rest_err.APIError) {
 
 	// kembalian dari golang channel
 	type result struct {
@@ -332,8 +332,8 @@ func (h *historyService) FindHistoryForHome(branch string) (dto.HistoryResponseM
 		// DB
 		historyListCompleteInfo, err := h.daoH.FindHistory(
 			dto.FilterBranchCatComplete{
-				FilterBranch:         branch,
-				FilterCategory:       "",
+				FilterBranch:         filterA.FilterBranch,
+				FilterCategory:       filterA.FilterCategory,
 				FilterCompleteStatus: []int{enum.HComplete, enum.HInfo},
 			},
 			dto.FilterTimeRangeLimit{
@@ -351,8 +351,8 @@ func (h *historyService) FindHistoryForHome(branch string) (dto.HistoryResponseM
 		// DB
 		historyListProgressPending, err := h.daoH.FindHistory(
 			dto.FilterBranchCatComplete{
-				FilterBranch:         branch,
-				FilterCategory:       "",
+				FilterBranch:         filterA.FilterBranch,
+				FilterCategory:       filterA.FilterCategory,
 				FilterCompleteStatus: []int{enum.HProgress, enum.HRequestPending, enum.HPending},
 			},
 			dto.FilterTimeRangeLimit{

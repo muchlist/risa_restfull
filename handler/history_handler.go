@@ -108,13 +108,15 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 // FindForHome menampilkan list history
 // Query [branch]
 func (h *historyHandler) FindForHome(c *fiber.Ctx) error {
-	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	branch := c.Query("branch")
-	if branch == "" {
-		branch = claims.Branch
+	category := c.Query("category")
+
+	filterA := dto.FilterBranchCatComplete{
+		FilterBranch:         branch,
+		FilterCategory:       category,
 	}
 
-	histories, apiErr := h.service.FindHistoryForHome(branch)
+	histories, apiErr := h.service.FindHistoryForHome(filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
