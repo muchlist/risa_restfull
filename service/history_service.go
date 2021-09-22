@@ -319,7 +319,7 @@ func (h *historyService) FindHistoryForHome(filterA dto.FilterBranchCatComplete)
 
 	// kembalian dari golang channel
 	type result struct {
-		res  dto.HistoryResponseMinList
+		res dto.HistoryResponseMinList
 		err rest_err.APIError
 	}
 
@@ -337,11 +337,11 @@ func (h *historyService) FindHistoryForHome(filterA dto.FilterBranchCatComplete)
 				FilterCompleteStatus: []int{enum.HComplete, enum.HInfo},
 			},
 			dto.FilterTimeRangeLimit{
-				Limit:       50,
+				Limit: 100,
 			},
 		)
 		resultChan <- result{
-			res:  historyListCompleteInfo,
+			res: historyListCompleteInfo,
 			err: err,
 		}
 	}
@@ -356,11 +356,11 @@ func (h *historyService) FindHistoryForHome(filterA dto.FilterBranchCatComplete)
 				FilterCompleteStatus: []int{enum.HProgress, enum.HRequestPending, enum.HPending},
 			},
 			dto.FilterTimeRangeLimit{
-				Limit:       50,
+				Limit: 100,
 			},
 		)
 		resultChan <- result{
-			res:  historyListProgressPending,
+			res: historyListProgressPending,
 			err: err,
 		}
 	}
