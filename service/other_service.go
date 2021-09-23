@@ -241,7 +241,7 @@ func (c *otherService) EditOther(user mjwt.CustomClaim, otherID string, input dt
 				Status:         "Edit",
 				Problem:        fmt.Sprintf("Detail %s diubah", subCategory),
 				ProblemResolve: "",
-				CompleteStatus: enum.HInfo,
+				CompleteStatus: enum.HDataInfo,
 				DateStart:      timeNow,
 				DateEnd:        timeNow,
 				Tag:            []string{},
