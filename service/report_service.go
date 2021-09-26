@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/muchlist/risa_restfull/constants/enum"
 	"time"
 
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -64,12 +65,12 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 		end = currentTime
 	}
 
-	// GET HISTORIES 0, 4 sesuai start end inputan
+	// GET HISTORIES 0, 4, 6 sesuai start end inputan INFO, COMPLETE, COMPLETE BA
 	historyList04, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       "",
-			FilterCompleteStatus: "0,4",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d", enum.HInfo, enum.HComplete, enum.HCompleteWithBA),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: start,
 			FilterEnd:   end,
@@ -86,7 +87,7 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       "",
-			FilterCompleteStatus: "1,2,3",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d,%d", enum.HProgress, enum.HRequestPending, enum.HPending, enum.HRequestComplete),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: start - (3 * 30 * 24 * 60 * 60), // 3 bulan,
 			FilterEnd:   end,
@@ -137,12 +138,12 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 		return nil, rest_err.NewBadRequestError("Gagal. Jarak pembuatan laporan tidak boleh kurang dari 2 menit!")
 	}
 
-	// GET HISTORIES 0, 4 sesuai start end inputan
+	// GET HISTORIES 0, 4, 6 sesuai start end inputan
 	historyList04, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       "",
-			FilterCompleteStatus: "0,4",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d", enum.HInfo, enum.HComplete, enum.HCompleteWithBA),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: lastPDFEndTime,
 			FilterEnd:   currentTime,
@@ -154,12 +155,12 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 		return nil, err
 	}
 
-	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
+	// GET HISTORIES 1, 2, 3 , 5 sesuai end inputan dan start = end - 3 bulan
 	historyList123, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       "",
-			FilterCompleteStatus: "1,2,3",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d,%d", enum.HProgress, enum.HRequestPending, enum.HPending, enum.HRequestComplete),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: lastPDFEndTime - (3 * 30 * 24 * 60 * 60), // 3 bulan,
 			FilterEnd:   currentTime,
@@ -206,12 +207,12 @@ func (r *reportService) GenerateReportPDFVendor(name string, branch string, star
 		end = currentTime
 	}
 
-	// GET HISTORIES 0, 4 sesuai start end inputan
+	// GET HISTORIES 0, 4, 6 sesuai start end inputan
 	historyList04, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
-			FilterCompleteStatus: "0,4",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d", enum.HInfo, enum.HComplete, enum.HCompleteWithBA),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: start,
 			FilterEnd:   end,
@@ -223,12 +224,12 @@ func (r *reportService) GenerateReportPDFVendor(name string, branch string, star
 		return nil, err
 	}
 
-	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
+	// GET HISTORIES 1, 2, 3, 5 sesuai end inputan dan start = end - 3 bulan
 	historyList123, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
-			FilterCompleteStatus: "1,2,3",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d,%d", enum.HProgress, enum.HRequestPending, enum.HPending, enum.HRequestComplete),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: end - (3 * 30 * 24 * 60 * 60), // 3 bulan,
 			FilterEnd:   end,
@@ -279,12 +280,12 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 		return nil, rest_err.NewBadRequestError("Gagal. Jarak pembuatan laporan tidak boleh kurang dari 2 menit!")
 	}
 
-	// GET HISTORIES 0, 4 sesuai start end inputan
+	// GET HISTORIES 0, 4, 6 sesuai start end inputan
 	historyList04, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
-			FilterCompleteStatus: "0,4",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d", enum.HInfo, enum.HComplete, enum.HCompleteWithBA),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: lastPDFEndTime,
 			FilterEnd:   currentTime,
@@ -296,12 +297,12 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 		return nil, err
 	}
 
-	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
+	// GET HISTORIES 1, 2, 3, 5 sesuai end inputan dan start = end - 3 bulan
 	historyList123, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
-			FilterCompleteStatus: "1,2,3",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d,%d", enum.HProgress, enum.HRequestPending, enum.HPending, enum.HRequestComplete),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: lastPDFEndTime - (3 * 30 * 24 * 60 * 60), // 3 bulan,
 			FilterEnd:   currentTime,
@@ -387,12 +388,12 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, st
 	// cek fisik altai 3 bulanan
 	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, end, branch, true)
 
-	// GET HISTORIES 0, 4 sesuai start end inputan
+	// GET HISTORIES 0, 4, 6 sesuai start end inputan
 	historyList04, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
-			FilterCompleteStatus: "0,4",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d", enum.HInfo, enum.HComplete, enum.HCompleteWithBA),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: targetMinDaily,
 			FilterEnd:   end,
@@ -404,12 +405,12 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, st
 		return nil, err
 	}
 
-	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
+	// GET HISTORIES 1, 2, 3, 5 sesuai end inputan dan start = end - 3 bulan
 	historyList123, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
-			FilterCompleteStatus: "1,2,3",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d,%d", enum.HProgress, enum.HRequestPending, enum.HPending, enum.HRequestComplete),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: end - (3 * 30 * 24 * 60 * 60), // 3 bulan,
 			FilterEnd:   end,
@@ -479,12 +480,12 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, bran
 	// cek fisik altai 3 bulanan
 	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
 
-	// GET HISTORIES 0, 4 sesuai start end inputan
+	// GET HISTORIES 0, 4, 6 sesuai start end inputan
 	historyList04, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
-			FilterCompleteStatus: "0,4",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d", enum.HInfo, enum.HComplete, enum.HCompleteWithBA),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: lastPDFEndTime,
 			FilterEnd:   currentTime,
@@ -496,12 +497,12 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, bran
 		return nil, err
 	}
 
-	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
+	// GET HISTORIES 1, 2, 3, 5 sesuai end inputan dan start = end - 3 bulan
 	historyList123, err := r.dao.History.UnwindHistory(
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s, %s", category.Cctv, category.Altai, category.OtherV),
-			FilterCompleteStatus: "1,2,3",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d,%d", enum.HProgress, enum.HRequestPending, enum.HPending, enum.HRequestComplete),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: currentTime - (3 * 30 * 24 * 60 * 60), // 3 bulan,
 			FilterEnd:   currentTime,
@@ -556,7 +557,7 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
-			FilterCompleteStatus: "4",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d", enum.HComplete, enum.HCompleteWithBA),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: start,
 			FilterEnd:   end,
@@ -573,7 +574,7 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
-			FilterCompleteStatus: "1,2,3",
+			FilterCompleteStatus: fmt.Sprintf("%d,%d,%d,%d", enum.HProgress, enum.HRequestPending, enum.HPending, enum.HRequestComplete),
 		}, dto.FilterTimeRangeLimit{
 			FilterStart: end - (3 * 30 * 24 * 60 * 60), // 3 bulan,
 			FilterEnd:   end,

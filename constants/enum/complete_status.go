@@ -3,24 +3,32 @@ package enum
 const (
 	HDataInfo = iota - 1
 	HInfo
-	HProgress
+	HProgress // 1
 	HRequestPending
 	HPending
-	HComplete
+	HComplete // 4
+	HRequestComplete
+	HCompleteWithBA
 )
 
+// GetProgressString mengembalikan string dari enum progress status
 func GetProgressString(status int) string {
-
-	if status == HDataInfo {
+	switch status {
+	case HDataInfo:
 		return "Data"
+	case HProgress:
+		return "Progress"
+	case HRequestPending:
+		return "Req-Pending"
+	case HPending:
+		return "Pending"
+	case HRequestComplete:
+		return "Req-Complete"
+	case HCompleteWithBA:
+		return "Complete"
+	case HComplete:
+		return "Complete"
+	default:
+		return "Unknown"
 	}
-
-	listCStatus := make([]string, 6)
-	listCStatus[HInfo] = "Info"
-	listCStatus[HProgress] = "Progress"
-	listCStatus[HRequestPending] = "Pending"
-	listCStatus[HPending] = "Pending"
-	listCStatus[HComplete] = "Complete"
-
-	return listCStatus[status]
 }

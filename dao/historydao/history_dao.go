@@ -23,24 +23,26 @@ const (
 	connectTimeout = 3
 	keyHistColl    = "history"
 
-	keyHistID             = "_id"
-	keyHistCreatedAt      = "created_at"
-	keyHistCreatedByID    = "created_by_id"
-	keyHistUpdatedAt      = "updated_at"
-	keyHistUpdatedBy      = "updated_by"
-	keyHistUpdatedByID    = "updated_by_id"
-	keyHistBranch         = "branch"
-	keyHistCategory       = "category"
-	keyHistParentID       = "parent_id"
-	keyHistStatus         = "status"
-	keyHistProblem        = "problem"
-	keyHistProblemResolve = "problem_resolve"
-	keyHistCompleteStatus = "complete_status"
-	keyHistDateStart      = "date_start"
-	keyHistDateEnd        = "date_end"
-	keyHistTag            = "tag"
-	keyHistImage          = "image"
-	keyHistUpdates        = "updates"
+	keyHistID                  = "_id"
+	keyHistCreatedAt           = "created_at"
+	keyHistCreatedByID         = "created_by_id"
+	keyHistUpdatedAt           = "updated_at"
+	keyHistUpdatedBy           = "updated_by"
+	keyHistUpdatedByID         = "updated_by_id"
+	keyHistBranch              = "branch"
+	keyHistCategory            = "category"
+	keyHistParentID            = "parent_id"
+	keyHistStatus              = "status"
+	keyHistProblem             = "problem"
+	keyHistProblemResolve      = "problem_resolve"
+	keyHistProblemLower        = "problem_lower"
+	keyHistProblemResolveLower = "problem_resolve_lower"
+	keyHistCompleteStatus      = "complete_status"
+	keyHistDateStart           = "date_start"
+	keyHistDateEnd             = "date_end"
+	keyHistTag                 = "tag"
+	keyHistImage               = "image"
+	keyHistUpdates             = "updates"
 )
 
 func NewHistoryDao() HistoryDaoAssumer {
@@ -59,6 +61,7 @@ type HistoryDaoAssumer interface {
 
 	GetHistoryByID(historyID primitive.ObjectID, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
 	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
+	SearchHistory(search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError)
@@ -93,6 +96,10 @@ func (h *historyDao) InsertHistory(input dto.History, isVendor bool) (*string, r
 	},
 	}
 
+	// History problem dan problem resolve lower (digunakan untuk pencarian text)
+	input.ProblemLower = strings.ToLower(input.Problem)
+	input.ProblemResolveLower = strings.ToLower(input.ProblemResolve)
+
 	result, err := coll.InsertOne(ctx, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan history ke database", err)
@@ -120,6 +127,10 @@ func (h *historyDao) InsertManyHistory(dataList []dto.History, isVendor bool) (i
 		if data.Updates == nil {
 			data.Updates = []dto.HistoryUpdate{}
 		}
+		// History problem dan problem resolve lower (digunakan untuk pencarian text)
+		data.ProblemLower = strings.ToLower(data.Problem)
+		data.ProblemResolveLower = strings.ToLower(data.ProblemResolve)
+
 		data.Updates = []dto.HistoryUpdate{{
 			Time:           data.CreatedAt,
 			UpdatedBy:      data.UpdatedBy,
@@ -158,6 +169,10 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 		input.Tag = []string{}
 	}
 
+	// History problem dan problem resolve lower (digunakan untuk pencarian text)
+	input.ProblemLower = strings.ToLower(input.Problem)
+	input.ProblemResolveLower = strings.ToLower(input.ProblemResolve)
+
 	opts := options.FindOneAndUpdate()
 	opts.SetReturnDocument(1)
 
@@ -170,15 +185,17 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 
 	update := bson.M{
 		"$set": bson.M{
-			keyHistUpdatedAt:      input.UpdatedAt,
-			keyHistUpdatedBy:      input.UpdatedBy,
-			keyHistUpdatedByID:    input.UpdatedByID,
-			keyHistStatus:         input.Status,
-			keyHistProblem:        input.Problem,
-			keyHistProblemResolve: input.ProblemResolve,
-			keyHistCompleteStatus: input.CompleteStatus,
-			keyHistDateEnd:        input.DateEnd,
-			keyHistTag:            input.Tag,
+			keyHistUpdatedAt:           input.UpdatedAt,
+			keyHistUpdatedBy:           input.UpdatedBy,
+			keyHistUpdatedByID:         input.UpdatedByID,
+			keyHistStatus:              input.Status,
+			keyHistProblem:             input.Problem,
+			keyHistProblemResolve:      input.ProblemResolve,
+			keyHistProblemLower:        input.ProblemLower,
+			keyHistProblemResolveLower: input.ProblemResolveLower,
+			keyHistCompleteStatus:      input.CompleteStatus,
+			keyHistDateEnd:             input.DateEnd,
+			keyHistTag:                 input.Tag,
 		},
 		"$push": bson.M{
 			keyHistUpdates: dto.HistoryUpdate{
@@ -325,6 +342,104 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	histories := dto.HistoryResponseMinList{}
 	if err = cursor.All(ctx, &histories); err != nil {
 		logger.Error("Gagal decode histories cursor ke objek slice (FindHistory)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.HistoryResponseMinList{}, apiErr
+	}
+
+	return histories, nil
+}
+
+//db.history.createIndex(
+//  {
+//    problem_lower: "text",
+//    problem_resolve_lower: "text"
+//  },
+//  {
+//    weights: {
+//      problem_lower: 5,
+//      problem_resolve_lower: 3
+//    }
+//  }
+//)
+
+func (h *historyDao) SearchHistory(search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
+	coll := db.DB.Collection(keyHistColl)
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	defer cancel()
+
+	search = strings.ToLower(search)
+
+	// validate search
+	if len(search) == 0 {
+		return dto.HistoryResponseMinList{}, nil
+	}
+
+	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
+	filterA.FilterCategory = strings.ToUpper(filterA.FilterCategory)
+
+	// set default limit
+	if filterB.Limit == 0 {
+		filterB.Limit = 100
+	}
+
+	// empty filter
+	filter := bson.M{}
+
+	filter["$text"] = bson.M{"$search": search}
+
+	// filter condition
+	// branch
+	if filterA.FilterBranch != "" {
+		filter[keyHistBranch] = filterA.FilterBranch
+	}
+
+	// category
+	if filterA.FilterCategory != "" {
+		// cek kategori jika multi category (pisah dengan koma)
+		if strings.Contains(filterA.FilterCategory, ",") {
+			categories := strings.Split(filterA.FilterCategory, ",")
+			filter[keyHistCategory] = bson.M{"$in": categories}
+		} else {
+			filter[keyHistCategory] = filterA.FilterCategory
+		}
+	}
+
+	// complete status
+	if filterA.FilterCompleteStatus != nil && len(filterA.FilterCompleteStatus) != 0 {
+		if len(filterA.FilterCompleteStatus) == 1 {
+			filter[keyHistCompleteStatus] = filterA.FilterCompleteStatus[0]
+		} else {
+			filter[keyHistCompleteStatus] = bson.M{"$in": filterA.FilterCompleteStatus}
+		}
+	}
+
+	// option range
+	if filterB.FilterStart != 0 {
+		filter[keyHistUpdatedAt] = bson.M{"$gte": filterB.FilterStart}
+	}
+	if filterB.FilterEnd != 0 {
+		filter[keyHistCreatedAt] = bson.M{"$lte": filterB.FilterEnd}
+	}
+
+	opts := options.Find()
+	opts.SetSort(bson.M{
+		"score": bson.M{
+			"$meta": "textScore",
+		},
+	})
+	opts.SetLimit(filterB.Limit)
+
+	cursor, err := coll.Find(ctx, filter, opts)
+
+	if err != nil {
+		logger.Error("Gagal mendapatkan daftar history dari database (SearchHistory)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return dto.HistoryResponseMinList{}, apiErr
+	}
+
+	histories := dto.HistoryResponseMinList{}
+	if err = cursor.All(ctx, &histories); err != nil {
+		logger.Error("Gagal decode histories cursor ke objek slice (SearchHistory)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryResponseMinList{}, apiErr
 	}
