@@ -49,7 +49,7 @@ type HistoryServiceAssumer interface {
 	PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError)
 
 	GetHistory(parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
-	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
+	FindHistory(search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
 	FindHistoryForHome(filterA dto.FilterBranchCatComplete) (dto.HistoryResponseMinList, rest_err.APIError)
 	UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
 	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
@@ -314,11 +314,21 @@ func (h *historyService) GetHistory(parentID string, branchIfSpecific string) (*
 	return history, nil
 }
 
-func (h *historyService) FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
-	historyList, err := h.daoH.FindHistory(filterA, filterB)
-	if err != nil {
-		return nil, err
+func (h *historyService) FindHistory(search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
+	historyList := dto.HistoryResponseMinList{}
+	var err rest_err.APIError
+	if len(search) != 0 {
+		historyList, err = h.daoH.SearchHistory(search, filterA, filterB)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		historyList, err = h.daoH.FindHistory(filterA, filterB)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return historyList, nil
 }
 
@@ -361,10 +371,10 @@ func (h *historyService) FindHistoryForHome(filterA dto.FilterBranchCatComplete)
 			dto.FilterBranchCatComplete{
 				FilterBranch:         filterA.FilterBranch,
 				FilterCategory:       filterA.FilterCategory,
-				FilterCompleteStatus: []int{enum.HProgress, enum.HRequestPending, enum.HPending},
+				FilterCompleteStatus: []int{enum.HProgress, enum.HRequestPending, enum.HPending, enum.HRequestComplete, enum.HCompleteWithBA},
 			},
 			dto.FilterTimeRangeLimit{
-				Limit: 100,
+				Limit: 200,
 			},
 		)
 		resultChan <- result{

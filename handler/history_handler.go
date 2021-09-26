@@ -71,7 +71,7 @@ func (h *historyHandler) Edit(c *fiber.Ctx) error {
 }
 
 // Find menampilkan list history
-// Query [branch, category, c_status, start, end, limit]
+// Query [branch, category, c_status, start, end, limit, search]
 func (h *historyHandler) Find(c *fiber.Ctx) error {
 	branch := c.Query("branch")
 	category := c.Query("category")
@@ -79,6 +79,7 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 	start := stringToInt(c.Query("start"))
 	end := stringToInt(c.Query("end"))
 	limit := stringToInt(c.Query("limit"))
+	search := c.Query("search")
 
 	filterCompleteStatus := make([]int, 0)
 	if cStatus != 0 {
@@ -97,7 +98,7 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 		Limit:       int64(limit),
 	}
 
-	histories, apiErr := h.service.FindHistory(filterA, filterB)
+	histories, apiErr := h.service.FindHistory(search, filterA, filterB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -112,8 +113,8 @@ func (h *historyHandler) FindForHome(c *fiber.Ctx) error {
 	category := c.Query("category")
 
 	filterA := dto.FilterBranchCatComplete{
-		FilterBranch:         branch,
-		FilterCategory:       category,
+		FilterBranch:   branch,
+		FilterCategory: category,
 	}
 
 	histories, apiErr := h.service.FindHistoryForHome(filterA)
