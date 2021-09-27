@@ -61,8 +61,9 @@ func (c *configCheckService) InsertConfigCheck(user mjwt.CustomClaim) (*string, 
 	configCheckItem := make([]dto.ConfigCheckItemEmbed, len(networkItems))
 	for i, networkItem := range networkItems {
 		configCheckItem[i] = dto.ConfigCheckItemEmbed{
-			ID:   networkItem.ID.Hex(),
-			Name: networkItem.Name,
+			ID:       networkItem.ID.Hex(),
+			Name:     networkItem.Name,
+			Location: networkItem.Location,
 		}
 	}
 

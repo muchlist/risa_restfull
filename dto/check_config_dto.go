@@ -22,6 +22,7 @@ type ConfigCheck struct {
 type ConfigCheckItemEmbed struct {
 	ID        string `json:"id" bson:"id"` // same as ID CCTV or general Unit cctv
 	Name      string `json:"name" bson:"name"`
+	Location  string `json:"location" bson:"location"`
 	CheckedAt int64  `json:"checked_at" bson:"checked_at"`
 	CheckedBy string `json:"checked_by" bson:"checked_by"`
 	IsUpdated bool   `json:"is_updated" bson:"is_updated"`
