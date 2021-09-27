@@ -23,26 +23,24 @@ const (
 	connectTimeout = 3
 	keyHistColl    = "history"
 
-	keyHistID                  = "_id"
-	keyHistCreatedAt           = "created_at"
-	keyHistCreatedByID         = "created_by_id"
-	keyHistUpdatedAt           = "updated_at"
-	keyHistUpdatedBy           = "updated_by"
-	keyHistUpdatedByID         = "updated_by_id"
-	keyHistBranch              = "branch"
-	keyHistCategory            = "category"
-	keyHistParentID            = "parent_id"
-	keyHistStatus              = "status"
-	keyHistProblem             = "problem"
-	keyHistProblemResolve      = "problem_resolve"
-	keyHistProblemLower        = "problem_lower"
-	keyHistProblemResolveLower = "problem_resolve_lower"
-	keyHistCompleteStatus      = "complete_status"
-	keyHistDateStart           = "date_start"
-	keyHistDateEnd             = "date_end"
-	keyHistTag                 = "tag"
-	keyHistImage               = "image"
-	keyHistUpdates             = "updates"
+	keyHistID             = "_id"
+	keyHistCreatedAt      = "created_at"
+	keyHistCreatedByID    = "created_by_id"
+	keyHistUpdatedAt      = "updated_at"
+	keyHistUpdatedBy      = "updated_by"
+	keyHistUpdatedByID    = "updated_by_id"
+	keyHistBranch         = "branch"
+	keyHistCategory       = "category"
+	keyHistParentID       = "parent_id"
+	keyHistStatus         = "status"
+	keyHistProblem        = "problem"
+	keyHistProblemResolve = "problem_resolve"
+	keyHistCompleteStatus = "complete_status"
+	keyHistDateStart      = "date_start"
+	keyHistDateEnd        = "date_end"
+	keyHistTag            = "tag"
+	keyHistImage          = "image"
+	keyHistUpdates        = "updates"
 )
 
 func NewHistoryDao() HistoryDaoAssumer {
@@ -96,10 +94,6 @@ func (h *historyDao) InsertHistory(input dto.History, isVendor bool) (*string, r
 	},
 	}
 
-	// History problem dan problem resolve lower (digunakan untuk pencarian text)
-	input.ProblemLower = strings.ToLower(input.Problem)
-	input.ProblemResolveLower = strings.ToLower(input.ProblemResolve)
-
 	result, err := coll.InsertOne(ctx, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan history ke database", err)
@@ -127,9 +121,6 @@ func (h *historyDao) InsertManyHistory(dataList []dto.History, isVendor bool) (i
 		if data.Updates == nil {
 			data.Updates = []dto.HistoryUpdate{}
 		}
-		// History problem dan problem resolve lower (digunakan untuk pencarian text)
-		data.ProblemLower = strings.ToLower(data.Problem)
-		data.ProblemResolveLower = strings.ToLower(data.ProblemResolve)
 
 		data.Updates = []dto.HistoryUpdate{{
 			Time:           data.CreatedAt,
@@ -169,10 +160,6 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 		input.Tag = []string{}
 	}
 
-	// History problem dan problem resolve lower (digunakan untuk pencarian text)
-	input.ProblemLower = strings.ToLower(input.Problem)
-	input.ProblemResolveLower = strings.ToLower(input.ProblemResolve)
-
 	opts := options.FindOneAndUpdate()
 	opts.SetReturnDocument(1)
 
@@ -185,17 +172,15 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 
 	update := bson.M{
 		"$set": bson.M{
-			keyHistUpdatedAt:           input.UpdatedAt,
-			keyHistUpdatedBy:           input.UpdatedBy,
-			keyHistUpdatedByID:         input.UpdatedByID,
-			keyHistStatus:              input.Status,
-			keyHistProblem:             input.Problem,
-			keyHistProblemResolve:      input.ProblemResolve,
-			keyHistProblemLower:        input.ProblemLower,
-			keyHistProblemResolveLower: input.ProblemResolveLower,
-			keyHistCompleteStatus:      input.CompleteStatus,
-			keyHistDateEnd:             input.DateEnd,
-			keyHistTag:                 input.Tag,
+			keyHistUpdatedAt:      input.UpdatedAt,
+			keyHistUpdatedBy:      input.UpdatedBy,
+			keyHistUpdatedByID:    input.UpdatedByID,
+			keyHistStatus:         input.Status,
+			keyHistProblem:        input.Problem,
+			keyHistProblemResolve: input.ProblemResolve,
+			keyHistCompleteStatus: input.CompleteStatus,
+			keyHistDateEnd:        input.DateEnd,
+			keyHistTag:            input.Tag,
 		},
 		"$push": bson.M{
 			keyHistUpdates: dto.HistoryUpdate{
@@ -328,7 +313,7 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{Key: keyHistUpdatedAt, Value: -1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyHistUpdatedAt, Value: -1}})
 	opts.SetLimit(filterB.Limit)
 
 	cursor, err := coll.Find(ctx, filter, opts)
@@ -350,24 +335,23 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 }
 
 //db.history.createIndex(
-//  {
-//    problem_lower: "text",
-//    problem_resolve_lower: "text"
-//  },
-//  {
-//    weights: {
-//      problem_lower: 5,
-//      problem_resolve_lower: 3
-//    }
-//  }
-//)
+//{
+// problem: "text",
+// problem_resolve: "text",
+// parent_name: "text"
+//},
+//{
+// weights: {
+//   problem_lower: 5,
+//   problem_resolve_lower: 3,
+//   parent_name: 1
+// }
+//})
 
 func (h *historyDao) SearchHistory(search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
 	defer cancel()
-
-	search = strings.ToLower(search)
 
 	// validate search
 	if len(search) == 0 {
@@ -379,12 +363,13 @@ func (h *historyDao) SearchHistory(search string, filterA dto.FilterBranchCatCom
 
 	// set default limit
 	if filterB.Limit == 0 {
-		filterB.Limit = 100
+		filterB.Limit = 200
 	}
 
 	// empty filter
 	filter := bson.M{}
 
+	fmt.Println(search)
 	filter["$text"] = bson.M{"$search": search}
 
 	// filter condition
@@ -422,10 +407,19 @@ func (h *historyDao) SearchHistory(search string, filterA dto.FilterBranchCatCom
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.M{
-		"score": bson.M{
+
+	// sort by score <-----
+	//opts.SetSort(bson.M{
+	//	"score": bson.M{
+	//		"$meta": "textScore",
+	//	},
+	//})
+
+	opts.SetSort(bson.D{
+		{Key: "score", Value: bson.M{
 			"$meta": "textScore",
-		},
+		}},
+		{Key: keyHistUpdatedAt, Value: -1},
 	})
 	opts.SetLimit(filterB.Limit)
 
