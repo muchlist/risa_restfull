@@ -75,6 +75,17 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		}
 	}
 
+	// cek jika user biasa (bukan Approver) tidak boleh menambahkan history
+	// History-with-note dan pending, alihkan ke req pending atau req complete-history
+	if !sfunc.InSlice(roles.RoleApprove, user.Roles) {
+		if input.CompleteStatus == enum.HPending {
+			input.CompleteStatus = enum.HRequestPending
+		}
+		if input.CompleteStatus == enum.HCompleteWithBA {
+			input.CompleteStatus = enum.HRequestComplete
+		}
+	}
+
 	// Mengambil gen_unit
 	// Tambahkan Case jika History status bukan Complete atau bukan info, akan gagal jika ID dan Cabang tidak sesuai
 	// jika complete gunakan GetUnitByID untuk memastikan ID dan Cabang sesuai
@@ -174,6 +185,15 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 	oid, errT := primitive.ObjectIDFromHex(historyID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	if !sfunc.InSlice(roles.RoleApprove, user.Roles) {
+		if input.CompleteStatus == enum.HPending {
+			input.CompleteStatus = enum.HRequestPending
+		}
+		if input.CompleteStatus == enum.HCompleteWithBA {
+			input.CompleteStatus = enum.HRequestComplete
+		}
 	}
 
 	// Filling data

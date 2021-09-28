@@ -51,6 +51,6 @@ func (h HistoryEditRequest) Validate() error {
 		validation.Field(&h.FilterTimestamp, validation.Required),
 		validation.Field(&h.Status, validation.Required),
 		validation.Field(&h.Problem, validation.Required),
-		validation.Field(&h.CompleteStatus, validation.Max(enum.HComplete), validation.Min(0)),
+		validation.Field(&h.CompleteStatus, validation.Max(enum.HCompleteWithBA), validation.Min(-1)),
 	)
 }
