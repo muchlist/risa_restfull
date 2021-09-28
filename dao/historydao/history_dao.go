@@ -706,10 +706,10 @@ func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, 
 
 	// kenapa dipisah ?
 	// karena yang dimunculkan adalah yang pending dan progress sebelum waktu end, sedangkan complete dan info sesuai range waktu
-	// Find complete (4) and info (0)
+	// Find complete (4, 6) and info (0)
 	filter := bson.M{
 		keyHistBranch:         branch,
-		keyHistCompleteStatus: bson.M{"$in": bson.A{0, 4}},
+		keyHistCompleteStatus: bson.M{"$in": bson.A{enum.HInfo, enum.HComplete, enum.HCompleteWithBA}},
 		keyHistUpdatedAt:      bson.M{"$gte": start, "$lte": end},
 	}
 	opts := options.Find()
@@ -732,7 +732,7 @@ func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, 
 	// Find progress (1) and pending (2, 3)
 	filter = bson.M{
 		keyHistBranch:         branch,
-		keyHistCompleteStatus: bson.M{"$in": bson.A{1, 2, 3}},
+		keyHistCompleteStatus: bson.M{"$in": bson.A{enum.HProgress, enum.HRequestPending, enum.HPending, enum.HRequestComplete}},
 		keyHistUpdatedAt:      bson.M{"$lte": end},
 	}
 
