@@ -334,19 +334,21 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	return histories, nil
 }
 
-//db.history.createIndex(
-//{
-// problem: "text",
-// problem_resolve: "text",
-// parent_name: "text"
-//},
-//{
-// weights: {
-//   problem_lower: 5,
-//   problem_resolve_lower: 3,
-//   parent_name: 1
-// }
-//})
+/*
+db.history.createIndex(
+{
+problem: "text",
+problem_resolve: "text",
+parent_name: "text"
+},
+{
+weights: {
+  problem_lower: 5,
+  problem_resolve_lower: 3,
+  parent_name: 1
+}
+})
+*/
 
 func (h *historyDao) SearchHistory(search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
