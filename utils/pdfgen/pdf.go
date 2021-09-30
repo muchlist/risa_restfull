@@ -47,13 +47,15 @@ func GeneratePDF(
 
 		// blok if yang dijalankan jika historynya sama
 		if idTemp == history.ID.Hex() {
-			updatedByExisting := allListComputed[len(allListComputed)-1].UpdatedBy
-			updatedByCurrent := strings.Split(history.Updates.UpdatedBy, " ")[0]
-			if updatedByExisting != updatedByCurrent {
-				allListComputed[len(allListComputed)-1].UpdatedBy = updatedByExisting + " > " + updatedByCurrent
+			if allListComputed != nil {
+				updatedByExisting := allListComputed[len(allListComputed)-1].UpdatedBy
+				updatedByCurrent := strings.Split(history.Updates.UpdatedBy, " ")[0]
+				if updatedByExisting != updatedByCurrent {
+					allListComputed[len(allListComputed)-1].UpdatedBy = updatedByExisting + " > " + updatedByCurrent
+				}
+				allListComputed[len(allListComputed)-1].Updates = history.Updates
+				continue
 			}
-			allListComputed[len(allListComputed)-1].Updates = history.Updates
-			continue
 		}
 		// end blok
 
