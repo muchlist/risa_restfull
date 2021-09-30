@@ -22,7 +22,7 @@ type PDFReqMonth struct {
 }
 
 func GeneratePDFVendorMonthly(
-	data PDFReqMonth, dataMaint dto.ReportResponse,
+	data PDFReqMonth, dataMaint dto.ReportResponse, dataCheckConf dto.ConfigCheck,
 ) error {
 	// slice yang sudah di filter dan dimodifikasi isinya
 	var allListComputed []dto.HistoryUnwindResponse
@@ -79,16 +79,20 @@ func GeneratePDFVendorMonthly(
 	}
 
 	for _, historyComputed := range allListComputed {
-		if historyComputed.Updates.CompleteStatus == 0 || historyComputed.Updates.CompleteStatus == 4 {
+		if historyComputed.Updates.CompleteStatus == enum.HInfo ||
+			historyComputed.Updates.CompleteStatus == enum.HComplete ||
+			historyComputed.Updates.CompleteStatus == enum.HRequestComplete ||
+			historyComputed.Updates.CompleteStatus == enum.HCompleteWithBA {
 			if strings.ToUpper(historyComputed.Status) != "MAINTENANCE" {
 				completeListNoMaint = append(completeListNoMaint, historyComputed)
 			}
 			completeList = append(completeList, historyComputed)
 		}
-		if historyComputed.Updates.CompleteStatus == 1 {
+		if historyComputed.Updates.CompleteStatus == enum.HProgress {
 			progressList = append(progressList, historyComputed)
 		}
-		if historyComputed.Updates.CompleteStatus == 2 || historyComputed.Updates.CompleteStatus == 3 {
+		if historyComputed.Updates.CompleteStatus == enum.HRequestPending ||
+			historyComputed.Updates.CompleteStatus == enum.HPending {
 			pendingList = append(pendingList, historyComputed)
 		}
 	}
@@ -117,10 +121,10 @@ func GeneratePDFVendorMonthly(
 	buildCCTVMonthlyViewLand(m, cctvMonthlyViewData, altaiMonthlyViewData)
 
 	// SPACE
-	m.Row(5, func() {
-		m.Col(0, func() {
-		})
-	})
+	//m.Row(5, func() {
+	//	m.Col(0, func() {
+	//	})
+	//})
 
 	// QUARTERLY
 	//----------convert data
@@ -130,13 +134,31 @@ func GeneratePDFVendorMonthly(
 	buildCCTVQuarterlyViewLand(m, regCctvQuarterlyViewData, altaiQuarterlyViewData)
 
 	// SPACE
-	m.Row(5, func() {
-		m.Col(0, func() {
-		})
-	})
+	//m.Row(5, func() {
+	//	m.Col(0, func() {
+	//	})
+	//})
 
 	buildTitleHeadingView(m, " Cek Fisik Triwulan Pulpis", getOrangeColor())
 	buildCCTVQuarterlyViewNoAltaiLand(m, pulpisCctvQuarterlyViewData)
+
+	// backup check
+	// SPACE
+	//m.Row(5, func() {
+	//	m.Col(0, func() {
+	//	})
+	//})
+	buildTitleHeadingView(m, " Pencadangan konfigurasi", getDarkGreyColorLight())
+	totalConfig := len(dataCheckConf.ConfigCheckItems)
+	configUpdated := 0
+	for _, d := range dataCheckConf.ConfigCheckItems {
+		if d.IsUpdated {
+			configUpdated++
+		}
+	}
+	m.Row(5, func() {
+		textBody(m, fmt.Sprintf("- Pencadangan konfigurasi : %d dari %d perangkat jaringan dicadangkan (data terlampir)", configUpdated, totalConfig), 5)
+	})
 
 	// NEW PAGE ================================================================= \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	m.AddPage()
@@ -162,6 +184,12 @@ func GeneratePDFVendorMonthly(
 		}
 		buildHistoryVendorIncident(m, completeListNoMaint, " Insiden", getTealColor())
 	}
+
+	// NEW PAGE ================================================================= \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	m.AddPage()
+	m.SetPageMargins(10, 10, 10)
+
+	buildConfigListMonth(m, dataCheckConf.ConfigCheckItems, " Lampiran pencadangan konfigurasi perangkat", getDarkGreyColorLight())
 
 	err = m.OutputFileAndClose(fmt.Sprintf("static/pdf-v-month/%s.pdf", data.Name))
 	if err != nil {
@@ -205,6 +233,7 @@ func buildHistoryVendorListMonth(m pdf.Maroto, dataList []dto.HistoryUnwindRespo
 			updateAt = "error"
 		}
 
+		data.UpdatedAt = 0 // permintaan bos untuk di 0 kan
 		contents = append(contents, []string{
 			fmt.Sprintf("%03d\n", i+1),
 			data.ParentName,
@@ -359,6 +388,7 @@ func addList(m pdf.Maroto, data dto.HistoryUnwindResponse, i int) {
 			textList(m, data.ProblemResolve, 0)
 		})
 
+		data.UpdatedAt = 0 // permintaan bos untuk di 0 kan
 		// pengerjaan
 		m.Col(1, func() {
 			textList(m, sfunc.IntToTime(data.UpdatedAt, ""), 0)
@@ -506,4 +536,62 @@ func buildCCTVQuarterlyViewNoAltaiLand(m pdf.Maroto, cctv summaryQuarterlyData) 
 
 	})
 
+}
+
+func buildConfigListMonth(m pdf.Maroto, dataList []dto.ConfigCheckItemEmbed, title string, customColor color.Color) {
+	tableHeading := []string{"No.", "Perangkat", "Lokasi", "Status", "Waktu verifikasi", "Diverifikasi oleh"}
+
+	var contents [][]string
+	for i, data := range dataList {
+		updateAt, err := timegen.GetTimeWITA(data.CheckedAt)
+		if err != nil {
+			updateAt = "error"
+		}
+
+		var status string
+		if data.IsUpdated {
+			status = "Dicadangkan"
+		}
+
+		contents = append(contents, []string{
+			fmt.Sprintf("%03d\n", i+1),
+			data.Name,
+			data.Location,
+			status,
+			updateAt,
+			strings.ToLower(data.CheckedBy)},
+		)
+	}
+
+	lightPurpleColor := getLightPurpleColor()
+
+	m.SetBackgroundColor(customColor)
+	m.Row(9, func() {
+		m.Col(12, func() {
+			m.Text(title, props.Text{
+				Top:             2,
+				Family:          consts.Courier,
+				Style:           consts.Bold,
+				Size:            12,
+				Align:           consts.Left,
+				VerticalPadding: 0,
+				Color:           color.NewWhite(),
+			})
+		})
+	})
+	m.SetBackgroundColor(color.NewWhite())
+	m.TableList(tableHeading, contents, props.TableList{
+		HeaderProp: props.TableListContent{
+			Size:      9,
+			GridSizes: []uint{2, 3, 2, 1, 2, 2},
+		},
+		ContentProp: props.TableListContent{
+			Size:      9,
+			GridSizes: []uint{2, 3, 2, 1, 2, 2},
+		},
+		Align:                consts.Left,
+		AlternatedBackground: &lightPurpleColor,
+		HeaderContentSpace:   1,
+		Line:                 true,
+	})
 }

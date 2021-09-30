@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/muchlist/risa_restfull/constants/enum"
+	"github.com/muchlist/risa_restfull/dao/configcheckdao"
 	"time"
 
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -30,6 +31,7 @@ type ReportParams struct {
 	CheckAltai    altaicheckdao.CheckAltaiDaoAssumer
 	CheckAltaiPhy altaiphycheckdao.CheckAltaiPhyDaoAssumer
 	Stock         stockdao.StockDaoAssumer
+	CheckConfig   configcheckdao.CheckConfigDaoAssumer
 	Pdf           reportdao.PdfDaoAssumer
 }
 
@@ -600,6 +602,9 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 	// cek fisik altai 3 bulanan
 	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
 
+	// checklist backup config
+	lastCheckConfig, _ := r.dao.CheckConfig.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch)
+
 	errPDF := pdfgen.GeneratePDFVendorMonthly(pdfgen.PDFReqMonth{
 		Name:        name,
 		HistoryList: historiesCombined,
@@ -611,7 +616,9 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 		CctvQuarterly:  cctvQuarter,
 		AltaiMonthly:   altaiMonthly,
 		AltaiQuarterly: altaiQuarter,
-	})
+	},
+		*lastCheckConfig,
+	)
 	if errPDF != nil {
 		return nil, rest_err.NewInternalServerError("gagal membuat Pdf", errPDF)
 	}

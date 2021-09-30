@@ -136,13 +136,17 @@ func GeneratePDFVendorDaily(name string, data dto.ReportResponse, pdfVendorStruc
 	}
 
 	for _, historyComputed := range allListComputed {
-		if historyComputed.Updates.CompleteStatus == 0 || historyComputed.Updates.CompleteStatus == 4 {
+		if historyComputed.Updates.CompleteStatus == enum.HInfo ||
+			historyComputed.Updates.CompleteStatus == enum.HComplete ||
+			historyComputed.Updates.CompleteStatus == enum.HRequestComplete ||
+			historyComputed.Updates.CompleteStatus == enum.HCompleteWithBA {
 			completeList = append(completeList, historyComputed)
 		}
-		if historyComputed.Updates.CompleteStatus == 1 {
+		if historyComputed.Updates.CompleteStatus == enum.HProgress {
 			progressList = append(progressList, historyComputed)
 		}
-		if historyComputed.Updates.CompleteStatus == 2 || historyComputed.Updates.CompleteStatus == 3 {
+		if historyComputed.Updates.CompleteStatus == enum.HRequestPending ||
+			historyComputed.Updates.CompleteStatus == enum.HPending {
 			pendingList = append(pendingList, historyComputed)
 		}
 	}

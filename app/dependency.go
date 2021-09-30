@@ -95,6 +95,7 @@ func setupDependency() {
 		CheckCCTVPhy:  venPhyCheckDao,
 		CheckAltai:    altaiCheckDao,
 		CheckAltaiPhy: altaiPhyCheckDao,
+		CheckConfig:   configCheckDao,
 		Stock:         stockDao,
 		Pdf:           pdfDao,
 	})
