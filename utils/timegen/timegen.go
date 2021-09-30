@@ -5,6 +5,9 @@ import (
 )
 
 func GetTimeWITA(timestampSec int64) (string, error) {
+	if timestampSec == 0 {
+		return "", nil
+	}
 	witaTimeZone, err := time.LoadLocation("Asia/Makassar")
 	if err != nil {
 		return "", err
@@ -16,6 +19,9 @@ func GetTimeWithYearWITA(timestampSec int64) (string, error) {
 	if timestampSec == 0 {
 		return "", nil
 	}
+	if timestampSec == 0 {
+		return "", nil
+	}
 	witaTimeZone, err := time.LoadLocation("Asia/Makassar")
 	if err != nil {
 		return "", err
@@ -24,6 +30,9 @@ func GetTimeWithYearWITA(timestampSec int64) (string, error) {
 }
 
 func GetTimeAsName(timestampSec int64) (string, error) {
+	if timestampSec == 0 {
+		return "", nil
+	}
 	witaTimeZone, err := time.LoadLocation("Asia/Makassar")
 	if err != nil {
 		return "", err
@@ -32,6 +41,9 @@ func GetTimeAsName(timestampSec int64) (string, error) {
 }
 
 func GetHourWITA(timestampSec int64) (string, error) {
+	if timestampSec == 0 {
+		return "", nil
+	}
 	witaTimeZone, err := time.LoadLocation("Asia/Makassar")
 	if err != nil {
 		return "", err
