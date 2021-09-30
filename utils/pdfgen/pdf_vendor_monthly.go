@@ -165,7 +165,7 @@ func GeneratePDFVendorMonthly(
 	m.SetPageMargins(5, 10, 5)
 
 	if len(completeList) != 0 {
-		buildHistoryVendorListMonth(m, completeList, " Completed", getTealColor())
+		buildHistoryVendorListMonth(m, completeList, " Rekap Pekerjaan yang Diselesaikan", getTealColor())
 	}
 
 	if len(progressList) != 0 {

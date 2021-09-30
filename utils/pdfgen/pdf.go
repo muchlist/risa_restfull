@@ -94,7 +94,7 @@ func GeneratePDF(
 	}
 
 	if len(completeList) != 0 {
-		buildHistoryList(m, completeList, " Rekap Pekerjaan yang Diselesaikan", getTealColor())
+		buildHistoryList(m, completeList, " Completed", getTealColor())
 	}
 
 	if len(progressList) != 0 {
