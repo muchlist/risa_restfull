@@ -32,7 +32,7 @@ type ReportParams struct {
 	CheckAltai    altaicheckdao.CheckAltaiDaoAssumer
 	CheckAltaiPhy altaiphycheckdao.CheckAltaiPhyDaoAssumer
 	Stock         stockdao.StockDaoAssumer
-	CheckConfig   configcheckdao.CheckConfigDaoAssumer
+	CheckConfig   configcheckdao.CheckConfigLoader
 	Pdf           reportdao.PdfDaoAssumer
 }
 
@@ -604,7 +604,7 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(context.TODO(), targetMinQuarter, currentTime, branch, true)
 
 	// checklist backup config
-	lastCheckConfig, _ := r.dao.CheckConfig.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch)
+	lastCheckConfig, _ := r.dao.CheckConfig.GetLastCheckCreateRange(context.TODO(), targetMinMonthly, currentTime, branch)
 
 	errPDF := pdfgen.GeneratePDFVendorMonthly(pdfgen.PDFReqMonth{
 		Name:        name,

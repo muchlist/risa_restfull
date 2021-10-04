@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"sort"
@@ -37,19 +38,19 @@ type configCheckService struct {
 	servHistory HistoryServiceAssumer
 }
 type ConfigCheckServiceAssumer interface {
-	InsertConfigCheck(user mjwt.CustomClaim) (*string, rest_err.APIError)
-	DeleteConfigCheck(user mjwt.CustomClaim, id string) rest_err.APIError
-	GetConfigCheckByID(configCheckID string, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError)
-	UpdateManyConfigCheckItem(user mjwt.CustomClaim, input dto.ConfigCheckUpdateManyRequest) (*dto.ConfigCheck, rest_err.APIError)
-	FindConfigCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.ConfigCheck, rest_err.APIError)
-	UpdateConfigCheckItem(user mjwt.CustomClaim, input dto.ConfigCheckItemUpdateRequest) (*dto.ConfigCheck, rest_err.APIError)
-	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.ConfigCheck, rest_err.APIError)
+	InsertConfigCheck(ctx context.Context, user mjwt.CustomClaim) (*string, rest_err.APIError)
+	DeleteConfigCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	GetConfigCheckByID(ctx context.Context, configCheckID string, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError)
+	UpdateManyConfigCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.ConfigCheckUpdateManyRequest) (*dto.ConfigCheck, rest_err.APIError)
+	FindConfigCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) ([]dto.ConfigCheck, rest_err.APIError)
+	UpdateConfigCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.ConfigCheckItemUpdateRequest) (*dto.ConfigCheck, rest_err.APIError)
+	FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.ConfigCheck, rest_err.APIError)
 }
 
-func (c *configCheckService) InsertConfigCheck(user mjwt.CustomClaim) (*string, rest_err.APIError) {
+func (c *configCheckService) InsertConfigCheck(ctx context.Context, user mjwt.CustomClaim) (*string, rest_err.APIError) {
 	timeNow := time.Now().Unix()
 
-	networkItems, err := c.daoNetwork.FindOther(dto.FilterOther{
+	networkItems, err := c.daoNetwork.FindOther(ctx, dto.FilterOther{
 		FilterBranch:      user.Branch,
 		FilterSubCategory: fmt.Sprintf("%s,%s", category.Network, category.Altai),
 	})
@@ -88,7 +89,7 @@ func (c *configCheckService) InsertConfigCheck(user mjwt.CustomClaim) (*string, 
 	}
 
 	// DB
-	insertedID, err := c.daoC.InsertCheck(data)
+	insertedID, err := c.daoC.InsertCheck(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +97,7 @@ func (c *configCheckService) InsertConfigCheck(user mjwt.CustomClaim) (*string, 
 	return insertedID, nil
 }
 
-func (c *configCheckService) DeleteConfigCheck(user mjwt.CustomClaim, id string) rest_err.APIError {
+func (c *configCheckService) DeleteConfigCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -105,7 +106,7 @@ func (c *configCheckService) DeleteConfigCheck(user mjwt.CustomClaim, id string)
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := c.daoC.DeleteCheck(dto.FilterIDBranchCreateGte{
+	_, err := c.daoC.DeleteCheck(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
 		FilterCreateGTE: timeMinusOneDay.Unix(),
@@ -117,7 +118,7 @@ func (c *configCheckService) DeleteConfigCheck(user mjwt.CustomClaim, id string)
 	return nil
 }
 
-func (c *configCheckService) UpdateConfigCheckItem(user mjwt.CustomClaim, input dto.ConfigCheckItemUpdateRequest) (*dto.ConfigCheck, rest_err.APIError) {
+func (c *configCheckService) UpdateConfigCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.ConfigCheckItemUpdateRequest) (*dto.ConfigCheck, rest_err.APIError) {
 	parentOid, errT := primitive.ObjectIDFromHex(input.ParentID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
@@ -136,14 +137,14 @@ func (c *configCheckService) UpdateConfigCheckItem(user mjwt.CustomClaim, input 
 		CheckedBy: user.Name,
 		IsUpdated: input.IsUpdated,
 	}
-	configCheck, err := c.daoC.UpdateCheckItem(data)
+	configCheck, err := c.daoC.UpdateCheckItem(ctx, data)
 	if err != nil {
 		return nil, err
 	}
 	return configCheck, nil
 }
 
-func (c *configCheckService) UpdateManyConfigCheckItem(user mjwt.CustomClaim, input dto.ConfigCheckUpdateManyRequest) (*dto.ConfigCheck, rest_err.APIError) {
+func (c *configCheckService) UpdateManyConfigCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.ConfigCheckUpdateManyRequest) (*dto.ConfigCheck, rest_err.APIError) {
 	parentOid, errT := primitive.ObjectIDFromHex(input.ParentID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
@@ -158,7 +159,7 @@ func (c *configCheckService) UpdateManyConfigCheckItem(user mjwt.CustomClaim, in
 		Updater:        user.Name,
 	}
 
-	err := c.daoC.UpdateManyItem(data)
+	err := c.daoC.UpdateManyItem(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -172,19 +173,19 @@ func (c *configCheckService) UpdateManyConfigCheckItem(user mjwt.CustomClaim, in
 		Updater:        user.Name,
 	}
 
-	err = c.daoC.UpdateManyItem(data)
+	err = c.daoC.UpdateManyItem(ctx, data)
 	if err != nil {
 		return nil, err
 	}
 
-	configCheck, err := c.daoC.GetCheckByID(parentOid, "")
+	configCheck, err := c.daoC.GetCheckByID(ctx, parentOid, "")
 	if err != nil {
 		return nil, err
 	}
 	return configCheck, nil
 }
 
-func (c *configCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.ConfigCheck, rest_err.APIError) {
+func (c *configCheckService) FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.ConfigCheck, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(detailID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -194,7 +195,7 @@ func (c *configCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 
 	// find config item yang sudah diupdate
 	var configUpdatedIDs []string
-	configChecklistDetail, err := c.daoC.GetCheckByID(oid, user.Branch)
+	configChecklistDetail, err := c.daoC.GetCheckByID(ctx, oid, user.Branch)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +225,7 @@ func (c *configCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 	}()
 
 	// 7. tandai isFinish true dan end_date ke waktu sekarang
-	configChecklistDetail, err = c.daoC.EditCheck(dto.ConfigCheckEdit{
+	configChecklistDetail, err = c.daoC.EditCheck(ctx, dto.ConfigCheckEdit{
 		FilterIDBranch: dto.FilterIDBranch{
 			FilterID:     oid,
 			FilterBranch: user.Branch,
@@ -244,21 +245,21 @@ func (c *configCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 	return configChecklistDetail, nil
 }
 
-func (c *configCheckService) GetConfigCheckByID(configCheckID string, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError) {
+func (c *configCheckService) GetConfigCheckByID(ctx context.Context, configCheckID string, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(configCheckID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	configCheck, err := c.daoC.GetCheckByID(oid, branchIfSpecific)
+	configCheck, err := c.daoC.GetCheckByID(ctx, oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}
 	return configCheck, nil
 }
 
-func (c *configCheckService) FindConfigCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.ConfigCheck, rest_err.APIError) {
-	configCheckList, err := c.daoC.FindCheck(branch, filter, false)
+func (c *configCheckService) FindConfigCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) ([]dto.ConfigCheck, rest_err.APIError) {
+	configCheckList, err := c.daoC.FindCheck(ctx, branch, filter, false)
 	if err != nil {
 		return []dto.ConfigCheck{}, err
 	}

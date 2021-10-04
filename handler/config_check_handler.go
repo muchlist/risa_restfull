@@ -24,7 +24,7 @@ type configCheckHandler struct {
 func (ac *configCheckHandler) Insert(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	insertID, apiErr := ac.service.InsertConfigCheck(*claims)
+	insertID, apiErr := ac.service.InsertConfigCheck(c.Context(), *claims)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -36,7 +36,7 @@ func (ac *configCheckHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := ac.service.DeleteConfigCheck(*claims, id)
+	apiErr := ac.service.DeleteConfigCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -47,7 +47,7 @@ func (ac *configCheckHandler) Delete(c *fiber.Ctx) error {
 func (ac *configCheckHandler) Get(c *fiber.Ctx) error {
 	checkID := c.Params("id")
 
-	check, apiErr := ac.service.GetConfigCheckByID(checkID, "")
+	check, apiErr := ac.service.GetConfigCheckByID(c.Context(), checkID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -63,7 +63,7 @@ func (ac *configCheckHandler) Find(c *fiber.Ctx) error {
 	end := stringToInt(c.Query("end"))
 	limit := stringToInt(c.Query("limit"))
 
-	checkList, apiErr := ac.service.FindConfigCheck(branch, dto.FilterTimeRangeLimit{
+	checkList, apiErr := ac.service.FindConfigCheck(c.Context(), branch, dto.FilterTimeRangeLimit{
 		FilterStart: int64(start),
 		FilterEnd:   int64(end),
 		Limit:       int64(limit),
@@ -91,7 +91,7 @@ func (ac *configCheckHandler) UpdateCheckItem(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkUpdated, apiErr := ac.service.UpdateConfigCheckItem(*claims, req)
+	checkUpdated, apiErr := ac.service.UpdateConfigCheckItem(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -114,7 +114,7 @@ func (ac *configCheckHandler) UpdateManyCheckItem(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkUpdated, apiErr := ac.service.UpdateManyConfigCheckItem(*claims, req)
+	checkUpdated, apiErr := ac.service.UpdateManyConfigCheckItem(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -125,7 +125,7 @@ func (ac *configCheckHandler) Finish(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	result, apiErr := ac.service.FinishCheck(*claims, id)
+	result, apiErr := ac.service.FinishCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
