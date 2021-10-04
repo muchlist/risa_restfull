@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -32,7 +33,7 @@ func NewVenPhyCheckService(
 type venPhyCheckService struct {
 	daoC        venphycheckdao.CheckVenPhyDaoAssumer
 	daoG        genunitdao.GenUnitDaoAssumer
-	daoCTV      cctvdao.CctvDaoAssumer
+	daoCTV      cctvdao.CctvLoader
 	servHistory HistoryServiceAssumer
 }
 type VenPhyCheckServiceAssumer interface {
@@ -61,7 +62,7 @@ func (vc *venPhyCheckService) InsertVenPhyCheck(user mjwt.CustomClaim, name stri
 
 	// ambil cctv untuk mendapatkan data lokasi
 	// cctvItems sudah sorted berdasarkan lokasi sedangkan genItems tidak
-	cctvItems, err := vc.daoCTV.FindCctv(dto.FilterBranchLocIPNameDisable{
+	cctvItems, err := vc.daoCTV.FindCctv(context.TODO(), dto.FilterBranchLocIPNameDisable{
 		FilterBranch: user.Branch,
 	})
 	if err != nil {

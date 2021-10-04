@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
@@ -34,7 +35,7 @@ func NewVendorCheckService(
 type vendorCheckService struct {
 	daoC        vendorcheckdao.CheckVendorDaoAssumer
 	daoG        genunitdao.GenUnitDaoAssumer
-	daoCTV      cctvdao.CctvDaoAssumer
+	daoCTV      cctvdao.CctvLoader
 	servHistory HistoryServiceAssumer
 }
 type VendorCheckServiceAssumer interface {
@@ -63,7 +64,7 @@ func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim) (*string, 
 
 	// ambil cctv untuk mendapatkan data lokasi
 	// cctvItems sudah sorted berdasarkan lokasi sedangkan genItems tidak
-	cctvItems, err := c.daoCTV.FindCctv(dto.FilterBranchLocIPNameDisable{
+	cctvItems, err := c.daoCTV.FindCctv(context.TODO(), dto.FilterBranchLocIPNameDisable{
 		FilterBranch: user.Branch,
 	})
 	if err != nil {
