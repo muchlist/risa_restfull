@@ -40,7 +40,7 @@ func (pc *computerHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := pc.service.InsertComputer(*claims, req)
+	insertID, apiErr := pc.service.InsertComputer(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -53,7 +53,7 @@ func (pc *computerHandler) Insert(c *fiber.Ctx) error {
 func (pc *computerHandler) GetComputer(c *fiber.Ctx) error {
 	computerID := c.Params("id")
 
-	computer, apiErr := pc.service.GetComputerByID(computerID, "")
+	computer, apiErr := pc.service.GetComputerByID(c.Context(), computerID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -96,7 +96,7 @@ func (pc *computerHandler) Find(c *fiber.Ctx) error {
 		FilterSeatManagement: seatManagement,
 	}
 
-	computerList, generalList, apiErr := pc.service.FindComputer(filterA)
+	computerList, generalList, apiErr := pc.service.FindComputer(c.Context(), filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -126,7 +126,7 @@ func (pc *computerHandler) DisableComputer(c *fiber.Ctx) error {
 		statusBool = true
 	}
 
-	computerList, apiErr := pc.service.DisableComputer(userID, *claims, statusBool)
+	computerList, apiErr := pc.service.DisableComputer(c.Context(), userID, *claims, statusBool)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -138,7 +138,7 @@ func (pc *computerHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := pc.service.DeleteComputer(*claims, id)
+	apiErr := pc.service.DeleteComputer(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -163,7 +163,7 @@ func (pc *computerHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	computerEdited, apiErr := pc.service.EditComputer(*claims, computerID, req)
+	computerEdited, apiErr := pc.service.EditComputer(c.Context(), *claims, computerID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -176,7 +176,7 @@ func (pc *computerHandler) UploadImage(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	// cek apakah ID computer && branch ada
-	_, apiErr := pc.service.GetComputerByID(id, claims.Branch)
+	_, apiErr := pc.service.GetComputerByID(c.Context(), id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -189,7 +189,7 @@ func (pc *computerHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// update path image di database
-	computerResult, apiErr := pc.service.PutImage(*claims, id, pathInDb)
+	computerResult, apiErr := pc.service.PutImage(c.Context(), *claims, id, pathInDb)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

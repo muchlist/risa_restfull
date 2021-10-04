@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
@@ -36,17 +37,17 @@ type computerService struct {
 	daoG genunitdao.GenUnitDaoAssumer
 }
 type ComputerServiceAssumer interface {
-	InsertComputer(user mjwt.CustomClaim, input dto.ComputerRequest) (*string, rest_err.APIError)
-	EditComputer(user mjwt.CustomClaim, computerID string, input dto.ComputerEditRequest) (*dto.Computer, rest_err.APIError)
-	DeleteComputer(user mjwt.CustomClaim, id string) rest_err.APIError
-	DisableComputer(computerID string, user mjwt.CustomClaim, value bool) (*dto.Computer, rest_err.APIError)
-	PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Computer, rest_err.APIError)
+	InsertComputer(ctx context.Context, user mjwt.CustomClaim, input dto.ComputerRequest) (*string, rest_err.APIError)
+	EditComputer(ctx context.Context, user mjwt.CustomClaim, computerID string, input dto.ComputerEditRequest) (*dto.Computer, rest_err.APIError)
+	DeleteComputer(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	DisableComputer(ctx context.Context, computerID string, user mjwt.CustomClaim, value bool) (*dto.Computer, rest_err.APIError)
+	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.Computer, rest_err.APIError)
 
-	GetComputerByID(computerID string, branchIfSpecific string) (*dto.Computer, rest_err.APIError)
-	FindComputer(filter dto.FilterComputer) (dto.ComputerResponseMinList, dto.GenUnitResponseList, rest_err.APIError)
+	GetComputerByID(ctx context.Context, computerID string, branchIfSpecific string) (*dto.Computer, rest_err.APIError)
+	FindComputer(ctx context.Context, filter dto.FilterComputer) (dto.ComputerResponseMinList, dto.GenUnitResponseList, rest_err.APIError)
 }
 
-func (c *computerService) InsertComputer(user mjwt.CustomClaim, input dto.ComputerRequest) (*string, rest_err.APIError) {
+func (c *computerService) InsertComputer(ctx context.Context, user mjwt.CustomClaim, input dto.ComputerRequest) (*string, rest_err.APIError) {
 	// FilterID digunakan juga oleh gen_unit_dao sehingga dibuat disini, bukan di database
 	idGenerated := primitive.NewObjectID()
 
@@ -107,7 +108,7 @@ func (c *computerService) InsertComputer(user mjwt.CustomClaim, input dto.Comput
 		}
 
 		// DB
-		insertedID, err := c.daoC.InsertPc(data)
+		insertedID, err := c.daoC.InsertPc(ctx, data)
 
 		resultChan <- result{
 			id:  insertedID,
@@ -159,7 +160,7 @@ func (c *computerService) InsertComputer(user mjwt.CustomClaim, input dto.Comput
 	return resultID, nil
 }
 
-func (c *computerService) EditComputer(user mjwt.CustomClaim, computerID string, input dto.ComputerEditRequest) (*dto.Computer, rest_err.APIError) {
+func (c *computerService) EditComputer(ctx context.Context, user mjwt.CustomClaim, computerID string, input dto.ComputerEditRequest) (*dto.Computer, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(computerID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -204,7 +205,7 @@ func (c *computerService) EditComputer(user mjwt.CustomClaim, computerID string,
 	}
 
 	// DB
-	computerEdited, err := c.daoC.EditPc(data)
+	computerEdited, err := c.daoC.EditPc(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +280,7 @@ func (c *computerService) EditComputer(user mjwt.CustomClaim, computerID string,
 	return computerEdited, nil
 }
 
-func (c *computerService) DeleteComputer(user mjwt.CustomClaim, id string) rest_err.APIError {
+func (c *computerService) DeleteComputer(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -288,7 +289,7 @@ func (c *computerService) DeleteComputer(user mjwt.CustomClaim, id string) rest_
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := c.daoC.DeletePc(dto.FilterIDBranchCreateGte{
+	_, err := c.daoC.DeletePc(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
 		FilterCreateGTE: timeMinusOneDay.Unix(),
@@ -308,14 +309,14 @@ func (c *computerService) DeleteComputer(user mjwt.CustomClaim, id string) rest_
 }
 
 // DisableComputer if value true , computer will disabled
-func (c *computerService) DisableComputer(computerID string, user mjwt.CustomClaim, value bool) (*dto.Computer, rest_err.APIError) {
+func (c *computerService) DisableComputer(ctx context.Context, computerID string, user mjwt.CustomClaim, value bool) (*dto.Computer, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(computerID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
 	// set disable enable computer
-	computer, err := c.daoC.DisablePc(oid, user, value)
+	computer, err := c.daoC.DisablePc(ctx, oid, user, value)
 	if err != nil {
 		return nil, err
 	}
@@ -330,20 +331,20 @@ func (c *computerService) DisableComputer(computerID string, user mjwt.CustomCla
 }
 
 // PutImage memasukkan lokasi file (path) ke dalam database computer dengan mengecek kesesuaian branch
-func (c *computerService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Computer, rest_err.APIError) {
+func (c *computerService) PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.Computer, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	computer, err := c.daoC.UploadImage(oid, imagePath, user.Branch)
+	computer, err := c.daoC.UploadImage(ctx, oid, imagePath, user.Branch)
 	if err != nil {
 		return nil, err
 	}
 	return computer, nil
 }
 
-func (c *computerService) GetComputerByID(computerID string, branchIfSpecific string) (*dto.Computer, rest_err.APIError) {
+func (c *computerService) GetComputerByID(ctx context.Context, computerID string, branchIfSpecific string) (*dto.Computer, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(computerID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -368,7 +369,7 @@ func (c *computerService) GetComputerByID(computerID string, branchIfSpecific st
 	go func() {
 		defer wg.Done()
 		// DB
-		computer, err := c.daoC.GetPcByID(oid, branchIfSpecific)
+		computer, err := c.daoC.GetPcByID(ctx, oid, branchIfSpecific)
 		resultComputerChan <- resultComputer{
 			data: computer,
 			err:  err,
@@ -410,7 +411,7 @@ func (c *computerService) GetComputerByID(computerID string, branchIfSpecific st
 	return computerData, nil
 }
 
-func (c *computerService) FindComputer(filter dto.FilterComputer) (dto.ComputerResponseMinList, dto.GenUnitResponseList, rest_err.APIError) {
+func (c *computerService) FindComputer(ctx context.Context, filter dto.FilterComputer) (dto.ComputerResponseMinList, dto.GenUnitResponseList, rest_err.APIError) {
 	// cek apakah ip address valid, jika valid maka set filter.FilterName ke kosong supaya pencarian berdasarkan IP
 	if filter.FilterIP != "" {
 		if net.ParseIP(filter.FilterIP) == nil {
@@ -438,7 +439,7 @@ func (c *computerService) FindComputer(filter dto.FilterComputer) (dto.ComputerR
 
 	go func() {
 		defer wg.Done()
-		computerList, err := c.daoC.FindPc(filter)
+		computerList, err := c.daoC.FindPc(ctx, filter)
 		computerListChan <- resultComputer{
 			data: computerList,
 			err:  err,
