@@ -386,10 +386,10 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, st
 	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(context.TODO(), targetMinDaily, end, branch)
 
 	// cek fisik altai bulanan
-	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, end, branch, false)
+	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(context.TODO(), targetMinMonthly, end, branch, false)
 
 	// cek fisik altai 3 bulanan
-	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, end, branch, true)
+	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(context.TODO(), targetMinQuarter, end, branch, true)
 
 	// GET HISTORIES 0, 4, 6 sesuai start end inputan
 	historyList04, err := r.dao.History.UnwindHistory(
@@ -478,10 +478,10 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, bran
 	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(context.TODO(), targetMinDaily, currentTime, branch)
 
 	// cek fisik altai bulanan
-	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)
+	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(context.TODO(), targetMinMonthly, currentTime, branch, false)
 
 	// cek fisik altai 3 bulanan
-	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
+	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(context.TODO(), targetMinQuarter, currentTime, branch, true)
 
 	// GET HISTORIES 0, 4, 6 sesuai start end inputan
 	historyList04, err := r.dao.History.UnwindHistory(
@@ -598,10 +598,10 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
 
 	// cek fisik altai bulanan
-	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)
+	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(context.TODO(), targetMinMonthly, currentTime, branch, false)
 
 	// cek fisik altai 3 bulanan
-	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
+	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(context.TODO(), targetMinQuarter, currentTime, branch, true)
 
 	// checklist backup config
 	lastCheckConfig, _ := r.dao.CheckConfig.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch)
