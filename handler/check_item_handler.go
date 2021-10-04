@@ -37,7 +37,7 @@ func (ci *checkItemHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := ci.service.InsertCheckItem(*claims, req)
+	insertID, apiErr := ci.service.InsertCheckItem(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -50,7 +50,7 @@ func (ci *checkItemHandler) Insert(c *fiber.Ctx) error {
 func (ci *checkItemHandler) GetCheckItem(c *fiber.Ctx) error {
 	checkItemID := c.Params("id")
 
-	checkItem, apiErr := ci.service.GetCheckItemByID(checkItemID, "")
+	checkItem, apiErr := ci.service.GetCheckItemByID(c.Context(), checkItemID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -78,7 +78,7 @@ func (ci *checkItemHandler) Find(c *fiber.Ctx) error {
 		FilterDisable: disable,
 	}
 
-	checkItemList, apiErr := ci.service.FindCheckItem(filterA, haveProblem)
+	checkItemList, apiErr := ci.service.FindCheckItem(c.Context(), filterA, haveProblem)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -105,7 +105,7 @@ func (ci *checkItemHandler) DisableCheckItem(c *fiber.Ctx) error {
 		statusBool = true
 	}
 
-	checkItemList, apiErr := ci.service.DisableCheckItem(userID, *claims, statusBool)
+	checkItemList, apiErr := ci.service.DisableCheckItem(c.Context(), userID, *claims, statusBool)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -117,7 +117,7 @@ func (ci *checkItemHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := ci.service.DeleteCheckItem(*claims, id)
+	apiErr := ci.service.DeleteCheckItem(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -142,7 +142,7 @@ func (ci *checkItemHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkItemEdited, apiErr := ci.service.EditCheckItem(*claims, checkItemID, req)
+	checkItemEdited, apiErr := ci.service.EditCheckItem(c.Context(), *claims, checkItemID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
