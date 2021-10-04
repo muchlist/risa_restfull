@@ -104,7 +104,7 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 	historiesCombined := append(historyList04, historyList123...)
 
 	// GET CHECK LIST
-	checkList, err := r.dao.CheckIT.FindCheckForReports(branch, dto.FilterTimeRangeLimit{
+	checkList, err := r.dao.CheckIT.FindCheckForReports(context.TODO(), branch, dto.FilterTimeRangeLimit{
 		FilterStart: start,
 		FilterEnd:   end,
 		Limit:       2,
@@ -177,7 +177,7 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 	historiesCombined := append(historyList04, historyList123...)
 
 	// GET CHECK LIST
-	checkList, err := r.dao.CheckIT.FindCheckForReports(branch, dto.FilterTimeRangeLimit{
+	checkList, err := r.dao.CheckIT.FindCheckForReports(context.TODO(), branch, dto.FilterTimeRangeLimit{
 		FilterStart: lastPDFEndTime,
 		FilterEnd:   currentTime,
 	})

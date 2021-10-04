@@ -37,7 +37,7 @@ func (ch *checkHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := ch.service.InsertCheck(*claims, req)
+	insertID, apiErr := ch.service.InsertCheck(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -50,7 +50,7 @@ func (ch *checkHandler) Insert(c *fiber.Ctx) error {
 func (ch *checkHandler) GetCheck(c *fiber.Ctx) error {
 	checkID := c.Params("id")
 
-	check, apiErr := ch.service.GetCheckByID(checkID, "")
+	check, apiErr := ch.service.GetCheckByID(c.Context(), checkID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -66,7 +66,7 @@ func (ch *checkHandler) Find(c *fiber.Ctx) error {
 	end := stringToInt(c.Query("end"))
 	limit := stringToInt(c.Query("limit"))
 
-	checkList, apiErr := ch.service.FindCheck(branch, dto.FilterTimeRangeLimit{
+	checkList, apiErr := ch.service.FindCheck(c.Context(), branch, dto.FilterTimeRangeLimit{
 		FilterStart: int64(start),
 		FilterEnd:   int64(end),
 		Limit:       int64(limit),
@@ -82,7 +82,7 @@ func (ch *checkHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := ch.service.DeleteCheck(*claims, id)
+	apiErr := ch.service.DeleteCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -101,7 +101,7 @@ func (ch *checkHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkEdited, apiErr := ch.service.EditCheck(*claims, checkID, req)
+	checkEdited, apiErr := ch.service.EditCheck(c.Context(), *claims, checkID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -124,7 +124,7 @@ func (ch *checkHandler) UpdateCheckItem(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkUpdated, apiErr := ch.service.UpdateCheckItem(*claims, req)
+	checkUpdated, apiErr := ch.service.UpdateCheckItem(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -138,7 +138,7 @@ func (ch *checkHandler) UploadImage(c *fiber.Ctx) error {
 	childID := c.Params("child_id")
 
 	// cek apakah ID check && branch ada
-	_, apiErr := ch.service.GetCheckByID(id, claims.Branch)
+	_, apiErr := ch.service.GetCheckByID(c.Context(), id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -152,7 +152,7 @@ func (ch *checkHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// update path image di database
-	checkResult, apiErr := ch.service.PutChildImage(*claims, id, childID, pathInDB)
+	checkResult, apiErr := ch.service.PutChildImage(c.Context(), *claims, id, childID, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
