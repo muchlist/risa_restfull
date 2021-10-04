@@ -20,7 +20,7 @@ import (
 )
 
 func NewStockService(stockDao stockdao.StockDaoAssumer,
-	histDao historydao.HistoryDaoAssumer, userDao userdao.UserDaoAssumer,
+	histDao historydao.HistorySaver, userDao userdao.UserDaoAssumer,
 	fcmClient fcm.ClientAssumer) StockServiceAssumer {
 	return &stockService{
 		daoS:      stockDao,
@@ -32,7 +32,7 @@ func NewStockService(stockDao stockdao.StockDaoAssumer,
 
 type stockService struct {
 	daoS      stockdao.StockDaoAssumer
-	daoH      historydao.HistoryDaoAssumer
+	daoH      historydao.HistorySaver
 	daoU      userdao.UserDaoAssumer
 	fcmClient fcm.ClientAssumer
 }
@@ -93,7 +93,7 @@ func (s *stockService) InsertStock(ctx context.Context, user mjwt.CustomClaim, i
 	}
 	isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 	// DB
-	_, err = s.daoH.InsertHistory(dto.History{
+	_, err = s.daoH.InsertHistory(ctx, dto.History{
 		CreatedAt:      timeNow,
 		CreatedBy:      user.Name,
 		CreatedByID:    user.Identity,
@@ -281,7 +281,7 @@ func (s *stockService) ChangeQtyStock(ctx context.Context, user mjwt.CustomClaim
 
 	isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 	// DB
-	_, err = s.daoH.InsertHistory(history, isVendor)
+	_, err = s.daoH.InsertHistory(ctx, history, isVendor)
 	if err != nil {
 		logger.Error("Berhasil membuat stock namun gagal membuat History (ChangeQtyStock)", err)
 		errPlus := rest_err.NewInternalServerError(fmt.Sprintf("galat : stock berhasil diuubah -> %s", err.Message()), err)
@@ -289,7 +289,7 @@ func (s *stockService) ChangeQtyStock(ctx context.Context, user mjwt.CustomClaim
 	}
 
 	go func() {
-		users, err := s.daoU.FindUser(user.Branch)
+		users, err := s.daoU.FindUser(ctx, user.Branch)
 		if err != nil {
 			logger.Error("mendapatkan user gagal saat menambahkan fcm (EDIT STOCK)", err)
 		}

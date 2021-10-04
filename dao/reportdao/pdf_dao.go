@@ -31,14 +31,14 @@ type pdfDao struct {
 }
 
 type PdfDaoAssumer interface {
-	InsertPdf(input dto.PdfFile) (*string, rest_err.APIError)
-	FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
-	FindLastPdf(branch string, typePdf string) (*dto.PdfFile, rest_err.APIError)
+	InsertPdf(ctx context.Context, input dto.PdfFile) (*string, rest_err.APIError)
+	FindPdf(ctx context.Context, branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
+	FindLastPdf(ctx context.Context, branch string, typePdf string) (*dto.PdfFile, rest_err.APIError)
 }
 
-func (c *pdfDao) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
+func (c *pdfDao) InsertPdf(ctx context.Context, input dto.PdfFile) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyPdfCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxtt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	input.Name = strings.ToUpper(input.Name)
@@ -46,7 +46,7 @@ func (c *pdfDao) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
 	input.Type = strings.ToUpper(input.Type)
 	input.CreatedBy = strings.ToUpper(input.CreatedBy)
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxtt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan pdf ke database", err)
 		logger.Error("Gagal menyimpan %s ke database (InsertPdf)", err)
@@ -58,9 +58,9 @@ func (c *pdfDao) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
 	return &insertID, nil
 }
 
-func (c *pdfDao) FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError) {
+func (c *pdfDao) FindPdf(ctx context.Context, branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError) {
 	coll := db.DB.Collection(keyPdfCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxtt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	branch = strings.ToUpper(branch)
@@ -78,7 +78,7 @@ func (c *pdfDao) FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err
 	opts.SetSort(bson.D{{Key: keyPdfCreatedAt, Value: -1}})
 	opts.SetLimit(10)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxtt, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar pdf dari database (FindPDF)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -86,7 +86,7 @@ func (c *pdfDao) FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err
 	}
 
 	var pdfList []dto.PdfFile
-	if err = cursor.All(ctx, &pdfList); err != nil {
+	if err = cursor.All(ctxtt, &pdfList); err != nil {
 		logger.Error("Gagal decode pdfList cursor ke objek slice (FindPdf)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return []dto.PdfFile{}, apiErr
@@ -95,9 +95,9 @@ func (c *pdfDao) FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err
 	return pdfList, nil
 }
 
-func (c *pdfDao) FindLastPdf(branch string, typePdf string) (*dto.PdfFile, rest_err.APIError) {
+func (c *pdfDao) FindLastPdf(ctx context.Context, branch string, typePdf string) (*dto.PdfFile, rest_err.APIError) {
 	coll := db.DB.Collection(keyPdfCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxtt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	branch = strings.ToUpper(branch)
@@ -115,7 +115,7 @@ func (c *pdfDao) FindLastPdf(branch string, typePdf string) (*dto.PdfFile, rest_
 	opts.SetSort(bson.D{{Key: keyPdfCreatedAt, Value: -1}}) //nolint:govet
 
 	var lastPdf dto.PdfFile
-	err := coll.FindOne(ctx, filter, opts).Decode(&lastPdf)
+	err := coll.FindOne(ctxtt, filter, opts).Decode(&lastPdf)
 	if err != nil {
 		logger.Error("Gagal decode objek lastPdf (FindLastPdf)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)

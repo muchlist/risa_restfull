@@ -202,7 +202,7 @@ func (c *checkService) EditCheck(ctx context.Context, user mjwt.CustomClaim, che
 					DateEnd:        timeNow,
 					Tag:            []string{},
 				}
-				_, err := c.servHistory.InsertHistory(user, dataHistory)
+				_, err := c.servHistory.InsertHistory(ctx, user, dataHistory)
 				if err != nil {
 					errorList = append(errorList, err)
 				}

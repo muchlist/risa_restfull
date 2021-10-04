@@ -50,23 +50,9 @@ func NewVenPhyCheckDao() CheckVenPhyDaoAssumer {
 type checkVenPhyDao struct {
 }
 
-type CheckVenPhyDaoAssumer interface {
-	InsertCheck(input dto.VenPhyCheck) (*string, rest_err.APIError)
-	EditCheck(input dto.VenPhyCheckEdit) (*dto.VenPhyCheck, rest_err.APIError)
-	DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.VenPhyCheck, rest_err.APIError)
-	UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.VenPhyCheck, rest_err.APIError)
-	UpdateCheckItem(input dto.VenPhyCheckItemUpdate) (*dto.VenPhyCheck, rest_err.APIError)
-	BulkUpdateItem(inputs []dto.VenPhyCheckItemUpdate) (int64, rest_err.APIError)
-
-	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.VenPhyCheck, rest_err.APIError)
-	FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.VenPhyCheck, rest_err.APIError)
-	FindCheckStillOpen(branch string, detail bool) ([]dto.VenPhyCheck, rest_err.APIError)
-	GetLastCheckCreateRange(start, end int64, branch string, isQuarter bool) (*dto.VenPhyCheck, rest_err.APIError)
-}
-
-func (c *checkVenPhyDao) InsertCheck(input dto.VenPhyCheck) (*string, rest_err.APIError) {
+func (c *checkVenPhyDao) InsertCheck(ctx context.Context, input dto.VenPhyCheck) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// Default value for slice
@@ -75,7 +61,7 @@ func (c *checkVenPhyDao) InsertCheck(input dto.VenPhyCheck) (*string, rest_err.A
 		input.VenPhyCheckItems = []dto.VenPhyCheckItemEmbed{}
 	}
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan vendor check fisik ke database", err)
 		logger.Error("Gagal menyimpan vendor check fisik ke database, (InsertCheck)", err)
@@ -87,9 +73,9 @@ func (c *checkVenPhyDao) InsertCheck(input dto.VenPhyCheck) (*string, rest_err.A
 	return &insertID, nil
 }
 
-func (c *checkVenPhyDao) EditCheck(input dto.VenPhyCheckEdit) (*dto.VenPhyCheck, rest_err.APIError) {
+func (c *checkVenPhyDao) EditCheck(ctx context.Context, input dto.VenPhyCheckEdit) (*dto.VenPhyCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// Default value for slice
@@ -120,7 +106,7 @@ func (c *checkVenPhyDao) EditCheck(input dto.VenPhyCheckEdit) (*dto.VenPhyCheck,
 	}
 
 	var check dto.VenPhyCheck
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("vendor check fisik tidak diupdate : validasi id branch isFinish")
 		}
@@ -133,9 +119,9 @@ func (c *checkVenPhyDao) EditCheck(input dto.VenPhyCheckEdit) (*dto.VenPhyCheck,
 	return &check, nil
 }
 
-func (c *checkVenPhyDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.VenPhyCheck, rest_err.APIError) {
+func (c *checkVenPhyDao) DeleteCheck(ctx context.Context, input dto.FilterIDBranchCreateGte) (*dto.VenPhyCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -145,7 +131,7 @@ func (c *checkVenPhyDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Ve
 	}
 
 	var check dto.VenPhyCheck
-	err := coll.FindOneAndDelete(ctx, filter).Decode(&check)
+	err := coll.FindOneAndDelete(ctxt, filter).Decode(&check)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Vendor Check fisik tidak dihapus : validasi id branch time_reach")
@@ -159,9 +145,9 @@ func (c *checkVenPhyDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Ve
 	return &check, nil
 }
 
-func (c *checkVenPhyDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.VenPhyCheck, rest_err.APIError) {
+func (c *checkVenPhyDao) UploadChildImage(ctx context.Context, filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.VenPhyCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -179,7 +165,7 @@ func (c *checkVenPhyDao) UploadChildImage(filterA dto.FilterParentIDChildIDAutho
 	}
 
 	var check dto.VenPhyCheck
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, vendor check fisik dengan id %s -> %s tidak ditemukan", filterA.FilterParentID.Hex(), filterA.FilterChildID))
 		}
@@ -192,9 +178,9 @@ func (c *checkVenPhyDao) UploadChildImage(filterA dto.FilterParentIDChildIDAutho
 	return &check, nil
 }
 
-func (c *checkVenPhyDao) UpdateCheckItem(input dto.VenPhyCheckItemUpdate) (*dto.VenPhyCheck, rest_err.APIError) {
+func (c *checkVenPhyDao) UpdateCheckItem(ctx context.Context, input dto.VenPhyCheckItemUpdate) (*dto.VenPhyCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -220,7 +206,7 @@ func (c *checkVenPhyDao) UpdateCheckItem(input dto.VenPhyCheckItemUpdate) (*dto.
 	}
 
 	var check dto.VenPhyCheck
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("vendor check fisik tidak diupdate : validasi id branch isFinish")
 		}
@@ -233,9 +219,9 @@ func (c *checkVenPhyDao) UpdateCheckItem(input dto.VenPhyCheckItemUpdate) (*dto.
 	return &check, nil
 }
 
-func (c *checkVenPhyDao) BulkUpdateItem(inputs []dto.VenPhyCheckItemUpdate) (int64, rest_err.APIError) {
+func (c *checkVenPhyDao) BulkUpdateItem(ctx context.Context, inputs []dto.VenPhyCheckItemUpdate) (int64, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	if len(inputs) == 0 {
@@ -266,7 +252,7 @@ func (c *checkVenPhyDao) BulkUpdateItem(inputs []dto.VenPhyCheckItemUpdate) (int
 	}
 
 	opts := options.BulkWrite().SetOrdered(false)
-	result, err := coll.BulkWrite(ctx, operations, opts)
+	result, err := coll.BulkWrite(ctxt, operations, opts)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return 0, rest_err.NewBadRequestError("vendor check fisik tidak diupdate : validasi id branch isFinish")
@@ -280,9 +266,9 @@ func (c *checkVenPhyDao) BulkUpdateItem(inputs []dto.VenPhyCheckItemUpdate) (int
 	return result.ModifiedCount, nil
 }
 
-func (c *checkVenPhyDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.VenPhyCheck, rest_err.APIError) {
+func (c *checkVenPhyDao) GetCheckByID(ctx context.Context, checkID primitive.ObjectID, branchIfSpecific string) (*dto.VenPhyCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{keyID: checkID}
@@ -292,7 +278,7 @@ func (c *checkVenPhyDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecif
 	}
 
 	var check dto.VenPhyCheck
-	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
+	if err := coll.FindOne(ctxt, filter).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("vendor check dengan ID %s tidak ditemukan. validation : id branch", checkID.Hex()))
 			return nil, apiErr
@@ -306,9 +292,9 @@ func (c *checkVenPhyDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecif
 	return &check, nil
 }
 
-func (c *checkVenPhyDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.VenPhyCheck, rest_err.APIError) {
+func (c *checkVenPhyDao) FindCheck(ctx context.Context, branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.VenPhyCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	if filterA.Limit == 0 {
@@ -338,7 +324,7 @@ func (c *checkVenPhyDao) FindCheck(branch string, filterA dto.FilterTimeRangeLim
 	opts.SetSort(bson.D{{keyUpdatedAt, -1}}) //nolint:govet
 	opts.SetLimit(filterA.Limit)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("gagal mendapatkan daftar vendor check dari database (FindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -346,7 +332,7 @@ func (c *checkVenPhyDao) FindCheck(branch string, filterA dto.FilterTimeRangeLim
 	}
 
 	var checkList []dto.VenPhyCheck
-	if err = cursor.All(ctx, &checkList); err != nil {
+	if err = cursor.All(ctxt, &checkList); err != nil {
 		logger.Error("Gagal decode checkList cursor ke objek slice (VendorFindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return []dto.VenPhyCheck{}, apiErr
@@ -355,9 +341,9 @@ func (c *checkVenPhyDao) FindCheck(branch string, filterA dto.FilterTimeRangeLim
 	return checkList, nil
 }
 
-func (c *checkVenPhyDao) FindCheckStillOpen(branch string, detail bool) ([]dto.VenPhyCheck, rest_err.APIError) {
+func (c *checkVenPhyDao) FindCheckStillOpen(ctx context.Context, branch string, detail bool) ([]dto.VenPhyCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// filter
@@ -378,7 +364,7 @@ func (c *checkVenPhyDao) FindCheckStillOpen(branch string, detail bool) ([]dto.V
 	opts.SetSort(bson.D{{Key: keyUpdatedAt, Value: -1}})
 	opts.SetLimit(100)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("gagal mendapatkan daftar vendor check dari database (FindCheckStillOpen)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -386,7 +372,7 @@ func (c *checkVenPhyDao) FindCheckStillOpen(branch string, detail bool) ([]dto.V
 	}
 
 	var checkList []dto.VenPhyCheck
-	if err = cursor.All(ctx, &checkList); err != nil {
+	if err = cursor.All(ctxt, &checkList); err != nil {
 		logger.Error("Gagal decode checkList cursor ke objek slice (FindCheckStillOpen)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return []dto.VenPhyCheck{}, apiErr
@@ -395,9 +381,9 @@ func (c *checkVenPhyDao) FindCheckStillOpen(branch string, detail bool) ([]dto.V
 	return checkList, nil
 }
 
-func (c *checkVenPhyDao) GetLastCheckCreateRange(start, end int64, branch string, isQuarter bool) (*dto.VenPhyCheck, rest_err.APIError) {
+func (c *checkVenPhyDao) GetLastCheckCreateRange(ctx context.Context, start, end int64, branch string, isQuarter bool) (*dto.VenPhyCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// filter
@@ -415,7 +401,7 @@ func (c *checkVenPhyDao) GetLastCheckCreateRange(start, end int64, branch string
 	opts.SetSort(bson.D{{Key: keyCreatedAt, Value: -1}})
 	opts.SetLimit(1)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("gagal mendapatkan daftar cctv dari database (GetLastCheckCreateRange)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -423,7 +409,7 @@ func (c *checkVenPhyDao) GetLastCheckCreateRange(start, end int64, branch string
 	}
 
 	var checkList []dto.VenPhyCheck
-	if err = cursor.All(ctx, &checkList); err != nil {
+	if err = cursor.All(ctxt, &checkList); err != nil {
 		logger.Error("Gagal decode checkList cursor ke objek slice (GetLastCheckCreateRange)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return nil, apiErr

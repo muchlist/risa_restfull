@@ -18,13 +18,13 @@ import (
 
 func NewAltaiCheckService(
 	altaiCheckDao altaicheckdao.CheckAltaiDaoAssumer,
-	genUnitDao genunitdao.GenUnitDaoAssumer,
+	genUnitLoader genunitdao.GenUnitLoader,
 	altaiDao otherdao.OtherLoader,
 	histService HistoryServiceAssumer,
 ) AltaiCheckServiceAssumer {
 	return &altaiCheckService{
 		daoC:        altaiCheckDao,
-		daoG:        genUnitDao,
+		daoG:        genUnitLoader,
 		daoAltai:    altaiDao,
 		servHistory: histService,
 	}
@@ -32,7 +32,7 @@ func NewAltaiCheckService(
 
 type altaiCheckService struct {
 	daoC        altaicheckdao.CheckAltaiDaoAssumer
-	daoG        genunitdao.GenUnitDaoAssumer
+	daoG        genunitdao.GenUnitLoader
 	daoAltai    otherdao.OtherLoader
 	servHistory HistoryServiceAssumer
 }
@@ -52,7 +52,7 @@ func (c *altaiCheckService) InsertAltaiCheck(ctx context.Context, user mjwt.Cust
 
 	// ambil altai genUnit item berdasarkan cabang yang di input
 	// mendapatkan data cases
-	genItems, err := c.daoG.FindUnit(dto.GenUnitFilter{
+	genItems, err := c.daoG.FindUnit(ctx, dto.GenUnitFilter{
 		Branch:   user.Branch,
 		Category: category.Altai,
 		Pings:    false,
@@ -211,7 +211,7 @@ func (c *altaiCheckService) FinishCheck(ctx context.Context, user mjwt.CustomCla
 	timeNow := time.Now().Unix()
 
 	// 1. cek altai existing, untuk mendapatkan keterangan apakah ada case
-	genItems, err := c.daoG.FindUnit(dto.GenUnitFilter{
+	genItems, err := c.daoG.FindUnit(ctx, dto.GenUnitFilter{
 		Branch:   user.Branch,
 		Category: category.Altai,
 		Pings:    false,
@@ -248,7 +248,7 @@ func (c *altaiCheckService) FinishCheck(ctx context.Context, user mjwt.CustomCla
 		// Insert History isoffline
 		if len(altaiOfflineID) != 0 {
 			for _, altaiID := range altaiOfflineID {
-				_, _ = c.servHistory.InsertHistory(user, dto.HistoryRequest{
+				_, _ = c.servHistory.InsertHistory(ctx, user, dto.HistoryRequest{
 					ParentID:       altaiID,
 					Status:         "",
 					Problem:        "ALTAI Offline",

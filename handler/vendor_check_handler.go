@@ -23,7 +23,7 @@ type vendorCheckHandler struct {
 func (vc *vendorCheckHandler) Insert(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	insertID, apiErr := vc.service.InsertVendorCheck(*claims)
+	insertID, apiErr := vc.service.InsertVendorCheck(c.Context(), *claims)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -35,7 +35,7 @@ func (vc *vendorCheckHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := vc.service.DeleteVendorCheck(*claims, id)
+	apiErr := vc.service.DeleteVendorCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -46,7 +46,7 @@ func (vc *vendorCheckHandler) Delete(c *fiber.Ctx) error {
 func (vc *vendorCheckHandler) Get(c *fiber.Ctx) error {
 	checkID := c.Params("id")
 
-	check, apiErr := vc.service.GetVendorCheckByID(checkID, "")
+	check, apiErr := vc.service.GetVendorCheckByID(c.Context(), checkID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -62,7 +62,7 @@ func (vc *vendorCheckHandler) Find(c *fiber.Ctx) error {
 	end := stringToInt(c.Query("end"))
 	limit := stringToInt(c.Query("limit"))
 
-	checkList, apiErr := vc.service.FindVendorCheck(branch, dto.FilterTimeRangeLimit{
+	checkList, apiErr := vc.service.FindVendorCheck(c.Context(), branch, dto.FilterTimeRangeLimit{
 		FilterStart: int64(start),
 		FilterEnd:   int64(end),
 		Limit:       int64(limit),
@@ -90,7 +90,7 @@ func (vc *vendorCheckHandler) UpdateCheckItem(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkUpdated, apiErr := vc.service.UpdateVendorCheckItem(*claims, req)
+	checkUpdated, apiErr := vc.service.UpdateVendorCheckItem(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -115,7 +115,7 @@ func (vc *vendorCheckHandler) BulkUpdateCheckItem(c *fiber.Ctx) error {
 		}
 	}
 
-	updatedCount, apiErr := vc.service.BulkUpdateVendorItem(*claims, reqs.Items)
+	updatedCount, apiErr := vc.service.BulkUpdateVendorItem(c.Context(), *claims, reqs.Items)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -126,7 +126,7 @@ func (vc *vendorCheckHandler) Finish(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	result, apiErr := vc.service.FinishCheck(*claims, id)
+	result, apiErr := vc.service.FinishCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

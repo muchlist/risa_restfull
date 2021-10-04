@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -43,21 +44,21 @@ type historyService struct {
 	fcmClient fcm.ClientAssumer
 }
 type HistoryServiceAssumer interface {
-	InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError)
-	EditHistory(user mjwt.CustomClaim, historyID string, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError)
-	DeleteHistory(user mjwt.CustomClaim, id string) rest_err.APIError
-	PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError)
+	InsertHistory(ctx context.Context, user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError)
+	EditHistory(ctx context.Context, user mjwt.CustomClaim, historyID string, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError)
+	DeleteHistory(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError)
 
-	GetHistory(parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
-	FindHistory(search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
-	FindHistoryForHome(filterA dto.FilterBranchCatComplete) (dto.HistoryResponseMinList, rest_err.APIError)
-	UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
-	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
-	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
-	GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError)
+	GetHistory(ctx context.Context, parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
+	FindHistory(ctx context.Context, search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
+	FindHistoryForHome(ctx context.Context, filterA dto.FilterBranchCatComplete) (dto.HistoryResponseMinList, rest_err.APIError)
+	UnwindHistory(ctx context.Context, filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
+	FindHistoryForParent(ctx context.Context, parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
+	FindHistoryForUser(ctx context.Context, userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
+	GetHistoryCount(ctx context.Context, branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError)
 }
 
-func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError) {
+func (h *historyService) InsertHistory(ctx context.Context, user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError) {
 	// Default value
 	timeNow := time.Now().Unix()
 	if input.DateStart == 0 {
@@ -96,7 +97,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	historyIsDataInfo := input.CompleteStatus == enum.HDataInfo
 	if !(historyIsComplete || historyIsInfo || historyIsDataInfo) {
 		// DB
-		parent, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
+		parent, err = h.daoG.InsertCase(ctx, dto.GenUnitCaseRequest{
 			UnitID:       input.ParentID,
 			FilterBranch: user.Branch,
 			CaseID:       generatedID.Hex(), // gunakan History id sebagai caseID
@@ -104,7 +105,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 		})
 	} else {
 		// DB
-		parent, err = h.daoG.GetUnitByID(input.ParentID, user.Branch)
+		parent, err = h.daoG.GetUnitByID(ctx, input.ParentID, user.Branch)
 	}
 	if err != nil {
 		// menggabungkan err dari case insert dengan diawali pesan error tambahan
@@ -140,7 +141,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 
 	// DB
-	insertedID, err := h.daoH.InsertHistory(data, isVendor)
+	insertedID, err := h.daoH.InsertHistory(ctx, data, isVendor)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +154,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 			return
 		}
 
-		users, err := h.daoU.FindUser(user.Branch)
+		users, err := h.daoU.FindUser(ctx, user.Branch)
 		if err != nil {
 			logger.Error("mendapatkan user gagal saat menambahkan fcm (INSERT HISTORY)", err)
 		}
@@ -181,7 +182,7 @@ func (h *historyService) InsertHistory(user mjwt.CustomClaim, input dto.HistoryR
 	return insertedID, nil
 }
 
-func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyService) EditHistory(ctx context.Context, user mjwt.CustomClaim, historyID string, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(historyID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -215,14 +216,14 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 	isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 
 	// DB
-	historyEdited, err := h.daoH.EditHistory(oid, data, isVendor)
+	historyEdited, err := h.daoH.EditHistory(ctx, oid, data, isVendor)
 	if err != nil {
 		return nil, err
 	}
 
 	// Hapus Case pada parent
 	// DB
-	_, err = h.daoG.DeleteCase(dto.GenUnitCaseRequest{
+	_, err = h.daoG.DeleteCase(ctx, dto.GenUnitCaseRequest{
 		UnitID:       historyEdited.ParentID,
 		FilterBranch: user.Branch,
 		CaseID:       historyID,
@@ -237,7 +238,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 	historyIsInfo := input.CompleteStatus == enum.HInfo
 	if !(historyIsComplete || historyIsInfo) {
 		// DB
-		_, err = h.daoG.InsertCase(dto.GenUnitCaseRequest{
+		_, err = h.daoG.InsertCase(ctx, dto.GenUnitCaseRequest{
 			UnitID:       historyEdited.ParentID,
 			FilterBranch: user.Branch,
 			CaseID:       historyID, // gunakan History id sebagai caseID
@@ -249,7 +250,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 	}
 
 	go func() {
-		users, err := h.daoU.FindUser(user.Branch)
+		users, err := h.daoU.FindUser(ctx, user.Branch)
 		if err != nil {
 			logger.Error("mendapatkan user gagal saat menambahkan fcm (EDIT HISTORY)", err)
 		}
@@ -279,7 +280,7 @@ func (h *historyService) EditHistory(user mjwt.CustomClaim, historyID string, in
 	return historyEdited, nil
 }
 
-func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_err.APIError {
+func (h *historyService) DeleteHistory(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -295,7 +296,7 @@ func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_er
 	}
 
 	// DB
-	history, err := h.daoH.DeleteHistory(dto.FilterIDBranchCreateGte{
+	history, err := h.daoH.DeleteHistory(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
 		FilterCreateGTE: timeUnix,
@@ -307,7 +308,7 @@ func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_er
 	// Jika History yang dihapus tidak complete, berarti harus dihapus di parentnya karena masih ada sebagai case
 	if history.CompleteStatus != enum.HComplete {
 		// DB
-		_, err = h.daoG.DeleteCase(dto.GenUnitCaseRequest{
+		_, err = h.daoG.DeleteCase(ctx, dto.GenUnitCaseRequest{
 			UnitID:       history.ParentID,
 			FilterBranch: user.Branch,
 			CaseID:       id,
@@ -321,29 +322,29 @@ func (h *historyService) DeleteHistory(user mjwt.CustomClaim, id string) rest_er
 	return nil
 }
 
-func (h *historyService) GetHistory(parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyService) GetHistory(ctx context.Context, parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(parentID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	history, err := h.daoH.GetHistoryByID(oid, branchIfSpecific)
+	history, err := h.daoH.GetHistoryByID(ctx, oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}
 	return history, nil
 }
 
-func (h *historyService) FindHistory(search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
+func (h *historyService) FindHistory(ctx context.Context, search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
 	historyList := dto.HistoryResponseMinList{}
 	var err rest_err.APIError
 	if len(search) != 0 {
-		historyList, err = h.daoH.SearchHistory(search, filterA, filterB)
+		historyList, err = h.daoH.SearchHistory(ctx, search, filterA, filterB)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		historyList, err = h.daoH.FindHistory(filterA, filterB)
+		historyList, err = h.daoH.FindHistory(ctx, filterA, filterB)
 		if err != nil {
 			return nil, err
 		}
@@ -353,7 +354,7 @@ func (h *historyService) FindHistory(search string, filterA dto.FilterBranchCatC
 }
 
 // FindHistoryForHome get history complete + progress + pending + reqPending
-func (h *historyService) FindHistoryForHome(filterA dto.FilterBranchCatComplete) (dto.HistoryResponseMinList, rest_err.APIError) {
+func (h *historyService) FindHistoryForHome(ctx context.Context, filterA dto.FilterBranchCatComplete) (dto.HistoryResponseMinList, rest_err.APIError) {
 
 	// kembalian dari golang channel
 	type result struct {
@@ -368,7 +369,7 @@ func (h *historyService) FindHistoryForHome(filterA dto.FilterBranchCatComplete)
 	getCompleteHistory := func() {
 		defer wg.Done()
 		// DB
-		historyListCompleteInfo, err := h.daoH.FindHistory(
+		historyListCompleteInfo, err := h.daoH.FindHistory(ctx,
 			dto.FilterBranchCatComplete{
 				FilterBranch:         filterA.FilterBranch,
 				FilterCategory:       filterA.FilterCategory,
@@ -387,7 +388,7 @@ func (h *historyService) FindHistoryForHome(filterA dto.FilterBranchCatComplete)
 	getProgressHistory := func() {
 		defer wg.Done()
 		// DB
-		historyListProgressPending, err := h.daoH.FindHistory(
+		historyListProgressPending, err := h.daoH.FindHistory(ctx,
 			dto.FilterBranchCatComplete{
 				FilterBranch:         filterA.FilterBranch,
 				FilterCategory:       filterA.FilterCategory,
@@ -434,32 +435,32 @@ func (h *historyService) FindHistoryForHome(filterA dto.FilterBranchCatComplete)
 	return resultTemp, nil
 }
 
-func (h *historyService) UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError) {
-	historyList, err := h.daoH.UnwindHistory(filterA, filterB)
+func (h *historyService) UnwindHistory(ctx context.Context, filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError) {
+	historyList, err := h.daoH.UnwindHistory(ctx, filterA, filterB)
 	if err != nil {
 		return nil, err
 	}
 	return historyList, nil
 }
 
-func (h *historyService) FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
-	historyList, err := h.daoH.FindHistoryForUser(userID, filter)
+func (h *historyService) FindHistoryForUser(ctx context.Context, userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
+	historyList, err := h.daoH.FindHistoryForUser(ctx, userID, filter)
 	if err != nil {
 		return nil, err
 	}
 	return historyList, nil
 }
 
-func (h *historyService) FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError) {
-	historyList, err := h.daoH.FindHistoryForParent(parentID)
+func (h *historyService) FindHistoryForParent(ctx context.Context, parentID string) (dto.HistoryResponseMinList, rest_err.APIError) {
+	historyList, err := h.daoH.FindHistoryForParent(ctx, parentID)
 	if err != nil {
 		return nil, err
 	}
 	return historyList, nil
 }
 
-func (h *historyService) GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError) {
-	historyCountList, err := h.daoH.GetHistoryCount(branchIfSpecific, statusComplete)
+func (h *historyService) GetHistoryCount(ctx context.Context, branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError) {
+	historyCountList, err := h.daoH.GetHistoryCount(ctx, branchIfSpecific, statusComplete)
 	if err != nil {
 		return nil, err
 	}
@@ -467,13 +468,13 @@ func (h *historyService) GetHistoryCount(branchIfSpecific string, statusComplete
 }
 
 // PutImage memasukkan lokasi file (path) ke dalam database History dengan mengecek kesesuaian branch
-func (h *historyService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyService) PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	history, err := h.daoH.UploadImage(oid, imagePath, user.Branch)
+	history, err := h.daoH.UploadImage(ctx, oid, imagePath, user.Branch)
 	if err != nil {
 		return nil, err
 	}

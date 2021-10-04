@@ -18,7 +18,7 @@ import (
 
 func NewVenPhyCheckService(
 	venPhyCheckDao venphycheckdao.CheckVenPhyDaoAssumer,
-	genUnitDao genunitdao.GenUnitDaoAssumer,
+	genUnitDao genunitdao.GenUnitLoader,
 	cctvDao cctvdao.CctvDaoAssumer,
 	histService HistoryServiceAssumer,
 ) VenPhyCheckServiceAssumer {
@@ -32,26 +32,26 @@ func NewVenPhyCheckService(
 
 type venPhyCheckService struct {
 	daoC        venphycheckdao.CheckVenPhyDaoAssumer
-	daoG        genunitdao.GenUnitDaoAssumer
+	daoG        genunitdao.GenUnitLoader
 	daoCTV      cctvdao.CctvLoader
 	servHistory HistoryServiceAssumer
 }
 type VenPhyCheckServiceAssumer interface {
-	InsertVenPhyCheck(user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError)
-	DeleteVenPhyCheck(user mjwt.CustomClaim, id string) rest_err.APIError
-	GetVenPhyCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VenPhyCheck, rest_err.APIError)
-	FindVenPhyCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VenPhyCheck, rest_err.APIError)
-	UpdateVenPhyCheckItem(user mjwt.CustomClaim, input dto.VenPhyCheckItemUpdateRequest) (*dto.VenPhyCheck, rest_err.APIError)
-	BulkUpdateVenPhyItem(user mjwt.CustomClaim, inputs []dto.VenPhyCheckItemUpdateRequest) (string, rest_err.APIError)
-	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError)
+	InsertVenPhyCheck(ctx context.Context, user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError)
+	DeleteVenPhyCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	GetVenPhyCheckByID(ctx context.Context, vendorCheckID string, branchIfSpecific string) (*dto.VenPhyCheck, rest_err.APIError)
+	FindVenPhyCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) ([]dto.VenPhyCheck, rest_err.APIError)
+	UpdateVenPhyCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.VenPhyCheckItemUpdateRequest) (*dto.VenPhyCheck, rest_err.APIError)
+	BulkUpdateVenPhyItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.VenPhyCheckItemUpdateRequest) (string, rest_err.APIError)
+	FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError)
 }
 
-func (vc *venPhyCheckService) InsertVenPhyCheck(user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError) {
+func (vc *venPhyCheckService) InsertVenPhyCheck(ctx context.Context, user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError) {
 	timeNow := time.Now().Unix()
 
 	// ambil cctv genUnit item berdasarkan cabang yang di input
 	// mendapatkan data cases
-	genItems, err := vc.daoG.FindUnit(dto.GenUnitFilter{
+	genItems, err := vc.daoG.FindUnit(ctx, dto.GenUnitFilter{
 		Branch:   user.Branch,
 		Category: category.Cctv,
 		Pings:    false,
@@ -62,7 +62,7 @@ func (vc *venPhyCheckService) InsertVenPhyCheck(user mjwt.CustomClaim, name stri
 
 	// ambil cctv untuk mendapatkan data lokasi
 	// cctvItems sudah sorted berdasarkan lokasi sedangkan genItems tidak
-	cctvItems, err := vc.daoCTV.FindCctv(context.TODO(), dto.FilterBranchLocIPNameDisable{
+	cctvItems, err := vc.daoCTV.FindCctv(ctx, dto.FilterBranchLocIPNameDisable{
 		FilterBranch: user.Branch,
 	})
 	if err != nil {
@@ -120,7 +120,7 @@ func (vc *venPhyCheckService) InsertVenPhyCheck(user mjwt.CustomClaim, name stri
 	}
 
 	// DB
-	insertedID, err := vc.daoC.InsertCheck(data)
+	insertedID, err := vc.daoC.InsertCheck(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (vc *venPhyCheckService) InsertVenPhyCheck(user mjwt.CustomClaim, name stri
 	return insertedID, nil
 }
 
-func (vc *venPhyCheckService) DeleteVenPhyCheck(user mjwt.CustomClaim, id string) rest_err.APIError {
+func (vc *venPhyCheckService) DeleteVenPhyCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -137,7 +137,7 @@ func (vc *venPhyCheckService) DeleteVenPhyCheck(user mjwt.CustomClaim, id string
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := vc.daoC.DeleteCheck(dto.FilterIDBranchCreateGte{
+	_, err := vc.daoC.DeleteCheck(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
 		FilterCreateGTE: timeMinusOneDay.Unix(),
@@ -151,7 +151,7 @@ func (vc *venPhyCheckService) DeleteVenPhyCheck(user mjwt.CustomClaim, id string
 
 // UpdateVenPhyCheckItem
 // setiap melakukan update akan mengupdate cek fisik lainnya yang masih belum finish
-func (vc *venPhyCheckService) UpdateVenPhyCheckItem(user mjwt.CustomClaim, input dto.VenPhyCheckItemUpdateRequest) (*dto.VenPhyCheck, rest_err.APIError) {
+func (vc *venPhyCheckService) UpdateVenPhyCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.VenPhyCheckItemUpdateRequest) (*dto.VenPhyCheck, rest_err.APIError) {
 	parentOid, errT := primitive.ObjectIDFromHex(input.ParentID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
@@ -175,13 +175,13 @@ func (vc *venPhyCheckService) UpdateVenPhyCheckItem(user mjwt.CustomClaim, input
 	}
 	// harus sukses mengupdate dirinya sendiri dulu karena ada validasi, baru update
 	// check fisik lain yang belum finish
-	vendorCheck, err := vc.daoC.UpdateCheckItem(data)
+	vendorCheck, err := vc.daoC.UpdateCheckItem(ctx, data)
 	if err != nil {
 		return nil, err
 	}
 
 	go func() {
-		checkStillOpens, err := vc.daoC.FindCheckStillOpen(user.Branch, false)
+		checkStillOpens, err := vc.daoC.FindCheckStillOpen(ctx, user.Branch, false)
 		if err != nil {
 			return
 		}
@@ -209,7 +209,7 @@ func (vc *venPhyCheckService) UpdateVenPhyCheckItem(user mjwt.CustomClaim, input
 		if len(checkStillOpensValid) == 0 {
 			return
 		}
-		updatedCount, err := vc.daoC.BulkUpdateItem(checkStillOpensValid)
+		updatedCount, err := vc.daoC.BulkUpdateItem(ctx, checkStillOpensValid)
 		if err != nil {
 			logger.Error("gagal bulk update pada (UpdateVenPhyCheckItem)", err)
 		}
@@ -219,7 +219,7 @@ func (vc *venPhyCheckService) UpdateVenPhyCheckItem(user mjwt.CustomClaim, input
 	return vendorCheck, nil
 }
 
-func (vc *venPhyCheckService) BulkUpdateVenPhyItem(user mjwt.CustomClaim, inputs []dto.VenPhyCheckItemUpdateRequest) (string, rest_err.APIError) {
+func (vc *venPhyCheckService) BulkUpdateVenPhyItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.VenPhyCheckItemUpdateRequest) (string, rest_err.APIError) {
 	if len(inputs) == 0 {
 		return "", rest_err.NewBadRequestError("tidak ada perubahan")
 	}
@@ -250,14 +250,14 @@ func (vc *venPhyCheckService) BulkUpdateVenPhyItem(user mjwt.CustomClaim, inputs
 			IsOffline:    input.IsOffline,
 		}
 	}
-	result, err := vc.daoC.BulkUpdateItem(inputDatas)
+	result, err := vc.daoC.BulkUpdateItem(ctx, inputDatas)
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%d data telah diubah", result), nil
 }
 
-func (vc *venPhyCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError) {
+func (vc *venPhyCheckService) FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(detailID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -266,7 +266,7 @@ func (vc *venPhyCheckService) FinishCheck(user mjwt.CustomClaim, detailID string
 	timeNow := time.Now().Unix()
 
 	// tandai isFinish true dan end_date ke waktu sekarang
-	cctvChecklistDetail, err := vc.daoC.EditCheck(dto.VenPhyCheckEdit{
+	cctvChecklistDetail, err := vc.daoC.EditCheck(ctx, dto.VenPhyCheckEdit{
 		FilterIDBranch: dto.FilterIDBranch{
 			FilterID:     oid,
 			FilterBranch: user.Branch,
@@ -285,21 +285,21 @@ func (vc *venPhyCheckService) FinishCheck(user mjwt.CustomClaim, detailID string
 	return cctvChecklistDetail, nil
 }
 
-func (vc *venPhyCheckService) GetVenPhyCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VenPhyCheck, rest_err.APIError) {
+func (vc *venPhyCheckService) GetVenPhyCheckByID(ctx context.Context, vendorCheckID string, branchIfSpecific string) (*dto.VenPhyCheck, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(vendorCheckID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	vendorCheck, err := vc.daoC.GetCheckByID(oid, branchIfSpecific)
+	vendorCheck, err := vc.daoC.GetCheckByID(ctx, oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}
 	return vendorCheck, nil
 }
 
-func (vc *venPhyCheckService) FindVenPhyCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VenPhyCheck, rest_err.APIError) {
-	vendorCheckList, err := vc.daoC.FindCheck(branch, filter, false)
+func (vc *venPhyCheckService) FindVenPhyCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) ([]dto.VenPhyCheck, rest_err.APIError) {
+	vendorCheckList, err := vc.daoC.FindCheck(ctx, branch, filter, false)
 	if err != nil {
 		return []dto.VenPhyCheck{}, err
 	}

@@ -22,7 +22,7 @@ import (
 )
 
 func NewOtherService(otherDao otherdao.OtherDaoAssumer,
-	histDao historydao.HistoryDaoAssumer,
+	histDao historydao.HistorySaver,
 	genDao genunitdao.GenUnitDaoAssumer) OtherServiceAssumer {
 	return &otherService{
 		daoO: otherDao,
@@ -33,7 +33,7 @@ func NewOtherService(otherDao otherdao.OtherDaoAssumer,
 
 type otherService struct {
 	daoO otherdao.OtherDaoAssumer
-	daoH historydao.HistoryDaoAssumer
+	daoH historydao.HistorySaver
 	daoG genunitdao.GenUnitDaoAssumer
 }
 type OtherServiceAssumer interface {
@@ -118,7 +118,7 @@ func (c *otherService) InsertOther(ctx context.Context, user mjwt.CustomClaim, i
 		defer wg.Done()
 		// Menambahkan juga General Unit dengan ID yang sama
 		// DB
-		insertedID, err := c.daoG.InsertUnit(
+		insertedID, err := c.daoG.InsertUnit(ctx,
 			dto.GenUnit{
 				ID:       idGenerated.Hex(),
 				Category: subCategory,
@@ -213,7 +213,7 @@ func (c *otherService) EditOther(ctx context.Context, user mjwt.CustomClaim, oth
 	editUnit := func() {
 		defer wg.Done()
 		// DB
-		_, err = c.daoG.EditUnit(otherID, dto.GenUnitEditRequest{
+		_, err = c.daoG.EditUnit(ctx, otherID, dto.GenUnitEditRequest{
 			Category: subCategory,
 			Name:     otherEdited.Name,
 			IP:       otherEdited.IP,
@@ -226,7 +226,7 @@ func (c *otherService) EditOther(ctx context.Context, user mjwt.CustomClaim, oth
 		isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 		defer wg.Done()
 		// DB
-		_, err = c.daoH.InsertHistory(
+		_, err = c.daoH.InsertHistory(ctx,
 			dto.History{
 				ID:             primitive.NewObjectID(),
 				CreatedAt:      timeNow,
@@ -298,7 +298,7 @@ func (c *otherService) DeleteOther(ctx context.Context, user mjwt.CustomClaim, s
 
 	// Delete unit_gen
 	// DB
-	err = c.daoG.DeleteUnit(otherID)
+	err = c.daoG.DeleteUnit(ctx, otherID)
 	if err != nil {
 		return err
 	}
@@ -320,7 +320,7 @@ func (c *otherService) DisableOther(ctx context.Context, otherID string, user mj
 	}
 
 	// set disable enable gen_unit
-	_, err = c.daoG.DisableUnit(oid.Hex(), value)
+	_, err = c.daoG.DisableUnit(ctx, oid.Hex(), value)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +377,7 @@ func (c *otherService) GetOtherByID(ctx context.Context, otherID string, branchI
 	go func() {
 		defer wg.Done()
 		// DB
-		other, err := c.daoG.GetUnitByID(otherID, branchIfSpecific)
+		other, err := c.daoG.GetUnitByID(ctx, otherID, branchIfSpecific)
 		resultGeneralChan <- resultGeneral{
 			data: other,
 			err:  err,
@@ -456,7 +456,7 @@ func (c *otherService) FindOther(ctx context.Context, filter dto.FilterOther) (d
 			return
 		}
 
-		generalList, err := c.daoG.FindUnit(dto.GenUnitFilter{
+		generalList, err := c.daoG.FindUnit(ctx, dto.GenUnitFilter{
 			Branch:   filter.FilterBranch,
 			Category: filter.FilterSubCategory,
 			Pings:    false,

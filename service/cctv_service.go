@@ -22,7 +22,7 @@ import (
 )
 
 func NewCctvService(cctvDao cctvdao.CctvDaoAssumer,
-	histDao historydao.HistoryDaoAssumer,
+	histDao historydao.HistorySaver,
 	genDao genunitdao.GenUnitDaoAssumer) CctvServiceAssumer {
 	return &cctvService{
 		daoC: cctvDao,
@@ -33,7 +33,7 @@ func NewCctvService(cctvDao cctvdao.CctvDaoAssumer,
 
 type cctvService struct {
 	daoC cctvdao.CctvDaoAssumer
-	daoH historydao.HistoryDaoAssumer
+	daoH historydao.HistorySaver
 	daoG genunitdao.GenUnitDaoAssumer
 }
 type CctvServiceAssumer interface {
@@ -111,7 +111,7 @@ func (c *cctvService) InsertCctv(ctx context.Context, user mjwt.CustomClaim, inp
 		defer wg.Done()
 		// Menambahkan juga General Unit dengan ID yang sama
 		// DB
-		insertedID, err := c.daoG.InsertUnit(
+		insertedID, err := c.daoG.InsertUnit(ctx,
 			dto.GenUnit{
 				ID:       idGenerated.Hex(),
 				Category: category.Cctv,
@@ -200,7 +200,7 @@ func (c *cctvService) EditCctv(ctx context.Context, user mjwt.CustomClaim, cctvI
 	editUnit := func() {
 		defer wg.Done()
 		// DB
-		_, err = c.daoG.EditUnit(cctvID, dto.GenUnitEditRequest{
+		_, err = c.daoG.EditUnit(ctx, cctvID, dto.GenUnitEditRequest{
 			Category: category.Cctv,
 			Name:     cctvEdited.Name,
 			IP:       cctvEdited.IP,
@@ -213,7 +213,7 @@ func (c *cctvService) EditCctv(ctx context.Context, user mjwt.CustomClaim, cctvI
 		defer wg.Done()
 		isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 		// DB
-		_, err = c.daoH.InsertHistory(
+		_, err = c.daoH.InsertHistory(ctx,
 			dto.History{
 				ID:             primitive.NewObjectID(),
 				CreatedAt:      timeNow,
@@ -283,7 +283,7 @@ func (c *cctvService) DeleteCctv(ctx context.Context, user mjwt.CustomClaim, id 
 
 	// Delete unit_gen
 	// DB
-	err = c.daoG.DeleteUnit(id)
+	err = c.daoG.DeleteUnit(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -305,7 +305,7 @@ func (c *cctvService) DisableCctv(ctx context.Context, cctvID string, user mjwt.
 	}
 
 	// set disable enable gen_unit
-	_, err = c.daoG.DisableUnit(oid.Hex(), value)
+	_, err = c.daoG.DisableUnit(ctx, oid.Hex(), value)
 	if err != nil {
 		return nil, err
 	}
@@ -362,7 +362,7 @@ func (c *cctvService) GetCctvByID(ctx context.Context, cctvID string, branchIfSp
 	go func() {
 		defer wg.Done()
 		// DB
-		cctv, err := c.daoG.GetUnitByID(cctvID, branchIfSpecific)
+		cctv, err := c.daoG.GetUnitByID(ctx, cctvID, branchIfSpecific)
 		resultGeneralChan <- resultGeneral{
 			data: cctv,
 			err:  err,
@@ -441,7 +441,7 @@ func (c *cctvService) FindCctv(ctx context.Context, filter dto.FilterBranchLocIP
 			return
 		}
 
-		generalList, err := c.daoG.FindUnit(dto.GenUnitFilter{
+		generalList, err := c.daoG.FindUnit(ctx, dto.GenUnitFilter{
 			Branch:   filter.FilterBranch,
 			Category: category.Cctv,
 			Pings:    true,

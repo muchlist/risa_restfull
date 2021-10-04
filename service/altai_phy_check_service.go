@@ -18,13 +18,13 @@ import (
 
 func NewAltaiPhyCheckService(
 	altaiPhyCheckDao altaiphycheckdao.CheckAltaiPhyDaoAssumer,
-	genUnitDao genunitdao.GenUnitDaoAssumer,
+	genUnitLoader genunitdao.GenUnitLoader,
 	otherDao otherdao.OtherLoader,
 	histService HistoryServiceAssumer,
 ) AltaiPhyCheckServiceAssumer {
 	return &altaiPhyCheckService{
 		daoC:        altaiPhyCheckDao,
-		daoG:        genUnitDao,
+		daoG:        genUnitLoader,
 		daoAltai:    otherDao,
 		servHistory: histService,
 	}
@@ -32,7 +32,7 @@ func NewAltaiPhyCheckService(
 
 type altaiPhyCheckService struct {
 	daoC        altaiphycheckdao.CheckAltaiPhyDaoAssumer
-	daoG        genunitdao.GenUnitDaoAssumer
+	daoG        genunitdao.GenUnitLoader
 	daoAltai    otherdao.OtherLoader
 	servHistory HistoryServiceAssumer
 }
@@ -51,7 +51,7 @@ func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(ctx context.Context, user mj
 
 	// ambil altai genUnit item berdasarkan cabang yang di input
 	// mendapatkan data cases
-	genItems, err := vc.daoG.FindUnit(dto.GenUnitFilter{
+	genItems, err := vc.daoG.FindUnit(ctx, dto.GenUnitFilter{
 		Branch:   user.Branch,
 		Category: category.Altai,
 		Pings:    false,

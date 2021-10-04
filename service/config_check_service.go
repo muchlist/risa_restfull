@@ -210,7 +210,7 @@ func (c *configCheckService) FinishCheck(ctx context.Context, user mjwt.CustomCl
 	go func() {
 		if len(configUpdatedIDs) != 0 {
 			for _, configID := range configUpdatedIDs {
-				_, _ = c.servHistory.InsertHistory(user, dto.HistoryRequest{
+				_, _ = c.servHistory.InsertHistory(ctx, user, dto.HistoryRequest{
 					ParentID:       configID,
 					Status:         "",
 					Problem:        "Pengecekan auto backup",

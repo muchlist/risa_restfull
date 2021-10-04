@@ -50,26 +50,9 @@ func NewHistoryDao() HistoryDaoAssumer {
 type historyDao struct {
 }
 
-type HistoryDaoAssumer interface {
-	InsertHistory(input dto.History, isVendor bool) (*string, rest_err.APIError)
-	InsertManyHistory(dataList []dto.History, isVendor bool) (int, rest_err.APIError)
-	EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit, isVendor bool) (*dto.HistoryResponse, rest_err.APIError)
-	DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.HistoryResponse, rest_err.APIError)
-	UploadImage(historyID primitive.ObjectID, imagePath string, filterBranch string) (*dto.HistoryResponse, rest_err.APIError)
-
-	GetHistoryByID(historyID primitive.ObjectID, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
-	FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
-	SearchHistory(search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
-	FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError)
-	FindHistoryForUser(userID string, filter dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError)
-	GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError)
-	FindHistoryForReport(branchIfSpecific string, start int64, end int64) (dto.HistoryResponseMinList, rest_err.APIError)
-	UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError)
-}
-
-func (h *historyDao) InsertHistory(input dto.History, isVendor bool) (*string, rest_err.APIError) {
+func (h *historyDao) InsertHistory(ctx context.Context, input dto.History, isVendor bool) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	input.Branch = strings.ToUpper(input.Branch)
@@ -94,7 +77,7 @@ func (h *historyDao) InsertHistory(input dto.History, isVendor bool) (*string, r
 	},
 	}
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan history ke database", err)
 		logger.Error("Gagal menyimpan history ke database, (InsertHistory)", err)
@@ -106,9 +89,9 @@ func (h *historyDao) InsertHistory(input dto.History, isVendor bool) (*string, r
 	return &insertID, nil
 }
 
-func (h *historyDao) InsertManyHistory(dataList []dto.History, isVendor bool) (int, rest_err.APIError) {
+func (h *historyDao) InsertManyHistory(ctx context.Context, dataList []dto.History, isVendor bool) (int, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	var dataForInserts []interface{}
@@ -139,7 +122,7 @@ func (h *historyDao) InsertManyHistory(dataList []dto.History, isVendor bool) (i
 		return 0, nil
 	}
 
-	result, err := coll.InsertMany(ctx, dataForInserts)
+	result, err := coll.InsertMany(ctxt, dataForInserts)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan banyak history ke database", err)
 		logger.Error("Gagal menyimpan banyak history ke database, (InsertManyHistory)", err)
@@ -151,9 +134,9 @@ func (h *historyDao) InsertManyHistory(dataList []dto.History, isVendor bool) (i
 	return totalInserted, nil
 }
 
-func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.HistoryEdit, isVendor bool) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyDao) EditHistory(ctx context.Context, historyID primitive.ObjectID, input dto.HistoryEdit, isVendor bool) (*dto.HistoryResponse, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	if input.Tag == nil {
@@ -196,7 +179,7 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 	}
 
 	var history dto.HistoryResponse
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&history); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&history); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("History tidak diupdate : validasi id branch timestamp status_complete")
 		}
@@ -209,9 +192,9 @@ func (h *historyDao) EditHistory(historyID primitive.ObjectID, input dto.History
 	return &history, nil
 }
 
-func (h *historyDao) DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyDao) DeleteHistory(ctx context.Context, input dto.FilterIDBranchCreateGte) (*dto.HistoryResponse, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -221,7 +204,7 @@ func (h *historyDao) DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.Hist
 	}
 
 	var history dto.HistoryResponse
-	err := coll.FindOneAndDelete(ctx, filter).Decode(&history)
+	err := coll.FindOneAndDelete(ctxt, filter).Decode(&history)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("History tidak dihapus : validasi id branch time_reach")
@@ -235,9 +218,9 @@ func (h *historyDao) DeleteHistory(input dto.FilterIDBranchCreateGte) (*dto.Hist
 	return &history, nil
 }
 
-func (h *historyDao) GetHistoryByID(historyID primitive.ObjectID, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyDao) GetHistoryByID(ctx context.Context, historyID primitive.ObjectID, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// filter
@@ -248,7 +231,7 @@ func (h *historyDao) GetHistoryByID(historyID primitive.ObjectID, branchIfSpecif
 		filter[keyHistBranch] = strings.ToUpper(branchIfSpecific)
 	}
 	var history dto.HistoryResponse
-	if err := coll.FindOne(ctx, filter).Decode(&history); err != nil {
+	if err := coll.FindOne(ctxt, filter).Decode(&history); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("History dengan ID %s tidak ditemukan", historyID.Hex()))
 			return nil, apiErr
@@ -262,9 +245,9 @@ func (h *historyDao) GetHistoryByID(historyID primitive.ObjectID, branchIfSpecif
 	return &history, nil
 }
 
-func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
+func (h *historyDao) FindHistory(ctx context.Context, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
@@ -316,7 +299,7 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	opts.SetSort(bson.D{{Key: keyHistUpdatedAt, Value: -1}})
 	opts.SetLimit(filterB.Limit)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar history dari database (FindHistory)", err)
@@ -325,7 +308,7 @@ func (h *historyDao) FindHistory(filterA dto.FilterBranchCatComplete, filterB dt
 	}
 
 	histories := dto.HistoryResponseMinList{}
-	if err = cursor.All(ctx, &histories); err != nil {
+	if err = cursor.All(ctxt, &histories); err != nil {
 		logger.Error("Gagal decode histories cursor ke objek slice (FindHistory)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryResponseMinList{}, apiErr
@@ -350,9 +333,9 @@ weights: {
 })
 */
 
-func (h *historyDao) SearchHistory(search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
+func (h *historyDao) SearchHistory(ctx context.Context, search string, filterA dto.FilterBranchCatComplete, filterB dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// validate search
@@ -425,7 +408,7 @@ func (h *historyDao) SearchHistory(search string, filterA dto.FilterBranchCatCom
 	})
 	opts.SetLimit(filterB.Limit)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar history dari database (SearchHistory)", err)
@@ -434,7 +417,7 @@ func (h *historyDao) SearchHistory(search string, filterA dto.FilterBranchCatCom
 	}
 
 	histories := dto.HistoryResponseMinList{}
-	if err = cursor.All(ctx, &histories); err != nil {
+	if err = cursor.All(ctxt, &histories); err != nil {
 		logger.Error("Gagal decode histories cursor ke objek slice (SearchHistory)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryResponseMinList{}, apiErr
@@ -445,9 +428,9 @@ func (h *historyDao) SearchHistory(search string, filterA dto.FilterBranchCatCom
 
 // UnwindHistory mengembalikan unwind history dengan urutan
 //{Key: "$sort", Value: bson.D{{Key: keyHistUpdatedAt, Value: -1}, {Key: "updates.time", Value: 1}}},
-func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError) {
+func (h *historyDao) UnwindHistory(ctx context.Context, filterA dto.FilterBranchCatInCompleteIn, filterB dto.FilterTimeRangeLimit) (dto.HistoryUnwindResponseList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
@@ -518,7 +501,7 @@ func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filt
 		{Key: "$sort", Value: bson.D{{Key: keyHistUpdatedAt, Value: -1}, {Key: "updates.time", Value: 1}}},
 	}
 
-	cursor, err := coll.Aggregate(ctx, mongo.Pipeline{groupStage, unwindStage, sortStage})
+	cursor, err := coll.Aggregate(ctxt, mongo.Pipeline{groupStage, unwindStage, sortStage})
 
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar history dari database (UnwindHistory)", err)
@@ -527,7 +510,7 @@ func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filt
 	}
 
 	histories := dto.HistoryUnwindResponseList{}
-	if err = cursor.All(ctx, &histories); err != nil {
+	if err = cursor.All(ctxt, &histories); err != nil {
 		logger.Error("Gagal decode histories cursor ke objek slice (UnwindHistory)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryUnwindResponseList{}, apiErr
@@ -536,9 +519,9 @@ func (h *historyDao) UnwindHistory(filterA dto.FilterBranchCatInCompleteIn, filt
 	return histories, nil
 }
 
-func (h *historyDao) FindHistoryForParent(parentID string) (dto.HistoryResponseMinList, rest_err.APIError) {
+func (h *historyDao) FindHistoryForParent(ctx context.Context, parentID string) (dto.HistoryResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -547,7 +530,7 @@ func (h *historyDao) FindHistoryForParent(parentID string) (dto.HistoryResponseM
 
 	opts := options.Find()
 	opts.SetSort(bson.D{{Key: keyHistID, Value: -1}}) //nolint:govet
-	sortCursor, err := coll.Find(ctx, filter, opts)
+	sortCursor, err := coll.Find(ctxt, filter, opts)
 
 	if err != nil {
 		logger.Error("Gagal mendapatkan history dari database (FindHistoryForParent)", err)
@@ -556,7 +539,7 @@ func (h *historyDao) FindHistoryForParent(parentID string) (dto.HistoryResponseM
 	}
 
 	histories := dto.HistoryResponseMinList{}
-	if err = sortCursor.All(ctx, &histories); err != nil {
+	if err = sortCursor.All(ctxt, &histories); err != nil {
 		logger.Error("Gagal decode histories cursor ke objek slice (FindHistoryForParent)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryResponseMinList{}, apiErr
@@ -565,9 +548,9 @@ func (h *historyDao) FindHistoryForParent(parentID string) (dto.HistoryResponseM
 	return histories, nil
 }
 
-func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
+func (h *historyDao) FindHistoryForUser(ctx context.Context, userID string, filterOpt dto.FilterTimeRangeLimit) (dto.HistoryResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// set default limit
@@ -595,7 +578,7 @@ func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeR
 	opts.SetSort(bson.D{{Key: keyHistID, Value: -1}}) //nolint:govet
 	opts.SetLimit(filterOpt.Limit)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar history dari database (FindHistoryForUser)", err)
@@ -604,7 +587,7 @@ func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeR
 	}
 
 	histories := dto.HistoryResponseMinList{}
-	if err = cursor.All(ctx, &histories); err != nil {
+	if err = cursor.All(ctxt, &histories); err != nil {
 		logger.Error("Gagal decode histories cursor ke objek slice (FindHistoryForuser)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryResponseMinList{}, apiErr
@@ -614,9 +597,9 @@ func (h *historyDao) FindHistoryForUser(userID string, filterOpt dto.FilterTimeR
 }
 
 // get_histories_in_progress_count
-func (h *historyDao) GetHistoryCount(branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError) {
+func (h *historyDao) GetHistoryCount(ctx context.Context, branchIfSpecific string, statusComplete int) (dto.HistoryCountList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// Jika branch ada isinya maka hanya menampilkan branch tersebut,
@@ -646,7 +629,7 @@ func (h *historyDao) GetHistoryCount(branchIfSpecific string, statusComplete int
 		}},
 	}
 
-	cursor, err := coll.Aggregate(ctx, mongo.Pipeline{matchStage, groupStage, sortStage})
+	cursor, err := coll.Aggregate(ctxt, mongo.Pipeline{matchStage, groupStage, sortStage})
 
 	if err != nil {
 		logger.Error("Gagal mendapatkan history count dari database (GetHistoryCount)", err)
@@ -655,7 +638,7 @@ func (h *historyDao) GetHistoryCount(branchIfSpecific string, statusComplete int
 	}
 
 	histories := dto.HistoryCountList{}
-	if err = cursor.All(ctx, &histories); err != nil {
+	if err = cursor.All(ctxt, &histories); err != nil {
 		logger.Error("Gagal decode history count ke objek slice (GetHistoryCount)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryCountList{}, apiErr
@@ -666,9 +649,9 @@ func (h *historyDao) GetHistoryCount(branchIfSpecific string, statusComplete int
 
 // UploadImage tidak digunakan saat pembuatan history dengan langsung
 // menyertakan image, hanya untuk keperluan update pada dokumen yang sudah ada
-func (h *historyDao) UploadImage(historyID primitive.ObjectID, imagePath string, filterBranch string) (*dto.HistoryResponse, rest_err.APIError) {
+func (h *historyDao) UploadImage(ctx context.Context, historyID primitive.ObjectID, imagePath string, filterBranch string) (*dto.HistoryResponse, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -685,7 +668,7 @@ func (h *historyDao) UploadImage(historyID primitive.ObjectID, imagePath string,
 	}
 
 	var history dto.HistoryResponse
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&history); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&history); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, history dengan id %s tidak ditemukan", historyID.Hex()))
 		}
@@ -698,9 +681,9 @@ func (h *historyDao) UploadImage(historyID primitive.ObjectID, imagePath string,
 	return &history, nil
 }
 
-func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, end int64) (dto.HistoryResponseMinList, rest_err.APIError) {
+func (h *historyDao) FindHistoryForReport(ctx context.Context, branchIfSpecific string, start int64, end int64) (dto.HistoryResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyHistColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 	branch := strings.ToUpper(branchIfSpecific)
 
@@ -715,7 +698,7 @@ func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, 
 	opts := options.Find()
 	opts.SetSort(bson.D{{Key: keyHistUpdatedAt, Value: -1}}) //nolint:govet
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar history dari database (FindHistoryForReport cursor)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -723,7 +706,7 @@ func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, 
 	}
 
 	histories04 := dto.HistoryResponseMinList{}
-	if err = cursor.All(ctx, &histories04); err != nil {
+	if err = cursor.All(ctxt, &histories04); err != nil {
 		logger.Error("Gagal decode histories cursor ke objek slice (FindHistoryForReport 04)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryResponseMinList{}, apiErr
@@ -736,7 +719,7 @@ func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, 
 		keyHistUpdatedAt:      bson.M{"$lte": end},
 	}
 
-	cursor, err = coll.Find(ctx, filter, opts)
+	cursor, err = coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar history dari database (FindHistoryForReport cursor2)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -744,7 +727,7 @@ func (h *historyDao) FindHistoryForReport(branchIfSpecific string, start int64, 
 	}
 
 	histories123 := dto.HistoryResponseMinList{}
-	if err = cursor.All(ctx, &histories123); err != nil {
+	if err = cursor.All(ctxt, &histories123); err != nil {
 		logger.Error("Gagal decode histories cursor ke objek slice (FindHistoryForReport 123)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.HistoryResponseMinList{}, apiErr

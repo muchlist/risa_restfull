@@ -22,7 +22,7 @@ import (
 )
 
 func NewComputerService(computerDao computerdao.ComputerDaoAssumer,
-	histDao historydao.HistoryDaoAssumer,
+	histDao historydao.HistorySaver,
 	genDao genunitdao.GenUnitDaoAssumer) ComputerServiceAssumer {
 	return &computerService{
 		daoC: computerDao,
@@ -33,7 +33,7 @@ func NewComputerService(computerDao computerdao.ComputerDaoAssumer,
 
 type computerService struct {
 	daoC computerdao.ComputerDaoAssumer
-	daoH historydao.HistoryDaoAssumer
+	daoH historydao.HistorySaver
 	daoG genunitdao.GenUnitDaoAssumer
 }
 type ComputerServiceAssumer interface {
@@ -120,7 +120,7 @@ func (c *computerService) InsertComputer(ctx context.Context, user mjwt.CustomCl
 		defer wg.Done()
 		// Menambahkan juga General Unit dengan ID yang sama
 		// DB
-		insertedID, err := c.daoG.InsertUnit(
+		insertedID, err := c.daoG.InsertUnit(ctx,
 			dto.GenUnit{
 				ID:       idGenerated.Hex(),
 				Category: category.PC,
@@ -217,7 +217,7 @@ func (c *computerService) EditComputer(ctx context.Context, user mjwt.CustomClai
 	editUnit := func() {
 		defer wg.Done()
 		// DB
-		_, err = c.daoG.EditUnit(computerID, dto.GenUnitEditRequest{
+		_, err = c.daoG.EditUnit(ctx, computerID, dto.GenUnitEditRequest{
 			Category: category.PC,
 			Name:     computerEdited.Name,
 			IP:       computerEdited.IP,
@@ -230,7 +230,7 @@ func (c *computerService) EditComputer(ctx context.Context, user mjwt.CustomClai
 		defer wg.Done()
 		isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 		// DB
-		_, err = c.daoH.InsertHistory(
+		_, err = c.daoH.InsertHistory(ctx,
 			dto.History{
 				ID:             primitive.NewObjectID(),
 				CreatedAt:      timeNow,
@@ -300,7 +300,7 @@ func (c *computerService) DeleteComputer(ctx context.Context, user mjwt.CustomCl
 
 	// Delete unit_gen
 	// DB
-	err = c.daoG.DeleteUnit(id)
+	err = c.daoG.DeleteUnit(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -322,7 +322,7 @@ func (c *computerService) DisableComputer(ctx context.Context, computerID string
 	}
 
 	// set disable enable gen_unit
-	_, err = c.daoG.DisableUnit(oid.Hex(), value)
+	_, err = c.daoG.DisableUnit(ctx, oid.Hex(), value)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +379,7 @@ func (c *computerService) GetComputerByID(ctx context.Context, computerID string
 	go func() {
 		defer wg.Done()
 		// DB
-		computer, err := c.daoG.GetUnitByID(computerID, branchIfSpecific)
+		computer, err := c.daoG.GetUnitByID(ctx, computerID, branchIfSpecific)
 		resultGeneralChan <- resultGeneral{
 			data: computer,
 			err:  err,
@@ -458,7 +458,7 @@ func (c *computerService) FindComputer(ctx context.Context, filter dto.FilterCom
 			return
 		}
 
-		generalList, err := c.daoG.FindUnit(dto.GenUnitFilter{
+		generalList, err := c.daoG.FindUnit(ctx, dto.GenUnitFilter{
 			Branch:   filter.FilterBranch,
 			Category: category.PC,
 			Pings:    false,
