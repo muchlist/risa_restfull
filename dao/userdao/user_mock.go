@@ -1,6 +1,7 @@
 package userdao
 
 import (
+	"context"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/stretchr/testify/mock"
@@ -10,7 +11,7 @@ type MockDao struct {
 	mock.Mock
 }
 
-func (m *MockDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) {
+func (m *MockDao) InsertUser(_ context.Context, user dto.UserRequest) (*string, rest_err.APIError) {
 	args := m.Called(user)
 
 	var res *string
@@ -26,7 +27,7 @@ func (m *MockDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 	return res, err
 }
 
-func (m *MockDao) GetUserByIDWithPassword(email string) (*dto.User, rest_err.APIError) {
+func (m *MockDao) GetUserByIDWithPassword(_ context.Context, email string) (*dto.User, rest_err.APIError) {
 	args := m.Called(email)
 	var res *dto.User
 	if args.Get(0) != nil {
@@ -39,7 +40,7 @@ func (m *MockDao) GetUserByIDWithPassword(email string) (*dto.User, rest_err.API
 	return res, err
 }
 
-func (m *MockDao) CheckIDAvailable(email string) (bool, rest_err.APIError) {
+func (m *MockDao) CheckIDAvailable(_ context.Context, email string) (bool, rest_err.APIError) {
 	args := m.Called(email)
 	var err rest_err.APIError
 	if args.Get(1) != nil {
@@ -48,7 +49,7 @@ func (m *MockDao) CheckIDAvailable(email string) (bool, rest_err.APIError) {
 	return args.Get(0).(bool), err
 }
 
-func (m *MockDao) EditUser(userEmail string, userRequest dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
+func (m *MockDao) EditUser(_ context.Context, userEmail string, userRequest dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
 	args := m.Called(userEmail, userRequest)
 	var res *dto.UserResponse
 	if args.Get(0) != nil {
@@ -61,7 +62,7 @@ func (m *MockDao) EditUser(userEmail string, userRequest dto.UserEditRequest) (*
 	return res, err
 }
 
-func (m *MockDao) EditFcm(userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError) {
+func (m *MockDao) EditFcm(_ context.Context, userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError) {
 	args := m.Called(userID, fcmToken)
 	var res *dto.UserResponse
 	if args.Get(0) != nil {
@@ -74,7 +75,7 @@ func (m *MockDao) EditFcm(userID string, fcmToken string) (*dto.UserResponse, re
 	return res, err
 }
 
-func (m *MockDao) DeleteUser(userEmail string) rest_err.APIError {
+func (m *MockDao) DeleteUser(_ context.Context, userEmail string) rest_err.APIError {
 	args := m.Called(userEmail)
 	var err rest_err.APIError
 	if args.Get(0) != nil {
@@ -83,7 +84,7 @@ func (m *MockDao) DeleteUser(userEmail string) rest_err.APIError {
 	return err
 }
 
-func (m *MockDao) PutAvatar(email string, avatar string) (*dto.UserResponse, rest_err.APIError) {
+func (m *MockDao) PutAvatar(_ context.Context, email string, avatar string) (*dto.UserResponse, rest_err.APIError) {
 	args := m.Called(email, avatar)
 	var res *dto.UserResponse
 	if args.Get(0) != nil {
@@ -96,7 +97,7 @@ func (m *MockDao) PutAvatar(email string, avatar string) (*dto.UserResponse, res
 	return res, err
 }
 
-func (m *MockDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.APIError {
+func (m *MockDao) ChangePassword(_ context.Context, data dto.UserChangePasswordRequest) rest_err.APIError {
 	args := m.Called(data)
 	var err rest_err.APIError
 	if args.Get(0) != nil {
@@ -105,7 +106,7 @@ func (m *MockDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.AP
 	return err
 }
 
-func (m *MockDao) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIError) {
+func (m *MockDao) GetUserByID(_ context.Context, userID string) (*dto.UserResponse, rest_err.APIError) {
 	args := m.Called(userID)
 
 	var res *dto.UserResponse
@@ -121,7 +122,7 @@ func (m *MockDao) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIErr
 	return res, err
 }
 
-func (m *MockDao) FindUser(branch string) (dto.UserResponseList, rest_err.APIError) {
+func (m *MockDao) FindUser(_ context.Context, branch string) (dto.UserResponseList, rest_err.APIError) {
 	args := m.Called(branch)
 
 	var err rest_err.APIError

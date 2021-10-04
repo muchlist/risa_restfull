@@ -41,9 +41,9 @@ type userDao struct {
 }
 
 // InsertUser menambahkan user dan mengembalikan insertedID, err
-func (u *userDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) {
+func (u *userDao) InsertUser(ctx context.Context, user dto.UserRequest) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	user.Name = strings.ToUpper(user.Name)
@@ -65,7 +65,7 @@ func (u *userDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 		{keyUserTimeStamp, user.Timestamp},
 	}
 
-	result, err := coll.InsertOne(ctx, insertDoc)
+	result, err := coll.InsertOne(ctxt, insertDoc)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan user ke database", err)
 		logger.Error("Gagal menyimpan user ke database", err)
@@ -79,9 +79,9 @@ func (u *userDao) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) 
 }
 
 // EditUser mengubah user, memerlukan timestamp int64 agar lebih safety pada saat pengeditan oleh dua user
-func (u *userDao) EditUser(userID string, userRequest dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
+func (u *userDao) EditUser(ctx context.Context, userID string, userRequest dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
 	coll := db.DB.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	userRequest.Name = strings.ToUpper(userRequest.Name)
@@ -107,7 +107,7 @@ func (u *userDao) EditUser(userID string, userRequest dto.UserEditRequest) (*dto
 	}
 
 	var user dto.UserResponse
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&user); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("User tidak diupdate karena ID atau timestamp tidak valid")
 		}
@@ -120,9 +120,9 @@ func (u *userDao) EditUser(userID string, userRequest dto.UserEditRequest) (*dto
 	return &user, nil
 }
 
-func (u *userDao) EditFcm(userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError) {
+func (u *userDao) EditFcm(ctx context.Context, userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError) {
 	coll := db.DB.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	userID = strings.ToUpper(userID)
@@ -140,7 +140,7 @@ func (u *userDao) EditFcm(userID string, fcmToken string) (*dto.UserResponse, re
 	}
 
 	var user dto.UserResponse
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&user); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("User tidak diupdate karena ID tidak valid")
 		}
@@ -154,16 +154,16 @@ func (u *userDao) EditFcm(userID string, fcmToken string) (*dto.UserResponse, re
 }
 
 // DeleteUser menghapus user
-func (u *userDao) DeleteUser(userID string) rest_err.APIError {
+func (u *userDao) DeleteUser(ctx context.Context, userID string) rest_err.APIError {
 	coll := db.DB.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
 		keyUserID: strings.ToUpper(userID),
 	}
 
-	result, err := coll.DeleteOne(ctx, filter)
+	result, err := coll.DeleteOne(ctxt, filter)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return rest_err.NewBadRequestError("User gagal dihapus, dokumen tidak ditemukan")
@@ -182,9 +182,9 @@ func (u *userDao) DeleteUser(userID string) rest_err.APIError {
 }
 
 // PutAvatar hanya mengubah avatar berdasarkan filter email
-func (u *userDao) PutAvatar(userID string, avatar string) (*dto.UserResponse, rest_err.APIError) {
+func (u *userDao) PutAvatar(ctx context.Context, userID string, avatar string) (*dto.UserResponse, rest_err.APIError) {
 	coll := db.DB.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -201,7 +201,7 @@ func (u *userDao) PutAvatar(userID string, avatar string) (*dto.UserResponse, re
 	}
 
 	var user dto.UserResponse
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&user); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("User avatar gagal diupload, user dengan id %s tidak ditemukan", userID))
 		}
@@ -215,9 +215,9 @@ func (u *userDao) PutAvatar(userID string, avatar string) (*dto.UserResponse, re
 }
 
 // ChangePassword merubah hash_pw dengan password baru sesuai masukan
-func (u *userDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.APIError {
+func (u *userDao) ChangePassword(ctx context.Context, data dto.UserChangePasswordRequest) rest_err.APIError {
 	coll := db.DB.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -231,7 +231,7 @@ func (u *userDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.AP
 		},
 	}
 
-	result, err := coll.UpdateOne(ctx, filter, update)
+	result, err := coll.UpdateOne(ctxt, filter, update)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return rest_err.NewBadRequestError("Penggantian password gagal, ID salah")
@@ -251,16 +251,16 @@ func (u *userDao) ChangePassword(data dto.UserChangePasswordRequest) rest_err.AP
 
 // GetUser mendapatkan user dari database berdasarkan userID, jarang digunakan
 // pada case ini biasanya menggunakan email karena user yang digunakan adalah email
-func (u *userDao) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIError) {
+func (u *userDao) GetUserByID(ctx context.Context, userID string) (*dto.UserResponse, rest_err.APIError) {
 	coll := db.DB.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	var user dto.UserResponse
 	opts := options.FindOne()
 	opts.SetProjection(bson.M{keyUserHashPw: 0})
 
-	if err := coll.FindOne(ctx, bson.M{keyUserID: strings.ToUpper(userID)}, opts).Decode(&user); err != nil {
+	if err := coll.FindOne(ctxt, bson.M{keyUserID: strings.ToUpper(userID)}, opts).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			// apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan FilterID %v tidak ditemukan", userID.Hex()))
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("User dengan ID %s tidak ditemukan", userID))
@@ -276,14 +276,14 @@ func (u *userDao) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIErr
 
 // GetUserByIDWithPassword mendapatkan user dari database berdasarkan id dengan memunculkan passwordhash
 // password hash digunakan pada endpoint login dan change password
-func (u *userDao) GetUserByIDWithPassword(userID string) (*dto.User, rest_err.APIError) {
+func (u *userDao) GetUserByIDWithPassword(ctx context.Context, userID string) (*dto.User, rest_err.APIError) {
 	coll := db.DB.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	var user dto.User
 
-	if err := coll.FindOne(ctx, bson.M{keyUserID: strings.ToUpper(userID)}).Decode(&user); err != nil {
+	if err := coll.FindOne(ctxt, bson.M{keyUserID: strings.ToUpper(userID)}).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			// karena sudah pasti untuk keperluan login maka error yang dikembalikan unauthorized
 			apiErr := rest_err.NewUnauthorizedError("Username atau password tidak valid")
@@ -299,9 +299,9 @@ func (u *userDao) GetUserByIDWithPassword(userID string) (*dto.User, rest_err.AP
 }
 
 // FindUser mendapatkan daftar semua user dari database
-func (u *userDao) FindUser(branch string) (dto.UserResponseList, rest_err.APIError) {
+func (u *userDao) FindUser(ctx context.Context, branch string) (dto.UserResponseList, rest_err.APIError) {
 	coll := db.DB.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{}
@@ -312,14 +312,14 @@ func (u *userDao) FindUser(branch string) (dto.UserResponseList, rest_err.APIErr
 	users := dto.UserResponseList{}
 	opts := options.Find()
 	opts.SetSort(bson.D{{keyUserID, -1}}) //nolint:govet
-	sortCursor, err := coll.Find(ctx, filter, opts)
+	sortCursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan user dari database", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.UserResponseList{}, apiErr
 	}
 
-	if err = sortCursor.All(ctx, &users); err != nil {
+	if err = sortCursor.All(ctxt, &users); err != nil {
 		logger.Error("Gagal decode usersCursor ke objek slice", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.UserResponseList{}, apiErr
@@ -330,16 +330,16 @@ func (u *userDao) FindUser(branch string) (dto.UserResponseList, rest_err.APIErr
 
 // CheckEmailAvailable melakukan pengecekan apakah alamat email sdh terdaftar di database
 // jika ada akan return false ,yang artinya email tidak available
-func (u *userDao) CheckIDAvailable(userID string) (bool, rest_err.APIError) {
+func (u *userDao) CheckIDAvailable(ctx context.Context, userID string) (bool, rest_err.APIError) {
 	coll := db.DB.Collection(keyUserColl)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOne()
 	opts.SetProjection(bson.M{keyUserID: 1})
 	var user dto.UserResponse
 
-	if err := coll.FindOne(ctx, bson.M{keyUserID: strings.ToUpper(userID)}, opts).Decode(&user); err != nil {
+	if err := coll.FindOne(ctxt, bson.M{keyUserID: strings.ToUpper(userID)}, opts).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return true, nil
 		}
