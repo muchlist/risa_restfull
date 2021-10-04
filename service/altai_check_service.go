@@ -19,7 +19,7 @@ import (
 func NewAltaiCheckService(
 	altaiCheckDao altaicheckdao.CheckAltaiDaoAssumer,
 	genUnitDao genunitdao.GenUnitDaoAssumer,
-	altaiDao otherdao.OtherDaoAssumer,
+	altaiDao otherdao.OtherLoader,
 	histService HistoryServiceAssumer,
 ) AltaiCheckServiceAssumer {
 	return &altaiCheckService{
@@ -33,7 +33,7 @@ func NewAltaiCheckService(
 type altaiCheckService struct {
 	daoC        altaicheckdao.CheckAltaiDaoAssumer
 	daoG        genunitdao.GenUnitDaoAssumer
-	daoAltai    otherdao.OtherDaoAssumer
+	daoAltai    otherdao.OtherLoader
 	servHistory HistoryServiceAssumer
 }
 
