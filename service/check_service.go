@@ -54,7 +54,7 @@ func (c *checkService) InsertCheck(ctx context.Context, user mjwt.CustomClaim, i
 
 	go func() {
 		// ambil check item berdasarkan cabang yang di input
-		checkItems, err := c.daoCI.FindCheckItem(dto.FilterBranchNameDisable{
+		checkItems, err := c.daoCI.FindCheckItem(ctx, dto.FilterBranchNameDisable{
 			FilterBranch: user.Branch,
 		}, false)
 		if err != nil {
@@ -311,7 +311,7 @@ func (c *checkService) UpdateCheckItem(ctx context.Context, user mjwt.CustomClai
 	}
 
 	if updatedType != category.Cctv {
-		_, err = c.daoCI.EditCheckItemValue(
+		_, err = c.daoCI.EditCheckItemValue(ctx,
 			dto.CheckItemEditBySys{
 				FilterID:       childOid,
 				UpdatedAt:      0,
