@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/configcheckdao"
@@ -382,7 +383,7 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, st
 	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinQuarter, end, branch, true)
 
 	// cek virtual altai
-	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(targetMinDaily, end, branch)
+	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(context.TODO(), targetMinDaily, end, branch)
 
 	// cek fisik altai bulanan
 	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, end, branch, false)
@@ -474,7 +475,7 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, bran
 	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
 
 	// cek virtual altai
-	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(targetMinDaily, currentTime, branch)
+	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(context.TODO(), targetMinDaily, currentTime, branch)
 
 	// cek fisik altai bulanan
 	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)

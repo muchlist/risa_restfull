@@ -23,7 +23,7 @@ type altaiCheckHandler struct {
 func (ac *altaiCheckHandler) Insert(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	insertID, apiErr := ac.service.InsertAltaiCheck(*claims)
+	insertID, apiErr := ac.service.InsertAltaiCheck(c.Context(), *claims)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -35,7 +35,7 @@ func (ac *altaiCheckHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := ac.service.DeleteAltaiCheck(*claims, id)
+	apiErr := ac.service.DeleteAltaiCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -46,7 +46,7 @@ func (ac *altaiCheckHandler) Delete(c *fiber.Ctx) error {
 func (ac *altaiCheckHandler) Get(c *fiber.Ctx) error {
 	checkID := c.Params("id")
 
-	check, apiErr := ac.service.GetAltaiCheckByID(checkID, "")
+	check, apiErr := ac.service.GetAltaiCheckByID(c.Context(), checkID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -62,7 +62,7 @@ func (ac *altaiCheckHandler) Find(c *fiber.Ctx) error {
 	end := stringToInt(c.Query("end"))
 	limit := stringToInt(c.Query("limit"))
 
-	checkList, apiErr := ac.service.FindAltaiCheck(branch, dto.FilterTimeRangeLimit{
+	checkList, apiErr := ac.service.FindAltaiCheck(c.Context(), branch, dto.FilterTimeRangeLimit{
 		FilterStart: int64(start),
 		FilterEnd:   int64(end),
 		Limit:       int64(limit),
@@ -90,7 +90,7 @@ func (ac *altaiCheckHandler) UpdateCheckItem(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkUpdated, apiErr := ac.service.UpdateAltaiCheckItem(*claims, req)
+	checkUpdated, apiErr := ac.service.UpdateAltaiCheckItem(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -115,7 +115,7 @@ func (ac *altaiCheckHandler) BulkUpdateCheckItem(c *fiber.Ctx) error {
 		}
 	}
 
-	updatedCount, apiErr := ac.service.BulkUpdateAltaiItem(*claims, reqs.Items)
+	updatedCount, apiErr := ac.service.BulkUpdateAltaiItem(c.Context(), *claims, reqs.Items)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -126,7 +126,7 @@ func (ac *altaiCheckHandler) Finish(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	result, apiErr := ac.service.FinishCheck(*claims, id)
+	result, apiErr := ac.service.FinishCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
