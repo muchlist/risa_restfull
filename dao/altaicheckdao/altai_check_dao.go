@@ -45,25 +45,11 @@ func NewAltaiCheckDao() CheckAltaiDaoAssumer {
 	return &checkAltaiDao{}
 }
 
-type checkAltaiDao struct {
-}
+type checkAltaiDao struct{}
 
-type CheckAltaiDaoAssumer interface {
-	InsertCheck(input dto.AltaiCheck) (*string, rest_err.APIError)
-	EditCheck(input dto.AltaiCheckEdit) (*dto.AltaiCheck, rest_err.APIError)
-	DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.AltaiCheck, rest_err.APIError)
-	UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.AltaiCheck, rest_err.APIError)
-	UpdateCheckItem(input dto.AltaiCheckItemUpdate) (*dto.AltaiCheck, rest_err.APIError)
-	BulkUpdateItem(inputs []dto.AltaiCheckItemUpdate) (int64, rest_err.APIError)
-
-	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.AltaiCheck, rest_err.APIError)
-	FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.AltaiCheck, rest_err.APIError)
-	GetLastCheckCreateRange(start, end int64, branch string) (*dto.AltaiCheck, rest_err.APIError)
-}
-
-func (c *checkAltaiDao) InsertCheck(input dto.AltaiCheck) (*string, rest_err.APIError) {
+func (c *checkAltaiDao) InsertCheck(ctx context.Context, input dto.AltaiCheck) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// Default value for slice
@@ -72,7 +58,7 @@ func (c *checkAltaiDao) InsertCheck(input dto.AltaiCheck) (*string, rest_err.API
 		input.AltaiCheckItems = []dto.AltaiCheckItemEmbed{}
 	}
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan altai check ke database", err)
 		logger.Error("Gagal menyimpan altai check ke database, (AltaiInsertCheck)", err)
@@ -84,9 +70,9 @@ func (c *checkAltaiDao) InsertCheck(input dto.AltaiCheck) (*string, rest_err.API
 	return &insertID, nil
 }
 
-func (c *checkAltaiDao) EditCheck(input dto.AltaiCheckEdit) (*dto.AltaiCheck, rest_err.APIError) {
+func (c *checkAltaiDao) EditCheck(ctx context.Context, input dto.AltaiCheckEdit) (*dto.AltaiCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// Default value for slice
@@ -113,7 +99,7 @@ func (c *checkAltaiDao) EditCheck(input dto.AltaiCheckEdit) (*dto.AltaiCheck, re
 	}
 
 	var check dto.AltaiCheck
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("altai check tidak diupdate : validasi id branch isFinish")
 		}
@@ -126,9 +112,9 @@ func (c *checkAltaiDao) EditCheck(input dto.AltaiCheckEdit) (*dto.AltaiCheck, re
 	return &check, nil
 }
 
-func (c *checkAltaiDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.AltaiCheck, rest_err.APIError) {
+func (c *checkAltaiDao) DeleteCheck(ctx context.Context, input dto.FilterIDBranchCreateGte) (*dto.AltaiCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -138,7 +124,7 @@ func (c *checkAltaiDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Alt
 	}
 
 	var check dto.AltaiCheck
-	err := coll.FindOneAndDelete(ctx, filter).Decode(&check)
+	err := coll.FindOneAndDelete(ctxt, filter).Decode(&check)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Altai Check tidak dihapus : validasi id branch time_reach")
@@ -152,9 +138,9 @@ func (c *checkAltaiDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Alt
 	return &check, nil
 }
 
-func (c *checkAltaiDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.AltaiCheck, rest_err.APIError) {
+func (c *checkAltaiDao) UploadChildImage(ctx context.Context, filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.AltaiCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -172,7 +158,7 @@ func (c *checkAltaiDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor
 	}
 
 	var check dto.AltaiCheck
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, altai check dengan id %s -> %s tidak ditemukan", filterA.FilterParentID.Hex(), filterA.FilterChildID))
 		}
@@ -185,9 +171,9 @@ func (c *checkAltaiDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor
 	return &check, nil
 }
 
-func (c *checkAltaiDao) UpdateCheckItem(input dto.AltaiCheckItemUpdate) (*dto.AltaiCheck, rest_err.APIError) {
+func (c *checkAltaiDao) UpdateCheckItem(ctx context.Context, input dto.AltaiCheckItemUpdate) (*dto.AltaiCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -211,7 +197,7 @@ func (c *checkAltaiDao) UpdateCheckItem(input dto.AltaiCheckItemUpdate) (*dto.Al
 	}
 
 	var check dto.AltaiCheck
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("altai check tidak diupdate : validasi id branch isFinish")
 		}
@@ -224,9 +210,9 @@ func (c *checkAltaiDao) UpdateCheckItem(input dto.AltaiCheckItemUpdate) (*dto.Al
 	return &check, nil
 }
 
-func (c *checkAltaiDao) BulkUpdateItem(inputs []dto.AltaiCheckItemUpdate) (int64, rest_err.APIError) {
+func (c *checkAltaiDao) BulkUpdateItem(ctx context.Context, inputs []dto.AltaiCheckItemUpdate) (int64, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	if len(inputs) == 0 {
@@ -255,7 +241,7 @@ func (c *checkAltaiDao) BulkUpdateItem(inputs []dto.AltaiCheckItemUpdate) (int64
 	}
 
 	opts := options.BulkWrite().SetOrdered(false)
-	result, err := coll.BulkWrite(ctx, operations, opts)
+	result, err := coll.BulkWrite(ctxt, operations, opts)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return 0, rest_err.NewBadRequestError("altai check tidak diupdate : validasi id branch isFinish")
@@ -269,9 +255,9 @@ func (c *checkAltaiDao) BulkUpdateItem(inputs []dto.AltaiCheckItemUpdate) (int64
 	return result.ModifiedCount, nil
 }
 
-func (c *checkAltaiDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.AltaiCheck, rest_err.APIError) {
+func (c *checkAltaiDao) GetCheckByID(ctx context.Context, checkID primitive.ObjectID, branchIfSpecific string) (*dto.AltaiCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{keyID: checkID}
@@ -281,7 +267,7 @@ func (c *checkAltaiDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecifi
 	}
 
 	var check dto.AltaiCheck
-	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
+	if err := coll.FindOne(ctxt, filter).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("altai check dengan ID %s tidak ditemukan. validation : id branch", checkID.Hex()))
 			return nil, apiErr
@@ -295,9 +281,9 @@ func (c *checkAltaiDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecifi
 	return &check, nil
 }
 
-func (c *checkAltaiDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.AltaiCheck, rest_err.APIError) {
+func (c *checkAltaiDao) FindCheck(ctx context.Context, branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.AltaiCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	if filterA.Limit == 0 {
@@ -327,7 +313,7 @@ func (c *checkAltaiDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimi
 	opts.SetSort(bson.D{{Key: keyUpdatedAt, Value: -1}}) //nolint:govet
 	opts.SetLimit(filterA.Limit)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("gagal mendapatkan daftar altai check dari database (FindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -335,7 +321,7 @@ func (c *checkAltaiDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimi
 	}
 
 	var checkList []dto.AltaiCheck
-	if err = cursor.All(ctx, &checkList); err != nil {
+	if err = cursor.All(ctxt, &checkList); err != nil {
 		logger.Error("Gagal decode checkList cursor ke objek slice (AltaiFindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return []dto.AltaiCheck{}, apiErr
@@ -344,9 +330,9 @@ func (c *checkAltaiDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimi
 	return checkList, nil
 }
 
-func (c *checkAltaiDao) GetLastCheckCreateRange(start, end int64, branch string) (*dto.AltaiCheck, rest_err.APIError) {
+func (c *checkAltaiDao) GetLastCheckCreateRange(ctx context.Context, start, end int64, branch string) (*dto.AltaiCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// filter
@@ -362,7 +348,7 @@ func (c *checkAltaiDao) GetLastCheckCreateRange(start, end int64, branch string)
 	opts.SetSort(bson.D{{Key: keyCreatedAt, Value: -1}})
 	opts.SetLimit(1)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("gagal mendapatkan daftar altai check dari database (GetLastCheckCreateRange)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -370,7 +356,7 @@ func (c *checkAltaiDao) GetLastCheckCreateRange(start, end int64, branch string)
 	}
 
 	var checkList []dto.AltaiCheck
-	if err = cursor.All(ctx, &checkList); err != nil {
+	if err = cursor.All(ctxt, &checkList); err != nil {
 		logger.Error("Gagal decode checkList cursor ke objek slice (GetLastCheckCreateRange)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return nil, apiErr
