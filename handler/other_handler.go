@@ -41,7 +41,7 @@ func (ot *otherHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := ot.service.InsertOther(*claims, req)
+	insertID, apiErr := ot.service.InsertOther(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -54,7 +54,7 @@ func (ot *otherHandler) Insert(c *fiber.Ctx) error {
 func (ot *otherHandler) GetOther(c *fiber.Ctx) error {
 	otherID := c.Params("id")
 
-	other, apiErr := ot.service.GetOtherByID(otherID, "")
+	other, apiErr := ot.service.GetOtherByID(c.Context(), otherID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -97,7 +97,7 @@ func (ot *otherHandler) Find(c *fiber.Ctx) error {
 		FilterDisable:     disable,
 	}
 
-	otherList, generalList, apiErr := ot.service.FindOther(filterA)
+	otherList, generalList, apiErr := ot.service.FindOther(c.Context(), filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -133,7 +133,7 @@ func (ot *otherHandler) DisableOther(c *fiber.Ctx) error {
 		statusBool = true
 	}
 
-	otherList, apiErr := ot.service.DisableOther(userID, *claims, cat, statusBool)
+	otherList, apiErr := ot.service.DisableOther(c.Context(), userID, *claims, cat, statusBool)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -151,7 +151,7 @@ func (ot *otherHandler) Delete(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	apiErr := ot.service.DeleteOther(*claims, cat, id)
+	apiErr := ot.service.DeleteOther(c.Context(), *claims, cat, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -176,7 +176,7 @@ func (ot *otherHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	otherEdited, apiErr := ot.service.EditOther(*claims, otherID, req)
+	otherEdited, apiErr := ot.service.EditOther(c.Context(), *claims, otherID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -189,7 +189,7 @@ func (ot *otherHandler) UploadImage(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	// cek apakah ID other && branch ada
-	_, apiErr := ot.service.GetOtherByID(id, claims.Branch)
+	_, apiErr := ot.service.GetOtherByID(c.Context(), id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -202,7 +202,7 @@ func (ot *otherHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// update path image di database
-	otherResult, apiErr := ot.service.PutImage(*claims, id, pathInDb)
+	otherResult, apiErr := ot.service.PutImage(c.Context(), *claims, id, pathInDb)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

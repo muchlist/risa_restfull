@@ -63,7 +63,7 @@ func (c *altaiCheckService) InsertAltaiCheck(ctx context.Context, user mjwt.Cust
 
 	// ambil altai untuk mendapatkan data lokasi
 	// altaiItems sudah sorted berdasarkan lokasi sedangkan genItems tidak
-	altaiItems, err := c.daoAltai.FindOther(dto.FilterOther{
+	altaiItems, err := c.daoAltai.FindOther(ctx, dto.FilterOther{
 		FilterBranch:      user.Branch,
 		FilterSubCategory: category.Altai,
 	})

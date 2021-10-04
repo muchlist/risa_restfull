@@ -62,7 +62,7 @@ func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(ctx context.Context, user mj
 
 	// ambil altai untuk mendapatkan data lokasi
 	// altaiItems sudah sorted berdasarkan lokasi sedangkan genItems tidak
-	altaiItems, err := vc.daoAltai.FindOther(dto.FilterOther{
+	altaiItems, err := vc.daoAltai.FindOther(ctx, dto.FilterOther{
 		FilterBranch:      user.Branch,
 		FilterSubCategory: category.Altai,
 	})
