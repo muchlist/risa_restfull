@@ -31,7 +31,7 @@ type ReportParams struct {
 	CheckCCTVPhy  venphycheckdao.CheckVenPhyDaoAssumer
 	CheckAltai    altaicheckdao.CheckAltaiDaoAssumer
 	CheckAltaiPhy altaiphycheckdao.CheckAltaiPhyDaoAssumer
-	Stock         stockdao.StockDaoAssumer
+	Stock         stockdao.StockLoader
 	CheckConfig   configcheckdao.CheckConfigLoader
 	Pdf           reportdao.PdfDaoAssumer
 }
@@ -639,7 +639,7 @@ func (r *reportService) GenerateStockReportRestock(name, branch, category string
 	}
 
 	// GET Stock need Restock
-	stockList, err := r.dao.Stock.FindStockNeedRestock(
+	stockList, err := r.dao.Stock.FindStockNeedRestock(context.TODO(),
 		dto.FilterBranchCatDisable{
 			FilterBranch:   branch,
 			FilterCategory: category,
