@@ -1,7 +1,11 @@
 package dto
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"strings"
+)
 
+// PendingReport struct utama Pending reports
 type PendingReport struct {
 	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	CreatedAt      int64              `json:"created_at" bson:"created_at"`
@@ -21,6 +25,31 @@ type PendingReport struct {
 	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
 	Location       string             `json:"location" bson:"location"`
 	Images         []string           `json:"images" bson:"images"`
+}
+
+// NormalizeValue digunakan untuk mencegah ada nilai nil pada struct, terutama saat dimasukkan ke database mongodb yang bisa
+// menyebabkan error
+func (pd *PendingReport) NormalizeValue() {
+	if pd.Descriptions == nil {
+		pd.Descriptions = make([]PRDescription, 0)
+	}
+	if pd.Participants == nil {
+		pd.Participants = make([]Participant, 0)
+	}
+	if pd.Approvers == nil {
+		pd.Approvers = make([]Participant, 0)
+	}
+	if pd.Equipments == nil {
+		pd.Equipments = make([]PREquipment, 0)
+	}
+	if pd.Images == nil {
+		pd.Images = make([]string, 0)
+	}
+
+	pd.Title = strings.ToUpper(pd.Title)
+	pd.Number = strings.ToUpper(pd.Number)
+	pd.Branch = strings.ToUpper(pd.Branch)
+
 }
 
 type PendingReportRequest struct {
