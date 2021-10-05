@@ -50,20 +50,9 @@ func NewCctvDao() CctvDaoAssumer {
 type cctvDao struct {
 }
 
-type CctvDaoAssumer interface {
-	InsertCctv(input dto.Cctv) (*string, rest_err.APIError)
-	EditCctv(input dto.CctvEdit) (*dto.Cctv, rest_err.APIError)
-	DeleteCctv(input dto.FilterIDBranchCreateGte) (*dto.Cctv, rest_err.APIError)
-	DisableCctv(cctvID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError)
-	UploadImage(cctvID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Cctv, rest_err.APIError)
-
-	GetCctvByID(cctvID primitive.ObjectID, branchIfSpecific string) (*dto.Cctv, rest_err.APIError)
-	FindCctv(filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError)
-}
-
-func (c *cctvDao) InsertCctv(input dto.Cctv) (*string, rest_err.APIError) {
+func (c *cctvDao) InsertCctv(ctx context.Context, input dto.Cctv) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyCtvCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	input.Name = strings.ToUpper(input.Name)
@@ -73,7 +62,7 @@ func (c *cctvDao) InsertCctv(input dto.Cctv) (*string, rest_err.APIError) {
 	}
 	input.Disable = false
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan cctv ke database", err)
 		logger.Error("Gagal menyimpan cctv ke database, (InsertCctv)", err)
@@ -85,9 +74,9 @@ func (c *cctvDao) InsertCctv(input dto.Cctv) (*string, rest_err.APIError) {
 	return &insertID, nil
 }
 
-func (c *cctvDao) EditCctv(input dto.CctvEdit) (*dto.Cctv, rest_err.APIError) {
+func (c *cctvDao) EditCctv(ctx context.Context, input dto.CctvEdit) (*dto.Cctv, rest_err.APIError) {
 	coll := db.DB.Collection(keyCtvCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	input.Name = strings.ToUpper(input.Name)
@@ -126,7 +115,7 @@ func (c *cctvDao) EditCctv(input dto.CctvEdit) (*dto.Cctv, rest_err.APIError) {
 	}
 
 	var cctv dto.Cctv
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&cctv); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&cctv); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Cctv tidak diupdate : validasi id branch timestamp")
 		}
@@ -139,9 +128,9 @@ func (c *cctvDao) EditCctv(input dto.CctvEdit) (*dto.Cctv, rest_err.APIError) {
 	return &cctv, nil
 }
 
-func (c *cctvDao) DeleteCctv(input dto.FilterIDBranchCreateGte) (*dto.Cctv, rest_err.APIError) {
+func (c *cctvDao) DeleteCctv(ctx context.Context, input dto.FilterIDBranchCreateGte) (*dto.Cctv, rest_err.APIError) {
 	coll := db.DB.Collection(keyCtvCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -151,7 +140,7 @@ func (c *cctvDao) DeleteCctv(input dto.FilterIDBranchCreateGte) (*dto.Cctv, rest
 	}
 
 	var cctv dto.Cctv
-	err := coll.FindOneAndDelete(ctx, filter).Decode(&cctv)
+	err := coll.FindOneAndDelete(ctxt, filter).Decode(&cctv)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Cctv tidak dihapus : validasi id branch time_reach")
@@ -166,9 +155,9 @@ func (c *cctvDao) DeleteCctv(input dto.FilterIDBranchCreateGte) (*dto.Cctv, rest
 }
 
 // DisableCctv if value true , cctv will disabled
-func (c *cctvDao) DisableCctv(cctvID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError) {
+func (c *cctvDao) DisableCctv(ctx context.Context, cctvID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError) {
 	coll := db.DB.Collection(keyCtvCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -189,7 +178,7 @@ func (c *cctvDao) DisableCctv(cctvID primitive.ObjectID, user mjwt.CustomClaim, 
 	}
 
 	var cctv dto.Cctv
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&cctv); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&cctv); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Cctv tidak diupdate : validasi id branch")
 		}
@@ -202,9 +191,9 @@ func (c *cctvDao) DisableCctv(cctvID primitive.ObjectID, user mjwt.CustomClaim, 
 	return &cctv, nil
 }
 
-func (c *cctvDao) UploadImage(cctvID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Cctv, rest_err.APIError) {
+func (c *cctvDao) UploadImage(ctx context.Context, cctvID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Cctv, rest_err.APIError) {
 	coll := db.DB.Collection(keyCtvCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -221,7 +210,7 @@ func (c *cctvDao) UploadImage(cctvID primitive.ObjectID, imagePath string, filte
 	}
 
 	var cctv dto.Cctv
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&cctv); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&cctv); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, cctv dengan id %s tidak ditemukan", cctvID.Hex()))
 		}
@@ -234,9 +223,9 @@ func (c *cctvDao) UploadImage(cctvID primitive.ObjectID, imagePath string, filte
 	return &cctv, nil
 }
 
-func (c *cctvDao) GetCctvByID(cctvID primitive.ObjectID, branchIfSpecific string) (*dto.Cctv, rest_err.APIError) {
+func (c *cctvDao) GetCctvByID(ctx context.Context, cctvID primitive.ObjectID, branchIfSpecific string) (*dto.Cctv, rest_err.APIError) {
 	coll := db.DB.Collection(keyCtvCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{keyCtvID: cctvID}
@@ -245,7 +234,7 @@ func (c *cctvDao) GetCctvByID(cctvID primitive.ObjectID, branchIfSpecific string
 	}
 
 	var cctv dto.Cctv
-	if err := coll.FindOne(ctx, filter).Decode(&cctv); err != nil {
+	if err := coll.FindOne(ctxt, filter).Decode(&cctv); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Cctv dengan ID %s tidak ditemukan", cctvID.Hex()))
 			return nil, apiErr
@@ -259,9 +248,9 @@ func (c *cctvDao) GetCctvByID(cctvID primitive.ObjectID, branchIfSpecific string
 	return &cctv, nil
 }
 
-func (c *cctvDao) FindCctv(filterA dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError) {
+func (c *cctvDao) FindCctv(ctx context.Context, filterA dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyCtvCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
@@ -292,7 +281,7 @@ func (c *cctvDao) FindCctv(filterA dto.FilterBranchLocIPNameDisable) (dto.CctvRe
 	opts.SetSort(bson.D{{keyCtvLocation, -1}, {keyCtvName, 1}}) //nolint:govet
 	opts.SetLimit(500)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar cctv dari database (FindCctv)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -300,7 +289,7 @@ func (c *cctvDao) FindCctv(filterA dto.FilterBranchLocIPNameDisable) (dto.CctvRe
 	}
 
 	cctvList := dto.CctvResponseMinList{}
-	if err = cursor.All(ctx, &cctvList); err != nil {
+	if err = cursor.All(ctxt, &cctvList); err != nil {
 		logger.Error("Gagal decode cctvList cursor ke objek slice (FindCctv)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.CctvResponseMinList{}, apiErr

@@ -37,7 +37,7 @@ func (h *historyHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := h.service.InsertHistory(*claims, req)
+	insertID, apiErr := h.service.InsertHistory(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -63,7 +63,7 @@ func (h *historyHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	historyEdited, apiErr := h.service.EditHistory(*claims, historyID, req)
+	historyEdited, apiErr := h.service.EditHistory(c.Context(), *claims, historyID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -98,7 +98,7 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 		Limit:       int64(limit),
 	}
 
-	histories, apiErr := h.service.FindHistory(search, filterA, filterB)
+	histories, apiErr := h.service.FindHistory(c.Context(), search, filterA, filterB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -117,7 +117,7 @@ func (h *historyHandler) FindForHome(c *fiber.Ctx) error {
 		FilterCategory: category,
 	}
 
-	histories, apiErr := h.service.FindHistoryForHome(filterA)
+	histories, apiErr := h.service.FindHistoryForHome(c.Context(), filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -147,7 +147,7 @@ func (h *historyHandler) FindUnwind(c *fiber.Ctx) error {
 		Limit:       int64(limit),
 	}
 
-	histories, apiErr := h.service.UnwindHistory(filterA, filterB)
+	histories, apiErr := h.service.UnwindHistory(c.Context(), filterA, filterB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -159,7 +159,7 @@ func (h *historyHandler) FindUnwind(c *fiber.Ctx) error {
 func (h *historyHandler) FindFromParent(c *fiber.Ctx) error {
 	parentID := c.Params("id")
 
-	histories, apiErr := h.service.FindHistoryForParent(parentID)
+	histories, apiErr := h.service.FindHistoryForParent(c.Context(), parentID)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -182,7 +182,7 @@ func (h *historyHandler) FindFromUser(c *fiber.Ctx) error {
 		Limit:       int64(limit),
 	}
 
-	histories, apiErr := h.service.FindHistoryForUser(userID, filter)
+	histories, apiErr := h.service.FindHistoryForUser(c.Context(), userID, filter)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -194,7 +194,7 @@ func (h *historyHandler) FindFromUser(c *fiber.Ctx) error {
 func (h *historyHandler) GetHistory(c *fiber.Ctx) error {
 	userID := c.Params("id")
 
-	history, apiErr := h.service.GetHistory(userID, "")
+	history, apiErr := h.service.GetHistory(c.Context(), userID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -206,7 +206,7 @@ func (h *historyHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := h.service.DeleteHistory(*claims, id)
+	apiErr := h.service.DeleteHistory(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -220,7 +220,7 @@ func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	// cek apakah ID history && branch ada
-	_, apiErr := h.service.GetHistory(id, claims.Branch)
+	_, apiErr := h.service.GetHistory(c.Context(), id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -233,7 +233,7 @@ func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// update path image di database
-	historyResult, apiErr := h.service.PutImage(*claims, id, pathInDB)
+	historyResult, apiErr := h.service.PutImage(c.Context(), *claims, id, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

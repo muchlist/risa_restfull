@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/configcheckdao"
@@ -24,14 +25,14 @@ import (
 
 // ReportParams berisi semua dao yang diperlukan reports service, karena sangat banyak maka dibuat struct
 type ReportParams struct {
-	History       historydao.HistoryDaoAssumer
-	CheckIT       checkdao.CheckDaoAssumer
-	CheckCCTV     vendorcheckdao.CheckVendorDaoAssumer
-	CheckCCTVPhy  venphycheckdao.CheckVenPhyDaoAssumer
-	CheckAltai    altaicheckdao.CheckAltaiDaoAssumer
-	CheckAltaiPhy altaiphycheckdao.CheckAltaiPhyDaoAssumer
-	Stock         stockdao.StockDaoAssumer
-	CheckConfig   configcheckdao.CheckConfigDaoAssumer
+	History       historydao.HistoryLoader
+	CheckIT       checkdao.CheckLoader
+	CheckCCTV     vendorcheckdao.CheckVendorLoader
+	CheckCCTVPhy  venphycheckdao.CheckVenPhyLoader
+	CheckAltai    altaicheckdao.CheckAltaiLoader
+	CheckAltaiPhy altaiphycheckdao.CheckAltaiPhyLoader
+	Stock         stockdao.StockLoader
+	CheckConfig   configcheckdao.CheckConfigLoader
 	Pdf           reportdao.PdfDaoAssumer
 }
 
@@ -44,20 +45,20 @@ type reportService struct {
 }
 
 type ReportServiceAssumer interface {
-	InsertPdf(input dto.PdfFile) (*string, rest_err.APIError)
-	GenerateReportPDF(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
-	GenerateReportPDFStartFromLast(name string, branch string) (*string, rest_err.APIError)
-	GenerateReportPDFVendor(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
-	GenerateReportPDFVendorStartFromLast(name string, branch string) (*string, rest_err.APIError)
-	FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
-	GenerateReportVendorDaily(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
-	GenerateReportVendorDailyStartFromLast(name string, branch string) (*string, rest_err.APIError)
-	GenerateReportPDFVendorMonthly(name string, branch string, start int64, end int64) (*string, rest_err.APIError)
-	GenerateStockReportRestock(name, branch, category string, start, end int64) (*string, rest_err.APIError)
+	InsertPdf(ctx context.Context, input dto.PdfFile) (*string, rest_err.APIError)
+	GenerateReportPDF(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError)
+	GenerateReportPDFStartFromLast(ctx context.Context, name string, branch string) (*string, rest_err.APIError)
+	GenerateReportPDFVendor(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError)
+	GenerateReportPDFVendorStartFromLast(ctx context.Context, name string, branch string) (*string, rest_err.APIError)
+	FindPdf(ctx context.Context, branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
+	GenerateReportVendorDaily(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError)
+	GenerateReportVendorDailyStartFromLast(ctx context.Context, name string, branch string) (*string, rest_err.APIError)
+	GenerateReportPDFVendorMonthly(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError)
+	GenerateStockReportRestock(ctx context.Context, name, branch, category string, start, end int64) (*string, rest_err.APIError)
 }
 
 // GenerateReportPDF membuat laporan untuk it support
-func (r *reportService) GenerateReportPDF(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportPDF(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
 	}
@@ -68,7 +69,7 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 	}
 
 	// GET HISTORIES 0, 4, 6 sesuai start end inputan INFO, COMPLETE, COMPLETE BA
-	historyList04, err := r.dao.History.UnwindHistory(
+	historyList04, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       "",
@@ -85,7 +86,7 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 	}
 
 	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
-	historyList123, err := r.dao.History.UnwindHistory(
+	historyList123, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       "",
@@ -103,7 +104,7 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 	historiesCombined := append(historyList04, historyList123...)
 
 	// GET CHECK LIST
-	checkList, err := r.dao.CheckIT.FindCheckForReports(branch, dto.FilterTimeRangeLimit{
+	checkList, err := r.dao.CheckIT.FindCheckForReports(ctx, branch, dto.FilterTimeRangeLimit{
 		FilterStart: start,
 		FilterEnd:   end,
 		Limit:       2,
@@ -127,10 +128,10 @@ func (r *reportService) GenerateReportPDF(name string, branch string, start int6
 }
 
 // GenerateReportPDF membuat laporan untuk it support
-func (r *reportService) GenerateReportPDFStartFromLast(name string, branch string) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportPDFStartFromLast(ctx context.Context, name string, branch string) (*string, rest_err.APIError) {
 
 	currentTime := time.Now().Unix()
-	lastPDF, err := r.dao.Pdf.FindLastPdf(branch, pdftype.Laporan)
+	lastPDF, err := r.dao.Pdf.FindLastPdf(ctx, branch, pdftype.Laporan)
 	if err != nil {
 		return nil, rest_err.NewBadRequestError("Gagal mendapatkan data laporan sebelumnya")
 	}
@@ -141,7 +142,7 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 	}
 
 	// GET HISTORIES 0, 4, 6 sesuai start end inputan
-	historyList04, err := r.dao.History.UnwindHistory(
+	historyList04, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       "",
@@ -158,7 +159,7 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 	}
 
 	// GET HISTORIES 1, 2, 3 , 5 sesuai end inputan dan start = end - 3 bulan
-	historyList123, err := r.dao.History.UnwindHistory(
+	historyList123, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       "",
@@ -176,7 +177,7 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 	historiesCombined := append(historyList04, historyList123...)
 
 	// GET CHECK LIST
-	checkList, err := r.dao.CheckIT.FindCheckForReports(branch, dto.FilterTimeRangeLimit{
+	checkList, err := r.dao.CheckIT.FindCheckForReports(ctx, branch, dto.FilterTimeRangeLimit{
 		FilterStart: lastPDFEndTime,
 		FilterEnd:   currentTime,
 	})
@@ -199,7 +200,7 @@ func (r *reportService) GenerateReportPDFStartFromLast(name string, branch strin
 }
 
 // GenerateReportPDFVendor membuat Pdf untuk vendor multinet
-func (r *reportService) GenerateReportPDFVendor(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportPDFVendor(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
 	}
@@ -210,7 +211,7 @@ func (r *reportService) GenerateReportPDFVendor(name string, branch string, star
 	}
 
 	// GET HISTORIES 0, 4, 6 sesuai start end inputan
-	historyList04, err := r.dao.History.UnwindHistory(
+	historyList04, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
@@ -227,7 +228,7 @@ func (r *reportService) GenerateReportPDFVendor(name string, branch string, star
 	}
 
 	// GET HISTORIES 1, 2, 3, 5 sesuai end inputan dan start = end - 3 bulan
-	historyList123, err := r.dao.History.UnwindHistory(
+	historyList123, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
@@ -245,7 +246,7 @@ func (r *reportService) GenerateReportPDFVendor(name string, branch string, star
 
 	historiesCombined := append(historyList04, historyList123...)
 
-	vendorCheckList, err := r.dao.CheckCCTV.FindCheck(branch, dto.FilterTimeRangeLimit{
+	vendorCheckList, err := r.dao.CheckCCTV.FindCheck(ctx, branch, dto.FilterTimeRangeLimit{
 		FilterStart: start - (2 * 30 * 24 * 60 * 60), // batas awalnya di kurangi 2 bulan
 		FilterEnd:   end,
 		Limit:       20,
@@ -269,10 +270,10 @@ func (r *reportService) GenerateReportPDFVendor(name string, branch string, star
 }
 
 // GenerateReportPDFVendor membuat Pdf untuk vendor multinet
-func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch string) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportPDFVendorStartFromLast(ctx context.Context, name string, branch string) (*string, rest_err.APIError) {
 
 	currentTime := time.Now().Unix()
-	lastPDF, err := r.dao.Pdf.FindLastPdf(branch, pdftype.Vendor)
+	lastPDF, err := r.dao.Pdf.FindLastPdf(ctx, branch, pdftype.Vendor)
 	if err != nil {
 		return nil, rest_err.NewBadRequestError("gagal mendapatkan data laporan sebelumnya")
 	}
@@ -283,7 +284,7 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 	}
 
 	// GET HISTORIES 0, 4, 6 sesuai start end inputan
-	historyList04, err := r.dao.History.UnwindHistory(
+	historyList04, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
@@ -300,7 +301,7 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 	}
 
 	// GET HISTORIES 1, 2, 3, 5 sesuai end inputan dan start = end - 3 bulan
-	historyList123, err := r.dao.History.UnwindHistory(
+	historyList123, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s", category.Cctv, category.Altai),
@@ -318,7 +319,7 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 
 	historiesCombined := append(historyList04, historyList123...)
 
-	vendorCheckList, err := r.dao.CheckCCTV.FindCheck(branch, dto.FilterTimeRangeLimit{
+	vendorCheckList, err := r.dao.CheckCCTV.FindCheck(ctx, branch, dto.FilterTimeRangeLimit{
 		FilterStart: lastPDFEndTime - (2 * 30 * 24 * 60 * 60), // batas awalnya di kurangi 2 bulan
 		FilterEnd:   currentTime,
 		Limit:       20,
@@ -341,20 +342,20 @@ func (r *reportService) GenerateReportPDFVendorStartFromLast(name string, branch
 	return &name, nil
 }
 
-func (r *reportService) InsertPdf(input dto.PdfFile) (*string, rest_err.APIError) {
+func (r *reportService) InsertPdf(ctx context.Context, input dto.PdfFile) (*string, rest_err.APIError) {
 	currentTime := time.Now().Unix()
 	if input.EndReportTime > currentTime {
 		input.EndReportTime = currentTime
 	}
 
-	return r.dao.Pdf.InsertPdf(input)
+	return r.dao.Pdf.InsertPdf(ctx, input)
 }
 
-func (r *reportService) FindPdf(branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError) {
-	return r.dao.Pdf.FindPdf(branch, typePdf)
+func (r *reportService) FindPdf(ctx context.Context, branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError) {
+	return r.dao.Pdf.FindPdf(ctx, branch, typePdf)
 }
 
-func (r *reportService) GenerateReportVendorDaily(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportVendorDaily(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
 	}
@@ -373,25 +374,25 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, st
 	}
 
 	// cek virtual cctv
-	cctvVirtual, _ := r.dao.CheckCCTV.GetLastCheckCreateRange(targetMinDaily, end, branch)
+	cctvVirtual, _ := r.dao.CheckCCTV.GetLastCheckCreateRange(ctx, targetMinDaily, end, branch)
 
 	// cek fisik cctv bulanan
-	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinMonthly, end, branch, false)
+	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(ctx, targetMinMonthly, end, branch, false)
 
 	// cek fisik cctv 3 bulanan
-	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinQuarter, end, branch, true)
+	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(ctx, targetMinQuarter, end, branch, true)
 
 	// cek virtual altai
-	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(targetMinDaily, end, branch)
+	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(ctx, targetMinDaily, end, branch)
 
 	// cek fisik altai bulanan
-	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, end, branch, false)
+	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(ctx, targetMinMonthly, end, branch, false)
 
 	// cek fisik altai 3 bulanan
-	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, end, branch, true)
+	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(ctx, targetMinQuarter, end, branch, true)
 
 	// GET HISTORIES 0, 4, 6 sesuai start end inputan
-	historyList04, err := r.dao.History.UnwindHistory(
+	historyList04, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
@@ -408,7 +409,7 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, st
 	}
 
 	// GET HISTORIES 1, 2, 3, 5 sesuai end inputan dan start = end - 3 bulan
-	historyList123, err := r.dao.History.UnwindHistory(
+	historyList123, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
@@ -448,9 +449,9 @@ func (r *reportService) GenerateReportVendorDaily(name string, branch string, st
 	return &name, nil
 }
 
-func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, branch string) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportVendorDailyStartFromLast(ctx context.Context, name string, branch string) (*string, rest_err.APIError) {
 	currentTime := time.Now().Unix()
-	lastPDF, err := r.dao.Pdf.FindLastPdf(branch, pdftype.Vendor)
+	lastPDF, err := r.dao.Pdf.FindLastPdf(ctx, branch, pdftype.Vendor)
 	if err != nil {
 		return nil, rest_err.NewBadRequestError("gagal mendapatkan data laporan sebelumnya")
 	}
@@ -465,25 +466,25 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, bran
 	targetMinQuarter := currentTime - 60*60*24*150 // -5 bulan
 
 	// cek virtual cctv
-	cctvVirtual, _ := r.dao.CheckCCTV.GetLastCheckCreateRange(targetMinDaily, currentTime, branch)
+	cctvVirtual, _ := r.dao.CheckCCTV.GetLastCheckCreateRange(ctx, targetMinDaily, currentTime, branch)
 
 	// cek fisik cctv bulanan
-	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)
+	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(ctx, targetMinMonthly, currentTime, branch, false)
 
 	// cek fisik cctv 3 bulanan
-	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
+	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(ctx, targetMinQuarter, currentTime, branch, true)
 
 	// cek virtual altai
-	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(targetMinDaily, currentTime, branch)
+	altaiVirtual, _ := r.dao.CheckAltai.GetLastCheckCreateRange(ctx, targetMinDaily, currentTime, branch)
 
 	// cek fisik altai bulanan
-	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)
+	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(ctx, targetMinMonthly, currentTime, branch, false)
 
 	// cek fisik altai 3 bulanan
-	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
+	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(ctx, targetMinQuarter, currentTime, branch, true)
 
 	// GET HISTORIES 0, 4, 6 sesuai start end inputan
-	historyList04, err := r.dao.History.UnwindHistory(
+	historyList04, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
@@ -500,7 +501,7 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, bran
 	}
 
 	// GET HISTORIES 1, 2, 3, 5 sesuai end inputan dan start = end - 3 bulan
-	historyList123, err := r.dao.History.UnwindHistory(
+	historyList123, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s, %s", category.Cctv, category.Altai, category.OtherV),
@@ -541,7 +542,7 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(name string, bran
 }
 
 // GenerateReportPDFVendorMonthly membuat Pdf untuk vendor multinet
-func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportPDFVendorMonthly(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
 	}
@@ -555,7 +556,7 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 	targetMinQuarter := end - 60*60*24*150 // -5 bulan
 
 	// GET HISTORIES 4 sesuai start end inputan
-	historyList04, err := r.dao.History.UnwindHistory(
+	historyList04, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
@@ -572,7 +573,7 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 	}
 
 	// GET HISTORIES 1, 2, 3 sesuai end inputan dan start = end - 3 bulan
-	historyList123, err := r.dao.History.UnwindHistory(
+	historyList123, err := r.dao.History.UnwindHistory(ctx,
 		dto.FilterBranchCatInCompleteIn{
 			FilterBranch:         branch,
 			FilterCategory:       fmt.Sprintf("%s,%s,%s", category.Cctv, category.Altai, category.OtherV),
@@ -591,19 +592,19 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 	historiesCombined := append(historyList04, historyList123...)
 
 	// cek fisik cctv bulanan
-	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)
+	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(ctx, targetMinMonthly, currentTime, branch, false)
 
 	// cek fisik cctv 3 bulanan
-	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
+	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(ctx, targetMinQuarter, currentTime, branch, true)
 
 	// cek fisik altai bulanan
-	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch, false)
+	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(ctx, targetMinMonthly, currentTime, branch, false)
 
 	// cek fisik altai 3 bulanan
-	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(targetMinQuarter, currentTime, branch, true)
+	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(ctx, targetMinQuarter, currentTime, branch, true)
 
 	// checklist backup config
-	lastCheckConfig, _ := r.dao.CheckConfig.GetLastCheckCreateRange(targetMinMonthly, currentTime, branch)
+	lastCheckConfig, _ := r.dao.CheckConfig.GetLastCheckCreateRange(ctx, targetMinMonthly, currentTime, branch)
 
 	errPDF := pdfgen.GeneratePDFVendorMonthly(pdfgen.PDFReqMonth{
 		Name:        name,
@@ -627,7 +628,7 @@ func (r *reportService) GenerateReportPDFVendorMonthly(name string, branch strin
 }
 
 // GenerateStockReportRestock membuat Pdf untuk stock yang perlu diisi ulang
-func (r *reportService) GenerateStockReportRestock(name, branch, category string, start, end int64) (*string, rest_err.APIError) {
+func (r *reportService) GenerateStockReportRestock(ctx context.Context, name, branch, category string, start, end int64) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
 	}
@@ -638,7 +639,7 @@ func (r *reportService) GenerateStockReportRestock(name, branch, category string
 	}
 
 	// GET Stock need Restock
-	stockList, err := r.dao.Stock.FindStockNeedRestock(
+	stockList, err := r.dao.Stock.FindStockNeedRestock(ctx,
 		dto.FilterBranchCatDisable{
 			FilterBranch:   branch,
 			FilterCategory: category,

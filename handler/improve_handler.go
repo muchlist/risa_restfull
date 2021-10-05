@@ -37,7 +37,7 @@ func (iv *improveHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := iv.service.InsertImprove(*claims, req)
+	insertID, apiErr := iv.service.InsertImprove(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -63,7 +63,7 @@ func (iv *improveHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	improveEdited, apiErr := iv.service.EditImprove(*claims, improveID, req)
+	improveEdited, apiErr := iv.service.EditImprove(c.Context(), *claims, improveID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -81,7 +81,7 @@ func (iv *improveHandler) ChangeImprove(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	improveEdited, apiErr := iv.service.ChangeImprove(*claims, improveID, req)
+	improveEdited, apiErr := iv.service.ChangeImprove(c.Context(), *claims, improveID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -92,7 +92,7 @@ func (iv *improveHandler) ChangeImprove(c *fiber.Ctx) error {
 func (iv *improveHandler) GetImprove(c *fiber.Ctx) error {
 	improveID := c.Params("id")
 
-	improve, apiErr := iv.service.GetImproveByID(improveID, "")
+	improve, apiErr := iv.service.GetImproveByID(c.Context(), improveID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -118,7 +118,7 @@ func (iv *improveHandler) Find(c *fiber.Ctx) error {
 		Limit:                int64(limit),
 	}
 
-	improveList, apiErr := iv.service.FindImprove(filter)
+	improveList, apiErr := iv.service.FindImprove(c.Context(), filter)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -146,7 +146,7 @@ func (iv *improveHandler) ActivateImprove(c *fiber.Ctx) error {
 		isEnable = true
 	}
 
-	improveList, apiErr := iv.service.ActivateImprove(userID, *claims, isEnable)
+	improveList, apiErr := iv.service.ActivateImprove(c.Context(), userID, *claims, isEnable)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -158,7 +158,7 @@ func (iv *improveHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := iv.service.DeleteImprove(*claims, id)
+	apiErr := iv.service.DeleteImprove(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

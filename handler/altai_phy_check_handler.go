@@ -32,7 +32,7 @@ func (vc *altaiPhyCheckHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := vc.service.InsertAltaiPhyCheck(*claims, req.Name, false)
+	insertID, apiErr := vc.service.InsertAltaiPhyCheck(c.Context(), *claims, req.Name, false)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -51,7 +51,7 @@ func (vc *altaiPhyCheckHandler) InsertQuarter(c *fiber.Ctx) error {
 		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
-	insertID, apiErr := vc.service.InsertAltaiPhyCheck(*claims, req.Name, true)
+	insertID, apiErr := vc.service.InsertAltaiPhyCheck(c.Context(), *claims, req.Name, true)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -63,7 +63,7 @@ func (vc *altaiPhyCheckHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := vc.service.DeleteAltaiPhyCheck(*claims, id)
+	apiErr := vc.service.DeleteAltaiPhyCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -74,7 +74,7 @@ func (vc *altaiPhyCheckHandler) Delete(c *fiber.Ctx) error {
 func (vc *altaiPhyCheckHandler) Get(c *fiber.Ctx) error {
 	checkID := c.Params("id")
 
-	check, apiErr := vc.service.GetAltaiPhyCheckByID(checkID, "")
+	check, apiErr := vc.service.GetAltaiPhyCheckByID(c.Context(), checkID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -90,7 +90,7 @@ func (vc *altaiPhyCheckHandler) Find(c *fiber.Ctx) error {
 	end := stringToInt(c.Query("end"))
 	limit := stringToInt(c.Query("limit"))
 
-	checkList, apiErr := vc.service.FindAltaiPhyCheck(branch, dto.FilterTimeRangeLimit{
+	checkList, apiErr := vc.service.FindAltaiPhyCheck(c.Context(), branch, dto.FilterTimeRangeLimit{
 		FilterStart: int64(start),
 		FilterEnd:   int64(end),
 		Limit:       int64(limit),
@@ -118,7 +118,7 @@ func (vc *altaiPhyCheckHandler) UpdateCheckItem(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkUpdated, apiErr := vc.service.UpdateAltaiPhyCheckItem(*claims, req)
+	checkUpdated, apiErr := vc.service.UpdateAltaiPhyCheckItem(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -143,7 +143,7 @@ func (vc *altaiPhyCheckHandler) BulkUpdateCheckItem(c *fiber.Ctx) error {
 		}
 	}
 
-	updatedCount, apiErr := vc.service.BulkUpdateAltaiPhyItem(*claims, reqs.Items)
+	updatedCount, apiErr := vc.service.BulkUpdateAltaiPhyItem(c.Context(), *claims, reqs.Items)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -154,7 +154,7 @@ func (vc *altaiPhyCheckHandler) Finish(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	result, apiErr := vc.service.FinishCheck(*claims, id)
+	result, apiErr := vc.service.FinishCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

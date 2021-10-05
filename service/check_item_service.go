@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/dao/checkitemdao"
 	"github.com/muchlist/risa_restfull/dto"
@@ -19,16 +20,16 @@ type checkItemService struct {
 	daoC checkitemdao.CheckItemDaoAssumer
 }
 type CheckItemServiceAssumer interface {
-	InsertCheckItem(user mjwt.CustomClaim, input dto.CheckItemRequest) (*string, rest_err.APIError)
-	EditCheckItem(user mjwt.CustomClaim, checkItemID string, input dto.CheckItemEditRequest) (*dto.CheckItem, rest_err.APIError)
-	DeleteCheckItem(user mjwt.CustomClaim, id string) rest_err.APIError
-	DisableCheckItem(checkItemID string, user mjwt.CustomClaim, value bool) (*dto.CheckItem, rest_err.APIError)
+	InsertCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.CheckItemRequest) (*string, rest_err.APIError)
+	EditCheckItem(ctx context.Context, user mjwt.CustomClaim, checkItemID string, input dto.CheckItemEditRequest) (*dto.CheckItem, rest_err.APIError)
+	DeleteCheckItem(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	DisableCheckItem(ctx context.Context, checkItemID string, user mjwt.CustomClaim, value bool) (*dto.CheckItem, rest_err.APIError)
 
-	GetCheckItemByID(checkItemID string, branchIfSpecific string) (*dto.CheckItem, rest_err.APIError)
-	FindCheckItem(filter dto.FilterBranchNameDisable, filterHaveProblem bool) (dto.CheckItemResponseMinList, rest_err.APIError)
+	GetCheckItemByID(ctx context.Context, checkItemID string, branchIfSpecific string) (*dto.CheckItem, rest_err.APIError)
+	FindCheckItem(ctx context.Context, filter dto.FilterBranchNameDisable, filterHaveProblem bool) (dto.CheckItemResponseMinList, rest_err.APIError)
 }
 
-func (c *checkItemService) InsertCheckItem(user mjwt.CustomClaim, input dto.CheckItemRequest) (*string, rest_err.APIError) {
+func (c *checkItemService) InsertCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.CheckItemRequest) (*string, rest_err.APIError) {
 	// Filling data
 	timeNow := time.Now().Unix()
 	data := dto.CheckItem{
@@ -51,7 +52,7 @@ func (c *checkItemService) InsertCheckItem(user mjwt.CustomClaim, input dto.Chec
 	}
 
 	// DB
-	insertedID, err := c.daoC.InsertCheckItem(data)
+	insertedID, err := c.daoC.InsertCheckItem(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +60,7 @@ func (c *checkItemService) InsertCheckItem(user mjwt.CustomClaim, input dto.Chec
 	return insertedID, nil
 }
 
-func (c *checkItemService) EditCheckItem(user mjwt.CustomClaim, checkItemID string, input dto.CheckItemEditRequest) (*dto.CheckItem, rest_err.APIError) {
+func (c *checkItemService) EditCheckItem(ctx context.Context, user mjwt.CustomClaim, checkItemID string, input dto.CheckItemEditRequest) (*dto.CheckItem, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(checkItemID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -88,7 +89,7 @@ func (c *checkItemService) EditCheckItem(user mjwt.CustomClaim, checkItemID stri
 	}
 
 	// DB
-	checkItemEdited, err := c.daoC.EditCheckItem(data)
+	checkItemEdited, err := c.daoC.EditCheckItem(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -96,14 +97,14 @@ func (c *checkItemService) EditCheckItem(user mjwt.CustomClaim, checkItemID stri
 	return checkItemEdited, nil
 }
 
-func (c *checkItemService) DeleteCheckItem(user mjwt.CustomClaim, id string) rest_err.APIError {
+func (c *checkItemService) DeleteCheckItem(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
 	// DB
-	_, err := c.daoC.DeleteCheckItem(dto.FilterIDBranch{
+	_, err := c.daoC.DeleteCheckItem(ctx, dto.FilterIDBranch{
 		FilterID:     oid,
 		FilterBranch: user.Branch,
 	})
@@ -115,35 +116,35 @@ func (c *checkItemService) DeleteCheckItem(user mjwt.CustomClaim, id string) res
 }
 
 // DisableCheckItem if value true , checkItem will disabled
-func (c *checkItemService) DisableCheckItem(checkItemID string, user mjwt.CustomClaim, value bool) (*dto.CheckItem, rest_err.APIError) {
+func (c *checkItemService) DisableCheckItem(ctx context.Context, checkItemID string, user mjwt.CustomClaim, value bool) (*dto.CheckItem, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(checkItemID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
 	// set disable enable checkItem
-	checkItem, err := c.daoC.DisableCheckItem(oid, user, value)
+	checkItem, err := c.daoC.DisableCheckItem(ctx, oid, user, value)
 	if err != nil {
 		return nil, err
 	}
 	return checkItem, nil
 }
 
-func (c *checkItemService) GetCheckItemByID(checkItemID string, branchIfSpecific string) (*dto.CheckItem, rest_err.APIError) {
+func (c *checkItemService) GetCheckItemByID(ctx context.Context, checkItemID string, branchIfSpecific string) (*dto.CheckItem, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(checkItemID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	checkItem, err := c.daoC.GetCheckItemByID(oid, branchIfSpecific)
+	checkItem, err := c.daoC.GetCheckItemByID(ctx, oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}
 	return checkItem, nil
 }
 
-func (c *checkItemService) FindCheckItem(filter dto.FilterBranchNameDisable, filterHaveProblem bool) (dto.CheckItemResponseMinList, rest_err.APIError) {
-	checkItemList, err := c.daoC.FindCheckItem(filter, filterHaveProblem)
+func (c *checkItemService) FindCheckItem(ctx context.Context, filter dto.FilterBranchNameDisable, filterHaveProblem bool) (dto.CheckItemResponseMinList, rest_err.APIError) {
+	checkItemList, err := c.daoC.FindCheckItem(ctx, filter, filterHaveProblem)
 	if err != nil {
 		return nil, err
 	}

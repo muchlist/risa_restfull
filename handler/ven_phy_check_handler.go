@@ -32,7 +32,7 @@ func (vc *venPhyCheckHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := vc.service.InsertVenPhyCheck(*claims, req.Name, false)
+	insertID, apiErr := vc.service.InsertVenPhyCheck(c.Context(), *claims, req.Name, false)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -52,7 +52,7 @@ func (vc *venPhyCheckHandler) InsertQuarter(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := vc.service.InsertVenPhyCheck(*claims, req.Name, true)
+	insertID, apiErr := vc.service.InsertVenPhyCheck(c.Context(), *claims, req.Name, true)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -64,7 +64,7 @@ func (vc *venPhyCheckHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := vc.service.DeleteVenPhyCheck(*claims, id)
+	apiErr := vc.service.DeleteVenPhyCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -75,7 +75,7 @@ func (vc *venPhyCheckHandler) Delete(c *fiber.Ctx) error {
 func (vc *venPhyCheckHandler) Get(c *fiber.Ctx) error {
 	checkID := c.Params("id")
 
-	check, apiErr := vc.service.GetVenPhyCheckByID(checkID, "")
+	check, apiErr := vc.service.GetVenPhyCheckByID(c.Context(), checkID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -91,7 +91,7 @@ func (vc *venPhyCheckHandler) Find(c *fiber.Ctx) error {
 	end := stringToInt(c.Query("end"))
 	limit := stringToInt(c.Query("limit"))
 
-	checkList, apiErr := vc.service.FindVenPhyCheck(branch, dto.FilterTimeRangeLimit{
+	checkList, apiErr := vc.service.FindVenPhyCheck(c.Context(), branch, dto.FilterTimeRangeLimit{
 		FilterStart: int64(start),
 		FilterEnd:   int64(end),
 		Limit:       int64(limit),
@@ -119,7 +119,7 @@ func (vc *venPhyCheckHandler) UpdateCheckItem(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	checkUpdated, apiErr := vc.service.UpdateVenPhyCheckItem(*claims, req)
+	checkUpdated, apiErr := vc.service.UpdateVenPhyCheckItem(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -144,7 +144,7 @@ func (vc *venPhyCheckHandler) BulkUpdateCheckItem(c *fiber.Ctx) error {
 		}
 	}
 
-	updatedCount, apiErr := vc.service.BulkUpdateVenPhyItem(*claims, reqs.Items)
+	updatedCount, apiErr := vc.service.BulkUpdateVenPhyItem(c.Context(), *claims, reqs.Items)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -155,7 +155,7 @@ func (vc *venPhyCheckHandler) Finish(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	result, apiErr := vc.service.FinishCheck(*claims, id)
+	result, apiErr := vc.service.FinishCheck(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

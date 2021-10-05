@@ -1,6 +1,7 @@
 package scheduller
 
 import (
+	"context"
 	"github.com/go-co-op/gocron"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/risa_restfull/constants/category"
@@ -49,7 +50,7 @@ func RunScheduler(
 }
 
 func runCctvCheckBanjarmasin(genUnitService service.GenUnitServiceAssumer) {
-	_ = genUnitService.CheckHardwareDownAndSendNotif("BANJARMASIN", category.Cctv)
+	_ = genUnitService.CheckHardwareDownAndSendNotif(context.Background(), "BANJARMASIN", category.Cctv)
 }
 
 /*func runReportGeneratorVendorBanjarmasin(reportService service.ReportServiceAssumer) {

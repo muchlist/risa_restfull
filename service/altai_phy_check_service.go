@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -17,13 +18,13 @@ import (
 
 func NewAltaiPhyCheckService(
 	altaiPhyCheckDao altaiphycheckdao.CheckAltaiPhyDaoAssumer,
-	genUnitDao genunitdao.GenUnitDaoAssumer,
-	otherDao otherdao.OtherDaoAssumer,
+	genUnitLoader genunitdao.GenUnitLoader,
+	otherDao otherdao.OtherLoader,
 	histService HistoryServiceAssumer,
 ) AltaiPhyCheckServiceAssumer {
 	return &altaiPhyCheckService{
 		daoC:        altaiPhyCheckDao,
-		daoG:        genUnitDao,
+		daoG:        genUnitLoader,
 		daoAltai:    otherDao,
 		servHistory: histService,
 	}
@@ -31,26 +32,26 @@ func NewAltaiPhyCheckService(
 
 type altaiPhyCheckService struct {
 	daoC        altaiphycheckdao.CheckAltaiPhyDaoAssumer
-	daoG        genunitdao.GenUnitDaoAssumer
-	daoAltai    otherdao.OtherDaoAssumer
+	daoG        genunitdao.GenUnitLoader
+	daoAltai    otherdao.OtherLoader
 	servHistory HistoryServiceAssumer
 }
 type AltaiPhyCheckServiceAssumer interface {
-	InsertAltaiPhyCheck(user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError)
-	DeleteAltaiPhyCheck(user mjwt.CustomClaim, id string) rest_err.APIError
-	GetAltaiPhyCheckByID(altaiCheckID string, branchIfSpecific string) (*dto.AltaiPhyCheck, rest_err.APIError)
-	FindAltaiPhyCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.AltaiPhyCheck, rest_err.APIError)
-	UpdateAltaiPhyCheckItem(user mjwt.CustomClaim, input dto.AltaiPhyCheckItemUpdateRequest) (*dto.AltaiPhyCheck, rest_err.APIError)
-	BulkUpdateAltaiPhyItem(user mjwt.CustomClaim, inputs []dto.AltaiPhyCheckItemUpdateRequest) (string, rest_err.APIError)
-	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.AltaiPhyCheck, rest_err.APIError)
+	InsertAltaiPhyCheck(ctx context.Context, user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError)
+	DeleteAltaiPhyCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	GetAltaiPhyCheckByID(ctx context.Context, altaiCheckID string, branchIfSpecific string) (*dto.AltaiPhyCheck, rest_err.APIError)
+	FindAltaiPhyCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) ([]dto.AltaiPhyCheck, rest_err.APIError)
+	UpdateAltaiPhyCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.AltaiPhyCheckItemUpdateRequest) (*dto.AltaiPhyCheck, rest_err.APIError)
+	BulkUpdateAltaiPhyItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.AltaiPhyCheckItemUpdateRequest) (string, rest_err.APIError)
+	FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.AltaiPhyCheck, rest_err.APIError)
 }
 
-func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError) {
+func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(ctx context.Context, user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError) {
 	timeNow := time.Now().Unix()
 
 	// ambil altai genUnit item berdasarkan cabang yang di input
 	// mendapatkan data cases
-	genItems, err := vc.daoG.FindUnit(dto.GenUnitFilter{
+	genItems, err := vc.daoG.FindUnit(ctx, dto.GenUnitFilter{
 		Branch:   user.Branch,
 		Category: category.Altai,
 		Pings:    false,
@@ -61,7 +62,7 @@ func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(user mjwt.CustomClaim, name 
 
 	// ambil altai untuk mendapatkan data lokasi
 	// altaiItems sudah sorted berdasarkan lokasi sedangkan genItems tidak
-	altaiItems, err := vc.daoAltai.FindOther(dto.FilterOther{
+	altaiItems, err := vc.daoAltai.FindOther(ctx, dto.FilterOther{
 		FilterBranch:      user.Branch,
 		FilterSubCategory: category.Altai,
 	})
@@ -119,7 +120,7 @@ func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(user mjwt.CustomClaim, name 
 	}
 
 	// DB
-	insertedID, err := vc.daoC.InsertCheck(data)
+	insertedID, err := vc.daoC.InsertCheck(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +128,7 @@ func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(user mjwt.CustomClaim, name 
 	return insertedID, nil
 }
 
-func (vc *altaiPhyCheckService) DeleteAltaiPhyCheck(user mjwt.CustomClaim, id string) rest_err.APIError {
+func (vc *altaiPhyCheckService) DeleteAltaiPhyCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -136,7 +137,7 @@ func (vc *altaiPhyCheckService) DeleteAltaiPhyCheck(user mjwt.CustomClaim, id st
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := vc.daoC.DeleteCheck(dto.FilterIDBranchCreateGte{
+	_, err := vc.daoC.DeleteCheck(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
 		FilterCreateGTE: timeMinusOneDay.Unix(),
@@ -150,7 +151,7 @@ func (vc *altaiPhyCheckService) DeleteAltaiPhyCheck(user mjwt.CustomClaim, id st
 
 // UpdateAltaiPhyCheckItem
 // setiap melakukan update akan mengupdate cek fisik lainnya yang masih belum finish
-func (vc *altaiPhyCheckService) UpdateAltaiPhyCheckItem(user mjwt.CustomClaim, input dto.AltaiPhyCheckItemUpdateRequest) (*dto.AltaiPhyCheck, rest_err.APIError) {
+func (vc *altaiPhyCheckService) UpdateAltaiPhyCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.AltaiPhyCheckItemUpdateRequest) (*dto.AltaiPhyCheck, rest_err.APIError) {
 	parentOid, errT := primitive.ObjectIDFromHex(input.ParentID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
@@ -173,13 +174,13 @@ func (vc *altaiPhyCheckService) UpdateAltaiPhyCheckItem(user mjwt.CustomClaim, i
 	}
 	// harus sukses mengupdate dirinya sendiri dulu karena ada validasi, baru update
 	// check fisik lain yang belum finish
-	altaiCheck, err := vc.daoC.UpdateCheckItem(data)
+	altaiCheck, err := vc.daoC.UpdateCheckItem(ctx, data)
 	if err != nil {
 		return nil, err
 	}
 
 	go func() {
-		checkStillOpens, err := vc.daoC.FindCheckStillOpen(user.Branch, false)
+		checkStillOpens, err := vc.daoC.FindCheckStillOpen(ctx, user.Branch, false)
 		if err != nil {
 			return
 		}
@@ -206,7 +207,7 @@ func (vc *altaiPhyCheckService) UpdateAltaiPhyCheckItem(user mjwt.CustomClaim, i
 		if len(checkStillOpensValid) == 0 {
 			return
 		}
-		updatedCount, err := vc.daoC.BulkUpdateItem(checkStillOpensValid)
+		updatedCount, err := vc.daoC.BulkUpdateItem(ctx, checkStillOpensValid)
 		if err != nil {
 			logger.Error("gagal bulk update pada (UpdateAltaiPhyCheckItem)", err)
 		}
@@ -216,7 +217,7 @@ func (vc *altaiPhyCheckService) UpdateAltaiPhyCheckItem(user mjwt.CustomClaim, i
 	return altaiCheck, nil
 }
 
-func (vc *altaiPhyCheckService) BulkUpdateAltaiPhyItem(user mjwt.CustomClaim, inputs []dto.AltaiPhyCheckItemUpdateRequest) (string, rest_err.APIError) {
+func (vc *altaiPhyCheckService) BulkUpdateAltaiPhyItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.AltaiPhyCheckItemUpdateRequest) (string, rest_err.APIError) {
 	if len(inputs) == 0 {
 		return "", rest_err.NewBadRequestError("tidak ada perubahan")
 	}
@@ -243,14 +244,14 @@ func (vc *altaiPhyCheckService) BulkUpdateAltaiPhyItem(user mjwt.CustomClaim, in
 			IsOffline:    input.IsOffline,
 		}
 	}
-	result, err := vc.daoC.BulkUpdateItem(inputDatas)
+	result, err := vc.daoC.BulkUpdateItem(ctx, inputDatas)
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%d data telah diubah", result), nil
 }
 
-func (vc *altaiPhyCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.AltaiPhyCheck, rest_err.APIError) {
+func (vc *altaiPhyCheckService) FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.AltaiPhyCheck, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(detailID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -259,7 +260,7 @@ func (vc *altaiPhyCheckService) FinishCheck(user mjwt.CustomClaim, detailID stri
 	timeNow := time.Now().Unix()
 
 	// tandai isFinish true dan end_date ke waktu sekarang
-	altaiChecklistDetail, err := vc.daoC.EditCheck(dto.AltaiPhyCheckEdit{
+	altaiChecklistDetail, err := vc.daoC.EditCheck(ctx, dto.AltaiPhyCheckEdit{
 		FilterIDBranch: dto.FilterIDBranch{
 			FilterID:     oid,
 			FilterBranch: user.Branch,
@@ -278,21 +279,21 @@ func (vc *altaiPhyCheckService) FinishCheck(user mjwt.CustomClaim, detailID stri
 	return altaiChecklistDetail, nil
 }
 
-func (vc *altaiPhyCheckService) GetAltaiPhyCheckByID(altaiCheckID string, branchIfSpecific string) (*dto.AltaiPhyCheck, rest_err.APIError) {
+func (vc *altaiPhyCheckService) GetAltaiPhyCheckByID(ctx context.Context, altaiCheckID string, branchIfSpecific string) (*dto.AltaiPhyCheck, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(altaiCheckID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	altaiCheck, err := vc.daoC.GetCheckByID(oid, branchIfSpecific)
+	altaiCheck, err := vc.daoC.GetCheckByID(ctx, oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}
 	return altaiCheck, nil
 }
 
-func (vc *altaiPhyCheckService) FindAltaiPhyCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.AltaiPhyCheck, rest_err.APIError) {
-	altaiCheckList, err := vc.daoC.FindCheck(branch, filter, false)
+func (vc *altaiPhyCheckService) FindAltaiPhyCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) ([]dto.AltaiPhyCheck, rest_err.APIError) {
+	altaiCheckList, err := vc.daoC.FindCheck(ctx, branch, filter, false)
 	if err != nil {
 		return []dto.AltaiPhyCheck{}, err
 	}

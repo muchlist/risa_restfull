@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
@@ -17,13 +18,13 @@ import (
 
 func NewAltaiCheckService(
 	altaiCheckDao altaicheckdao.CheckAltaiDaoAssumer,
-	genUnitDao genunitdao.GenUnitDaoAssumer,
-	altaiDao otherdao.OtherDaoAssumer,
+	genUnitLoader genunitdao.GenUnitLoader,
+	altaiDao otherdao.OtherLoader,
 	histService HistoryServiceAssumer,
 ) AltaiCheckServiceAssumer {
 	return &altaiCheckService{
 		daoC:        altaiCheckDao,
-		daoG:        genUnitDao,
+		daoG:        genUnitLoader,
 		daoAltai:    altaiDao,
 		servHistory: histService,
 	}
@@ -31,26 +32,27 @@ func NewAltaiCheckService(
 
 type altaiCheckService struct {
 	daoC        altaicheckdao.CheckAltaiDaoAssumer
-	daoG        genunitdao.GenUnitDaoAssumer
-	daoAltai    otherdao.OtherDaoAssumer
+	daoG        genunitdao.GenUnitLoader
+	daoAltai    otherdao.OtherLoader
 	servHistory HistoryServiceAssumer
 }
+
 type AltaiCheckServiceAssumer interface {
-	InsertAltaiCheck(user mjwt.CustomClaim) (*string, rest_err.APIError)
-	DeleteAltaiCheck(user mjwt.CustomClaim, id string) rest_err.APIError
-	GetAltaiCheckByID(altaiCheckID string, branchIfSpecific string) (*dto.AltaiCheck, rest_err.APIError)
-	FindAltaiCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.AltaiCheck, rest_err.APIError)
-	UpdateAltaiCheckItem(user mjwt.CustomClaim, input dto.AltaiCheckItemUpdateRequest) (*dto.AltaiCheck, rest_err.APIError)
-	BulkUpdateAltaiItem(user mjwt.CustomClaim, inputs []dto.AltaiCheckItemUpdateRequest) (string, rest_err.APIError)
-	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.AltaiCheck, rest_err.APIError)
+	InsertAltaiCheck(ctx context.Context, user mjwt.CustomClaim) (*string, rest_err.APIError)
+	DeleteAltaiCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	GetAltaiCheckByID(ctx context.Context, altaiCheckID string, branchIfSpecific string) (*dto.AltaiCheck, rest_err.APIError)
+	FindAltaiCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) ([]dto.AltaiCheck, rest_err.APIError)
+	UpdateAltaiCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.AltaiCheckItemUpdateRequest) (*dto.AltaiCheck, rest_err.APIError)
+	BulkUpdateAltaiItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.AltaiCheckItemUpdateRequest) (string, rest_err.APIError)
+	FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.AltaiCheck, rest_err.APIError)
 }
 
-func (c *altaiCheckService) InsertAltaiCheck(user mjwt.CustomClaim) (*string, rest_err.APIError) {
+func (c *altaiCheckService) InsertAltaiCheck(ctx context.Context, user mjwt.CustomClaim) (*string, rest_err.APIError) {
 	timeNow := time.Now().Unix()
 
 	// ambil altai genUnit item berdasarkan cabang yang di input
 	// mendapatkan data cases
-	genItems, err := c.daoG.FindUnit(dto.GenUnitFilter{
+	genItems, err := c.daoG.FindUnit(ctx, dto.GenUnitFilter{
 		Branch:   user.Branch,
 		Category: category.Altai,
 		Pings:    false,
@@ -61,7 +63,7 @@ func (c *altaiCheckService) InsertAltaiCheck(user mjwt.CustomClaim) (*string, re
 
 	// ambil altai untuk mendapatkan data lokasi
 	// altaiItems sudah sorted berdasarkan lokasi sedangkan genItems tidak
-	altaiItems, err := c.daoAltai.FindOther(dto.FilterOther{
+	altaiItems, err := c.daoAltai.FindOther(ctx, dto.FilterOther{
 		FilterBranch:      user.Branch,
 		FilterSubCategory: category.Altai,
 	})
@@ -111,7 +113,7 @@ func (c *altaiCheckService) InsertAltaiCheck(user mjwt.CustomClaim) (*string, re
 	}
 
 	// DB
-	insertedID, err := c.daoC.InsertCheck(data)
+	insertedID, err := c.daoC.InsertCheck(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +121,7 @@ func (c *altaiCheckService) InsertAltaiCheck(user mjwt.CustomClaim) (*string, re
 	return insertedID, nil
 }
 
-func (c *altaiCheckService) DeleteAltaiCheck(user mjwt.CustomClaim, id string) rest_err.APIError {
+func (c *altaiCheckService) DeleteAltaiCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -128,7 +130,7 @@ func (c *altaiCheckService) DeleteAltaiCheck(user mjwt.CustomClaim, id string) r
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := c.daoC.DeleteCheck(dto.FilterIDBranchCreateGte{
+	_, err := c.daoC.DeleteCheck(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
 		FilterCreateGTE: timeMinusOneDay.Unix(),
@@ -140,7 +142,7 @@ func (c *altaiCheckService) DeleteAltaiCheck(user mjwt.CustomClaim, id string) r
 	return nil
 }
 
-func (c *altaiCheckService) UpdateAltaiCheckItem(user mjwt.CustomClaim, input dto.AltaiCheckItemUpdateRequest) (*dto.AltaiCheck, rest_err.APIError) {
+func (c *altaiCheckService) UpdateAltaiCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.AltaiCheckItemUpdateRequest) (*dto.AltaiCheck, rest_err.APIError) {
 	parentOid, errT := primitive.ObjectIDFromHex(input.ParentID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
@@ -160,14 +162,14 @@ func (c *altaiCheckService) UpdateAltaiCheckItem(user mjwt.CustomClaim, input dt
 		IsChecked: input.IsChecked,
 		IsOffline: input.IsOffline,
 	}
-	altaiCheck, err := c.daoC.UpdateCheckItem(data)
+	altaiCheck, err := c.daoC.UpdateCheckItem(ctx, data)
 	if err != nil {
 		return nil, err
 	}
 	return altaiCheck, nil
 }
 
-func (c *altaiCheckService) BulkUpdateAltaiItem(user mjwt.CustomClaim, inputs []dto.AltaiCheckItemUpdateRequest) (string, rest_err.APIError) {
+func (c *altaiCheckService) BulkUpdateAltaiItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.AltaiCheckItemUpdateRequest) (string, rest_err.APIError) {
 	if len(inputs) == 0 {
 		return "", rest_err.NewBadRequestError("tidak ada perubahan")
 	}
@@ -193,14 +195,14 @@ func (c *altaiCheckService) BulkUpdateAltaiItem(user mjwt.CustomClaim, inputs []
 			IsOffline: input.IsOffline,
 		}
 	}
-	result, err := c.daoC.BulkUpdateItem(inputDatas)
+	result, err := c.daoC.BulkUpdateItem(ctx, inputDatas)
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%d data telah diubah", result), nil
 }
 
-func (c *altaiCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.AltaiCheck, rest_err.APIError) {
+func (c *altaiCheckService) FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.AltaiCheck, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(detailID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -209,7 +211,7 @@ func (c *altaiCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) 
 	timeNow := time.Now().Unix()
 
 	// 1. cek altai existing, untuk mendapatkan keterangan apakah ada case
-	genItems, err := c.daoG.FindUnit(dto.GenUnitFilter{
+	genItems, err := c.daoG.FindUnit(ctx, dto.GenUnitFilter{
 		Branch:   user.Branch,
 		Category: category.Altai,
 		Pings:    false,
@@ -228,7 +230,7 @@ func (c *altaiCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) 
 
 	// 3. filter items check yang memiliki is_offline true
 	var altaiOfflineID []string
-	altaiChecklistDetail, err := c.daoC.GetCheckByID(oid, user.Branch)
+	altaiChecklistDetail, err := c.daoC.GetCheckByID(ctx, oid, user.Branch)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +248,7 @@ func (c *altaiCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) 
 		// Insert History isoffline
 		if len(altaiOfflineID) != 0 {
 			for _, altaiID := range altaiOfflineID {
-				_, _ = c.servHistory.InsertHistory(user, dto.HistoryRequest{
+				_, _ = c.servHistory.InsertHistory(ctx, user, dto.HistoryRequest{
 					ParentID:       altaiID,
 					Status:         "",
 					Problem:        "ALTAI Offline",
@@ -261,7 +263,7 @@ func (c *altaiCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) 
 	}()
 
 	// 7. tandai isFinish true dan end_date ke waktu sekarang
-	altaiChecklistDetail, err = c.daoC.EditCheck(dto.AltaiCheckEdit{
+	altaiChecklistDetail, err = c.daoC.EditCheck(ctx, dto.AltaiCheckEdit{
 		FilterIDBranch: dto.FilterIDBranch{
 			FilterID:     oid,
 			FilterBranch: user.Branch,
@@ -281,21 +283,21 @@ func (c *altaiCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) 
 	return altaiChecklistDetail, nil
 }
 
-func (c *altaiCheckService) GetAltaiCheckByID(altaiCheckID string, branchIfSpecific string) (*dto.AltaiCheck, rest_err.APIError) {
+func (c *altaiCheckService) GetAltaiCheckByID(ctx context.Context, altaiCheckID string, branchIfSpecific string) (*dto.AltaiCheck, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(altaiCheckID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	altaiCheck, err := c.daoC.GetCheckByID(oid, branchIfSpecific)
+	altaiCheck, err := c.daoC.GetCheckByID(ctx, oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}
 	return altaiCheck, nil
 }
 
-func (c *altaiCheckService) FindAltaiCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.AltaiCheck, rest_err.APIError) {
-	altaiCheckList, err := c.daoC.FindCheck(branch, filter, false)
+func (c *altaiCheckService) FindAltaiCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) ([]dto.AltaiCheck, rest_err.APIError) {
+	altaiCheckList, err := c.daoC.FindCheck(ctx, branch, filter, false)
 	if err != nil {
 		return []dto.AltaiCheck{}, err
 	}

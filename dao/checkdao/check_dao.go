@@ -51,21 +51,9 @@ func NewCheckDao() CheckDaoAssumer {
 type checkDao struct {
 }
 
-type CheckDaoAssumer interface {
-	InsertCheck(input dto.Check) (*string, rest_err.APIError)
-	EditCheck(input dto.CheckEdit) (*dto.Check, rest_err.APIError)
-	DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Check, rest_err.APIError)
-	UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.Check, rest_err.APIError)
-	UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest_err.APIError)
-
-	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.Check, rest_err.APIError)
-	FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError)
-	FindCheckForReports(branch string, filterA dto.FilterTimeRangeLimit) ([]dto.Check, rest_err.APIError)
-}
-
-func (c *checkDao) InsertCheck(input dto.Check) (*string, rest_err.APIError) {
+func (c *checkDao) InsertCheck(ctx context.Context, input dto.Check) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// Default value for slice
@@ -82,7 +70,7 @@ func (c *checkDao) InsertCheck(input dto.Check) (*string, rest_err.APIError) {
 		}
 	}
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan check ke database", err)
 		logger.Error("Gagal menyimpan check ke database, (InsertCheck)", err)
@@ -94,9 +82,9 @@ func (c *checkDao) InsertCheck(input dto.Check) (*string, rest_err.APIError) {
 	return &insertID, nil
 }
 
-func (c *checkDao) EditCheck(input dto.CheckEdit) (*dto.Check, rest_err.APIError) {
+func (c *checkDao) EditCheck(ctx context.Context, input dto.CheckEdit) (*dto.Check, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// Default value for slice
@@ -123,7 +111,7 @@ func (c *checkDao) EditCheck(input dto.CheckEdit) (*dto.Check, rest_err.APIError
 	}
 
 	var check dto.Check
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Check tidak diupdate : validasi id branch author isFinish")
 		}
@@ -136,9 +124,9 @@ func (c *checkDao) EditCheck(input dto.CheckEdit) (*dto.Check, rest_err.APIError
 	return &check, nil
 }
 
-func (c *checkDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Check, rest_err.APIError) {
+func (c *checkDao) DeleteCheck(ctx context.Context, input dto.FilterIDBranchCreateGte) (*dto.Check, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -148,7 +136,7 @@ func (c *checkDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Check, r
 	}
 
 	var check dto.Check
-	err := coll.FindOneAndDelete(ctx, filter).Decode(&check)
+	err := coll.FindOneAndDelete(ctxt, filter).Decode(&check)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Check tidak dihapus : validasi id branch time_reach")
@@ -162,9 +150,9 @@ func (c *checkDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Check, r
 	return &check, nil
 }
 
-func (c *checkDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.Check, rest_err.APIError) {
+func (c *checkDao) UploadChildImage(ctx context.Context, filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.Check, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -183,7 +171,7 @@ func (c *checkDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, ima
 	}
 
 	var check dto.Check
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, check dengan id %s -> %s tidak ditemukan", filterA.FilterParentID.Hex(), filterA.FilterChildID))
 		}
@@ -196,9 +184,9 @@ func (c *checkDao) UploadChildImage(filterA dto.FilterParentIDChildIDAuthor, ima
 	return &check, nil
 }
 
-func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest_err.APIError) {
+func (c *checkDao) UpdateCheckItem(ctx context.Context, input dto.CheckChildUpdate) (*dto.Check, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -224,7 +212,7 @@ func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest
 	}
 
 	var check dto.Check
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Check tidak diupdate : validasi id branch author isFinish")
 		}
@@ -237,9 +225,9 @@ func (c *checkDao) UpdateCheckItem(input dto.CheckChildUpdate) (*dto.Check, rest
 	return &check, nil
 }
 
-func (c *checkDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.Check, rest_err.APIError) {
+func (c *checkDao) GetCheckByID(ctx context.Context, checkID primitive.ObjectID, branchIfSpecific string) (*dto.Check, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{keyChID: checkID}
@@ -249,7 +237,7 @@ func (c *checkDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific str
 	}
 
 	var check dto.Check
-	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
+	if err := coll.FindOne(ctxt, filter).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Check dengan ID %s tidak ditemukan. validation : id branch", checkID.Hex()))
 			return nil, apiErr
@@ -263,9 +251,9 @@ func (c *checkDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific str
 	return &check, nil
 }
 
-func (c *checkDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError) {
+func (c *checkDao) FindCheck(ctx context.Context, branch string, filterA dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	if filterA.Limit == 0 {
@@ -292,7 +280,7 @@ func (c *checkDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (d
 	opts.SetSort(bson.D{{keyChID, -1}}) //nolint:govet
 	opts.SetLimit(filterA.Limit)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar check dari database (FindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -300,7 +288,7 @@ func (c *checkDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (d
 	}
 
 	checkList := dto.CheckResponseMinList{}
-	if err = cursor.All(ctx, &checkList); err != nil {
+	if err = cursor.All(ctxt, &checkList); err != nil {
 		logger.Error("Gagal decode checkList cursor ke objek slice (FindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.CheckResponseMinList{}, apiErr
@@ -310,9 +298,9 @@ func (c *checkDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit) (d
 }
 
 // FindCheckForReports mengembalikan check detail dengan limit 2
-func (c *checkDao) FindCheckForReports(branch string, filterA dto.FilterTimeRangeLimit) ([]dto.Check, rest_err.APIError) {
+func (c *checkDao) FindCheckForReports(ctx context.Context, branch string, filterA dto.FilterTimeRangeLimit) ([]dto.Check, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	if filterA.Limit == 0 {
@@ -336,7 +324,7 @@ func (c *checkDao) FindCheckForReports(branch string, filterA dto.FilterTimeRang
 	opts.SetSort(bson.D{{keyChID, -1}}) //nolint:govet
 	opts.SetLimit(filterA.Limit)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar check dari database (FindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -344,7 +332,7 @@ func (c *checkDao) FindCheckForReports(branch string, filterA dto.FilterTimeRang
 	}
 
 	var checkList []dto.Check
-	if err = cursor.All(ctx, &checkList); err != nil {
+	if err = cursor.All(ctxt, &checkList); err != nil {
 		logger.Error("Gagal decode checkList cursor ke objek slice (FindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return []dto.Check{}, apiErr

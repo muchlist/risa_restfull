@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
@@ -31,13 +32,13 @@ type genUnitService struct {
 }
 
 type GenUnitServiceAssumer interface {
-	FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError)
-	GetIPList(branchIfSpecific string, category string) ([]string, rest_err.APIError)
-	AppendPingState(input dto.GenUnitPingStateRequest) (int64, rest_err.APIError)
-	CheckHardwareDownAndSendNotif(branchIfSpecific string, category string) rest_err.APIError
+	FindUnit(ctx context.Context, filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError)
+	GetIPList(ctx context.Context, branchIfSpecific string, category string) ([]string, rest_err.APIError)
+	AppendPingState(ctx context.Context, input dto.GenUnitPingStateRequest) (int64, rest_err.APIError)
+	CheckHardwareDownAndSendNotif(ctx context.Context, branchIfSpecific string, category string) rest_err.APIError
 }
 
-func (g *genUnitService) FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError) {
+func (g *genUnitService) FindUnit(ctx context.Context, filter dto.GenUnitFilter) (dto.GenUnitResponseList, rest_err.APIError) {
 	// cek apakah ip address valid, jika valid maka set filter.FilterName ke kosong supaya pencarian berdasarkan FilterIP
 	if filter.IP != "" {
 		if net.ParseIP(filter.IP) == nil {
@@ -47,16 +48,16 @@ func (g *genUnitService) FindUnit(filter dto.GenUnitFilter) (dto.GenUnitResponse
 	}
 
 	// DB
-	unitList, err := g.dao.FindUnit(filter)
+	unitList, err := g.dao.FindUnit(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 	return unitList, nil
 }
 
-func (g *genUnitService) GetIPList(branchIfSpecific string, category string) ([]string, rest_err.APIError) {
+func (g *genUnitService) GetIPList(ctx context.Context, branchIfSpecific string, category string) ([]string, rest_err.APIError) {
 	// DB
-	ipAddressList, err := g.dao.GetIPList(branchIfSpecific, category)
+	ipAddressList, err := g.dao.GetIPList(ctx, branchIfSpecific, category)
 	if err != nil {
 		return nil, err
 	}
@@ -68,9 +69,9 @@ func (g *genUnitService) GetIPList(branchIfSpecific string, category string) ([]
 // CheckHardwareDownAndSendNotif mengecek perangkat yang mati dan belum pernah dilakukan pengeckean
 // lalu mengirimkan notif ke semua user terkait
 // sudah dilengkapi dengan logger
-func (g *genUnitService) CheckHardwareDownAndSendNotif(branchIfSpecific string, category string) rest_err.APIError {
+func (g *genUnitService) CheckHardwareDownAndSendNotif(ctx context.Context, branchIfSpecific string, category string) rest_err.APIError {
 	// DB
-	unitList, err := g.dao.FindUnit(dto.GenUnitFilter{
+	unitList, err := g.dao.FindUnit(ctx, dto.GenUnitFilter{
 		Branch:   branchIfSpecific,
 		Category: category,
 		Pings:    true,
@@ -89,7 +90,7 @@ func (g *genUnitService) CheckHardwareDownAndSendNotif(branchIfSpecific string, 
 		return nil
 	}
 
-	users, err := g.daoU.FindUser(branchIfSpecific)
+	users, err := g.daoU.FindUser(ctx, branchIfSpecific)
 	if err != nil {
 		logger.Error("mendapatkan user gagal saat menambahkan fcm (CheckHardwareDownAndSendNotif)", err)
 		return err
@@ -137,9 +138,9 @@ func filterUncheckedUnitList(data *dto.GenUnitResponseList) {
 	*data = temp
 }
 
-func (g *genUnitService) AppendPingState(input dto.GenUnitPingStateRequest) (int64, rest_err.APIError) {
+func (g *genUnitService) AppendPingState(ctx context.Context, input dto.GenUnitPingStateRequest) (int64, rest_err.APIError) {
 	// DB
-	unitUpdatedCount, err := g.dao.AppendPingState(input)
+	unitUpdatedCount, err := g.dao.AppendPingState(ctx, input)
 	if err != nil {
 		return 0, err
 	}

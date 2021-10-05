@@ -25,7 +25,7 @@ type userHandler struct {
 func (usr *userHandler) Get(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
 
-	user, apiErr := usr.service.GetUser(userID)
+	user, apiErr := usr.service.GetUser(c.Context(), userID)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -37,7 +37,7 @@ func (usr *userHandler) Get(c *fiber.Ctx) error {
 func (usr *userHandler) GetProfile(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 
-	user, apiErr := usr.service.GetUserByID(claims.Identity)
+	user, apiErr := usr.service.GetUserByID(c.Context(), claims.Identity)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -58,7 +58,7 @@ func (usr *userHandler) Register(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := usr.service.InsertUser(user)
+	insertID, apiErr := usr.service.InsertUser(c.Context(), user)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -69,7 +69,7 @@ func (usr *userHandler) Register(c *fiber.Ctx) error {
 
 // Find menampilkan list user
 func (usr *userHandler) Find(c *fiber.Ctx) error {
-	userList, apiErr := usr.service.FindUsers()
+	userList, apiErr := usr.service.FindUsers(c.Context())
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -92,7 +92,7 @@ func (usr *userHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	userEdited, apiErr := usr.service.EditUser(userID, user)
+	userEdited, apiErr := usr.service.EditUser(c.Context(), userID, user)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -115,7 +115,7 @@ func (usr *userHandler) UpdateFcmToken(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	userEdited, apiErr := usr.service.EditFcm(claims.Identity, fcmPayload.FcmToken)
+	userEdited, apiErr := usr.service.EditFcm(c.Context(), claims.Identity, fcmPayload.FcmToken)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -133,7 +133,7 @@ func (usr *userHandler) Delete(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	apiErr := usr.service.DeleteUser(userIDParams)
+	apiErr := usr.service.DeleteUser(c.Context(), userIDParams)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -159,7 +159,7 @@ func (usr *userHandler) ChangePassword(c *fiber.Ctx) error {
 	//mengganti user id dengan user aktif
 	user.ID = claims.Identity
 
-	apiErr := usr.service.ChangePassword(user)
+	apiErr := usr.service.ChangePassword(c.Context(), user)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(apiErr)
 	}
@@ -176,7 +176,7 @@ func (usr *userHandler) ResetPassword(c *fiber.Ctx) error {
 		NewPassword: "Password",
 	}
 
-	apiErr := usr.service.ResetPassword(data)
+	apiErr := usr.service.ResetPassword(c.Context(), data)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -199,7 +199,7 @@ func (usr *userHandler) Login(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	response, apiErr := usr.service.Login(login)
+	response, apiErr := usr.service.Login(c.Context(), login)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -222,7 +222,7 @@ func (usr *userHandler) RefreshToken(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	response, apiErr := usr.service.Refresh(payload)
+	response, apiErr := usr.service.Refresh(c.Context(), payload)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -241,7 +241,7 @@ func (usr *userHandler) UploadImage(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	usersResult, apiErr := usr.service.PutAvatar(claims.Identity, pathInDB)
+	usersResult, apiErr := usr.service.PutAvatar(c.Context(), claims.Identity, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

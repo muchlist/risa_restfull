@@ -48,19 +48,9 @@ func NewCheckItemDao() CheckItemDaoAssumer {
 type checkItemDao struct {
 }
 
-type CheckItemDaoAssumer interface {
-	InsertCheckItem(input dto.CheckItem) (*string, rest_err.APIError)
-	EditCheckItem(input dto.CheckItemEdit) (*dto.CheckItem, rest_err.APIError)
-	EditCheckItemValue(input dto.CheckItemEditBySys) (*dto.CheckItem, rest_err.APIError)
-	DeleteCheckItem(input dto.FilterIDBranch) (*dto.CheckItem, rest_err.APIError)
-	DisableCheckItem(checkItemID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.CheckItem, rest_err.APIError)
-	GetCheckItemByID(checkItemID primitive.ObjectID, branchIfSpecific string) (*dto.CheckItem, rest_err.APIError)
-	FindCheckItem(filterA dto.FilterBranchNameDisable, filterHaveProblem bool) (dto.CheckItemResponseMinList, rest_err.APIError)
-}
-
-func (c *checkItemDao) InsertCheckItem(input dto.CheckItem) (*string, rest_err.APIError) {
+func (c *checkItemDao) InsertCheckItem(ctx context.Context, input dto.CheckItem) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// Default value
@@ -77,7 +67,7 @@ func (c *checkItemDao) InsertCheckItem(input dto.CheckItem) (*string, rest_err.A
 	}
 	input.Disable = false
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan checkItem ke database", err)
 		logger.Error("Gagal menyimpan checkItem ke database, (InsertCheckItem)", err)
@@ -89,9 +79,9 @@ func (c *checkItemDao) InsertCheckItem(input dto.CheckItem) (*string, rest_err.A
 	return &insertID, nil
 }
 
-func (c *checkItemDao) EditCheckItem(input dto.CheckItemEdit) (*dto.CheckItem, rest_err.APIError) {
+func (c *checkItemDao) EditCheckItem(ctx context.Context, input dto.CheckItemEdit) (*dto.CheckItem, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	input.Name = strings.ToUpper(input.Name)
@@ -134,7 +124,7 @@ func (c *checkItemDao) EditCheckItem(input dto.CheckItemEdit) (*dto.CheckItem, r
 	}
 
 	var checkItem dto.CheckItem
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&checkItem); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&checkItem); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("CheckItem tidak diupdate : validasi id branch timestamp")
 		}
@@ -147,9 +137,9 @@ func (c *checkItemDao) EditCheckItem(input dto.CheckItemEdit) (*dto.CheckItem, r
 	return &checkItem, nil
 }
 
-func (c *checkItemDao) EditCheckItemValue(input dto.CheckItemEditBySys) (*dto.CheckItem, rest_err.APIError) {
+func (c *checkItemDao) EditCheckItemValue(ctx context.Context, input dto.CheckItemEditBySys) (*dto.CheckItem, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -168,7 +158,7 @@ func (c *checkItemDao) EditCheckItemValue(input dto.CheckItemEditBySys) (*dto.Ch
 	}
 
 	var checkItem dto.CheckItem
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&checkItem); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&checkItem); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("CheckItem tidak diupdate : validasi id branch timestamp")
 		}
@@ -181,9 +171,9 @@ func (c *checkItemDao) EditCheckItemValue(input dto.CheckItemEditBySys) (*dto.Ch
 	return &checkItem, nil
 }
 
-func (c *checkItemDao) DeleteCheckItem(input dto.FilterIDBranch) (*dto.CheckItem, rest_err.APIError) {
+func (c *checkItemDao) DeleteCheckItem(ctx context.Context, input dto.FilterIDBranch) (*dto.CheckItem, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -192,7 +182,7 @@ func (c *checkItemDao) DeleteCheckItem(input dto.FilterIDBranch) (*dto.CheckItem
 	}
 
 	var checkItem dto.CheckItem
-	err := coll.FindOneAndDelete(ctx, filter).Decode(&checkItem)
+	err := coll.FindOneAndDelete(ctxt, filter).Decode(&checkItem)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("CheckItem tidak dihapus : validasi id branch")
@@ -207,9 +197,9 @@ func (c *checkItemDao) DeleteCheckItem(input dto.FilterIDBranch) (*dto.CheckItem
 }
 
 // DisableCheckItem if value true , checkItem will disabled
-func (c *checkItemDao) DisableCheckItem(checkItemID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.CheckItem, rest_err.APIError) {
+func (c *checkItemDao) DisableCheckItem(ctx context.Context, checkItemID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.CheckItem, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -230,7 +220,7 @@ func (c *checkItemDao) DisableCheckItem(checkItemID primitive.ObjectID, user mjw
 	}
 
 	var checkItem dto.CheckItem
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&checkItem); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&checkItem); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("CheckItem tidak diupdate : validasi id branch")
 		}
@@ -243,9 +233,9 @@ func (c *checkItemDao) DisableCheckItem(checkItemID primitive.ObjectID, user mjw
 	return &checkItem, nil
 }
 
-func (c *checkItemDao) GetCheckItemByID(checkItemID primitive.ObjectID, branchIfSpecific string) (*dto.CheckItem, rest_err.APIError) {
+func (c *checkItemDao) GetCheckItemByID(ctx context.Context, checkItemID primitive.ObjectID, branchIfSpecific string) (*dto.CheckItem, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{keyChID: checkItemID}
@@ -254,7 +244,7 @@ func (c *checkItemDao) GetCheckItemByID(checkItemID primitive.ObjectID, branchIf
 	}
 
 	var checkItem dto.CheckItem
-	if err := coll.FindOne(ctx, filter).Decode(&checkItem); err != nil {
+	if err := coll.FindOne(ctxt, filter).Decode(&checkItem); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("CheckItem dengan ID %s tidak ditemukan", checkItemID.Hex()))
 			return nil, apiErr
@@ -268,9 +258,9 @@ func (c *checkItemDao) GetCheckItemByID(checkItemID primitive.ObjectID, branchIf
 	return &checkItem, nil
 }
 
-func (c *checkItemDao) FindCheckItem(filterA dto.FilterBranchNameDisable, filterHaveProblem bool) (dto.CheckItemResponseMinList, rest_err.APIError) {
+func (c *checkItemDao) FindCheckItem(ctx context.Context, filterA dto.FilterBranchNameDisable, filterHaveProblem bool) (dto.CheckItemResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyChCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
@@ -297,7 +287,7 @@ func (c *checkItemDao) FindCheckItem(filterA dto.FilterBranchNameDisable, filter
 	opts := options.Find()
 	opts.SetSort(bson.D{{keyChType, -1}, {keyChName, 1}}) //nolint:govet
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar checkItem dari database (FindCheckItem)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -305,7 +295,7 @@ func (c *checkItemDao) FindCheckItem(filterA dto.FilterBranchNameDisable, filter
 	}
 
 	checkItemList := dto.CheckItemResponseMinList{}
-	if err = cursor.All(ctx, &checkItemList); err != nil {
+	if err = cursor.All(ctxt, &checkItemList); err != nil {
 		logger.Error("Gagal decode checkItemList cursor ke objek slice (FindCheckItem)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.CheckItemResponseMinList{}, apiErr

@@ -38,7 +38,7 @@ func (s *stockHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := s.service.InsertStock(*claims, req)
+	insertID, apiErr := s.service.InsertStock(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -64,7 +64,7 @@ func (s *stockHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	stockEdited, apiErr := s.service.EditStock(*claims, stockID, req)
+	stockEdited, apiErr := s.service.EditStock(c.Context(), *claims, stockID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -88,7 +88,7 @@ func (s *stockHandler) ChangeQty(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	stockEdited, apiErr := s.service.ChangeQtyStock(*claims, stockID, req)
+	stockEdited, apiErr := s.service.ChangeQtyStock(c.Context(), *claims, stockID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -99,7 +99,7 @@ func (s *stockHandler) ChangeQty(c *fiber.Ctx) error {
 func (s *stockHandler) GetStock(c *fiber.Ctx) error {
 	stockID := c.Params("id")
 
-	stock, apiErr := s.service.GetStockByID(stockID, "")
+	stock, apiErr := s.service.GetStockByID(c.Context(), stockID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -125,7 +125,7 @@ func (s *stockHandler) Find(c *fiber.Ctx) error {
 		FilterDisable:  disable,
 	}
 
-	stockList, apiErr := s.service.FindStock(filterA)
+	stockList, apiErr := s.service.FindStock(c.Context(), filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -138,7 +138,7 @@ func (s *stockHandler) Find(c *fiber.Ctx) error {
 func (s *stockHandler) FindNeedRestock1(c *fiber.Ctx) error {
 	branch := c.Query("branch")
 
-	stockList, apiErr := s.service.FindNeedReStock(branch)
+	stockList, apiErr := s.service.FindNeedReStock(c.Context(), branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -162,7 +162,7 @@ func (s *stockHandler) FindNeedRestock2(c *fiber.Ctx) error {
 		FilterDisable:  disable,
 	}
 
-	stockList, apiErr := s.service.FindNeedReStock2(filterA)
+	stockList, apiErr := s.service.FindNeedReStock2(c.Context(), filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -189,7 +189,7 @@ func (s *stockHandler) DisableStock(c *fiber.Ctx) error {
 		isDisable = true
 	}
 
-	stockList, apiErr := s.service.DisableStock(userID, *claims, isDisable)
+	stockList, apiErr := s.service.DisableStock(c.Context(), userID, *claims, isDisable)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -201,7 +201,7 @@ func (s *stockHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := s.service.DeleteStock(*claims, id)
+	apiErr := s.service.DeleteStock(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -215,7 +215,7 @@ func (s *stockHandler) UploadImage(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	// cek apakah ID stock && branch ada
-	_, apiErr := s.service.GetStockByID(id, claims.Branch)
+	_, apiErr := s.service.GetStockByID(c.Context(), id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -228,7 +228,7 @@ func (s *stockHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// update path image di database
-	stockResult, apiErr := s.service.PutImage(*claims, id, pathInDB)
+	stockResult, apiErr := s.service.PutImage(c.Context(), *claims, id, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

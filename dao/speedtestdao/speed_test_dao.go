@@ -25,16 +25,16 @@ type speedTestDao struct {
 }
 
 type SpedTestDaoAssumer interface {
-	InsertSpeed(input dto.SpeedTest) (*string, rest_err.APIError)
-	RetrieveSpeed() (dto.SpeedTestList, rest_err.APIError)
+	InsertSpeed(ctx context.Context, input dto.SpeedTest) (*string, rest_err.APIError)
+	RetrieveSpeed(ctx context.Context) (dto.SpeedTestList, rest_err.APIError)
 }
 
-func (s *speedTestDao) InsertSpeed(input dto.SpeedTest) (*string, rest_err.APIError) {
+func (s *speedTestDao) InsertSpeed(ctx context.Context, input dto.SpeedTest) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keySpCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan data speed ke database", err)
 		logger.Error("Gagal menyimpan data speed ke database, (InsertCheck)", err)
@@ -46,12 +46,12 @@ func (s *speedTestDao) InsertSpeed(input dto.SpeedTest) (*string, rest_err.APIEr
 	return &insertID, nil
 }
 
-func (s *speedTestDao) RetrieveSpeed() (dto.SpeedTestList, rest_err.APIError) {
+func (s *speedTestDao) RetrieveSpeed(ctx context.Context) (dto.SpeedTestList, rest_err.APIError) {
 	coll := db.DB.Collection(keySpCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
-	cursor, err := coll.Find(ctx, bson.M{}, options.Find())
+	cursor, err := coll.Find(ctxt, bson.M{}, options.Find())
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar check dari database (FindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -59,7 +59,7 @@ func (s *speedTestDao) RetrieveSpeed() (dto.SpeedTestList, rest_err.APIError) {
 	}
 
 	speedList := dto.SpeedTestList{}
-	if err = cursor.All(ctx, &speedList); err != nil {
+	if err = cursor.All(ctxt, &speedList); err != nil {
 		logger.Error("Gagal decode speedList cursor ke objek slice (FindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.SpeedTestList{}, apiErr

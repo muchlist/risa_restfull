@@ -49,21 +49,9 @@ func NewConfigCheckDao() CheckConfigDaoAssumer {
 type checkConfigDao struct {
 }
 
-type CheckConfigDaoAssumer interface {
-	InsertCheck(input dto.ConfigCheck) (*string, rest_err.APIError)
-	EditCheck(input dto.ConfigCheckEdit) (*dto.ConfigCheck, rest_err.APIError)
-	DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.ConfigCheck, rest_err.APIError)
-	UpdateCheckItem(input dto.ConfigCheckItemUpdate) (*dto.ConfigCheck, rest_err.APIError)
-	UpdateManyItem(input dto.ConfigCheckUpdateMany) rest_err.APIError
-
-	GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError)
-	FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.ConfigCheck, rest_err.APIError)
-	GetLastCheckCreateRange(start, end int64, branch string) (*dto.ConfigCheck, rest_err.APIError)
-}
-
-func (c *checkConfigDao) InsertCheck(input dto.ConfigCheck) (*string, rest_err.APIError) {
+func (c *checkConfigDao) InsertCheck(ctx context.Context, input dto.ConfigCheck) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// Default value for slice
@@ -72,7 +60,7 @@ func (c *checkConfigDao) InsertCheck(input dto.ConfigCheck) (*string, rest_err.A
 		input.ConfigCheckItems = []dto.ConfigCheckItemEmbed{}
 	}
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan config check ke database", err)
 		logger.Error("Gagal menyimpan config check ke database, (ConfigInsertCheck)", err)
@@ -84,9 +72,9 @@ func (c *checkConfigDao) InsertCheck(input dto.ConfigCheck) (*string, rest_err.A
 	return &insertID, nil
 }
 
-func (c *checkConfigDao) EditCheck(input dto.ConfigCheckEdit) (*dto.ConfigCheck, rest_err.APIError) {
+func (c *checkConfigDao) EditCheck(ctx context.Context, input dto.ConfigCheckEdit) (*dto.ConfigCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// Default value for slice
@@ -113,7 +101,7 @@ func (c *checkConfigDao) EditCheck(input dto.ConfigCheckEdit) (*dto.ConfigCheck,
 	}
 
 	var check dto.ConfigCheck
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("config check tidak diupdate : validasi id branch isFinish")
 		}
@@ -126,9 +114,9 @@ func (c *checkConfigDao) EditCheck(input dto.ConfigCheckEdit) (*dto.ConfigCheck,
 	return &check, nil
 }
 
-func (c *checkConfigDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.ConfigCheck, rest_err.APIError) {
+func (c *checkConfigDao) DeleteCheck(ctx context.Context, input dto.FilterIDBranchCreateGte) (*dto.ConfigCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -138,7 +126,7 @@ func (c *checkConfigDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Co
 	}
 
 	var check dto.ConfigCheck
-	err := coll.FindOneAndDelete(ctx, filter).Decode(&check)
+	err := coll.FindOneAndDelete(ctxt, filter).Decode(&check)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Config Check tidak dihapus : validasi id branch time_reach")
@@ -152,9 +140,9 @@ func (c *checkConfigDao) DeleteCheck(input dto.FilterIDBranchCreateGte) (*dto.Co
 	return &check, nil
 }
 
-func (c *checkConfigDao) UpdateCheckItem(input dto.ConfigCheckItemUpdate) (*dto.ConfigCheck, rest_err.APIError) {
+func (c *checkConfigDao) UpdateCheckItem(ctx context.Context, input dto.ConfigCheckItemUpdate) (*dto.ConfigCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -177,7 +165,7 @@ func (c *checkConfigDao) UpdateCheckItem(input dto.ConfigCheckItemUpdate) (*dto.
 	}
 
 	var check dto.ConfigCheck
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&check); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("config check tidak diupdate : validasi id branch isFinish")
 		}
@@ -191,9 +179,9 @@ func (c *checkConfigDao) UpdateCheckItem(input dto.ConfigCheckItemUpdate) (*dto.
 }
 
 // UpdateManyItem mengupdate list didalam checkConfigDetail
-func (c *checkConfigDao) UpdateManyItem(input dto.ConfigCheckUpdateMany) rest_err.APIError {
+func (c *checkConfigDao) UpdateManyItem(ctx context.Context, input dto.ConfigCheckUpdateMany) rest_err.APIError {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	if len(input.ChildIDsUpdate) == 0 || input.ChildIDsUpdate == nil {
@@ -224,7 +212,7 @@ func (c *checkConfigDao) UpdateManyItem(input dto.ConfigCheckUpdateMany) rest_er
 		Filters: []interface{}{bson.M{"elem.id": bson.M{"$in": input.ChildIDsUpdate}}},
 	})
 
-	_, err := coll.UpdateOne(ctx, filter, update, opts)
+	_, err := coll.UpdateOne(ctxt, filter, update, opts)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return rest_err.NewBadRequestError("config check tidak diupdate : validasi id branch isFinish")
@@ -238,9 +226,9 @@ func (c *checkConfigDao) UpdateManyItem(input dto.ConfigCheckUpdateMany) rest_er
 	return nil
 }
 
-func (c *checkConfigDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError) {
+func (c *checkConfigDao) GetCheckByID(ctx context.Context, checkID primitive.ObjectID, branchIfSpecific string) (*dto.ConfigCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{keyID: checkID}
@@ -250,7 +238,7 @@ func (c *checkConfigDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecif
 	}
 
 	var check dto.ConfigCheck
-	if err := coll.FindOne(ctx, filter).Decode(&check); err != nil {
+	if err := coll.FindOne(ctxt, filter).Decode(&check); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("config check dengan ID %s tidak ditemukan. validation : id branch", checkID.Hex()))
 			return nil, apiErr
@@ -264,9 +252,9 @@ func (c *checkConfigDao) GetCheckByID(checkID primitive.ObjectID, branchIfSpecif
 	return &check, nil
 }
 
-func (c *checkConfigDao) FindCheck(branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.ConfigCheck, rest_err.APIError) {
+func (c *checkConfigDao) FindCheck(ctx context.Context, branch string, filterA dto.FilterTimeRangeLimit, detail bool) ([]dto.ConfigCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	if filterA.Limit == 0 {
@@ -296,7 +284,7 @@ func (c *checkConfigDao) FindCheck(branch string, filterA dto.FilterTimeRangeLim
 	opts.SetSort(bson.D{{Key: keyUpdatedAt, Value: -1}})
 	opts.SetLimit(filterA.Limit)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("gagal mendapatkan daftar config check dari database (FindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -304,7 +292,7 @@ func (c *checkConfigDao) FindCheck(branch string, filterA dto.FilterTimeRangeLim
 	}
 
 	var checkList []dto.ConfigCheck
-	if err = cursor.All(ctx, &checkList); err != nil {
+	if err = cursor.All(ctxt, &checkList); err != nil {
 		logger.Error("Gagal decode checkList cursor ke objek slice (ConfigFindCheck)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return []dto.ConfigCheck{}, apiErr
@@ -313,9 +301,9 @@ func (c *checkConfigDao) FindCheck(branch string, filterA dto.FilterTimeRangeLim
 	return checkList, nil
 }
 
-func (c *checkConfigDao) GetLastCheckCreateRange(start, end int64, branch string) (*dto.ConfigCheck, rest_err.APIError) {
+func (c *checkConfigDao) GetLastCheckCreateRange(ctx context.Context, start, end int64, branch string) (*dto.ConfigCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	// filter
@@ -331,7 +319,7 @@ func (c *checkConfigDao) GetLastCheckCreateRange(start, end int64, branch string
 	opts.SetSort(bson.D{{Key: keyCreatedAt, Value: -1}})
 	opts.SetLimit(1)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("gagal mendapatkan daftar config check dari database (GetLastCheckCreateRange)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -339,7 +327,7 @@ func (c *checkConfigDao) GetLastCheckCreateRange(start, end int64, branch string
 	}
 
 	var checkList []dto.ConfigCheck
-	if err = cursor.All(ctx, &checkList); err != nil {
+	if err = cursor.All(ctxt, &checkList); err != nil {
 		logger.Error("Gagal decode checkList cursor ke objek slice (GetLastCheckCreateRange)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return nil, apiErr

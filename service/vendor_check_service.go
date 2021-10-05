@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/category"
@@ -19,7 +20,7 @@ import (
 
 func NewVendorCheckService(
 	vendorCheckDao vendorcheckdao.CheckVendorDaoAssumer,
-	genUnitDao genunitdao.GenUnitDaoAssumer,
+	genUnitDao genunitdao.GenUnitLoader,
 	cctvDao cctvdao.CctvDaoAssumer,
 	histService HistoryServiceAssumer,
 ) VendorCheckServiceAssumer {
@@ -33,26 +34,26 @@ func NewVendorCheckService(
 
 type vendorCheckService struct {
 	daoC        vendorcheckdao.CheckVendorDaoAssumer
-	daoG        genunitdao.GenUnitDaoAssumer
-	daoCTV      cctvdao.CctvDaoAssumer
+	daoG        genunitdao.GenUnitLoader
+	daoCTV      cctvdao.CctvLoader
 	servHistory HistoryServiceAssumer
 }
 type VendorCheckServiceAssumer interface {
-	InsertVendorCheck(user mjwt.CustomClaim) (*string, rest_err.APIError)
-	DeleteVendorCheck(user mjwt.CustomClaim, id string) rest_err.APIError
-	GetVendorCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError)
-	FindVendorCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError)
-	UpdateVendorCheckItem(user mjwt.CustomClaim, input dto.VendorCheckItemUpdateRequest) (*dto.VendorCheck, rest_err.APIError)
-	BulkUpdateVendorItem(user mjwt.CustomClaim, inputs []dto.VendorCheckItemUpdateRequest) (string, rest_err.APIError)
-	FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError)
+	InsertVendorCheck(ctx context.Context, user mjwt.CustomClaim) (*string, rest_err.APIError)
+	DeleteVendorCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	GetVendorCheckByID(ctx context.Context, vendorCheckID string, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError)
+	FindVendorCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError)
+	UpdateVendorCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.VendorCheckItemUpdateRequest) (*dto.VendorCheck, rest_err.APIError)
+	BulkUpdateVendorItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.VendorCheckItemUpdateRequest) (string, rest_err.APIError)
+	FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError)
 }
 
-func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim) (*string, rest_err.APIError) {
+func (c *vendorCheckService) InsertVendorCheck(ctx context.Context, user mjwt.CustomClaim) (*string, rest_err.APIError) {
 	timeNow := time.Now().Unix()
 
 	// ambil cctv genUnit item berdasarkan cabang yang di input
 	// mendapatkan data cases
-	genItems, err := c.daoG.FindUnit(dto.GenUnitFilter{
+	genItems, err := c.daoG.FindUnit(ctx, dto.GenUnitFilter{
 		Branch:   user.Branch,
 		Category: category.Cctv,
 		Pings:    false,
@@ -63,7 +64,7 @@ func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim) (*string, 
 
 	// ambil cctv untuk mendapatkan data lokasi
 	// cctvItems sudah sorted berdasarkan lokasi sedangkan genItems tidak
-	cctvItems, err := c.daoCTV.FindCctv(dto.FilterBranchLocIPNameDisable{
+	cctvItems, err := c.daoCTV.FindCctv(ctx, dto.FilterBranchLocIPNameDisable{
 		FilterBranch: user.Branch,
 	})
 	if err != nil {
@@ -121,7 +122,7 @@ func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim) (*string, 
 	}
 
 	// DB
-	insertedID, err := c.daoC.InsertCheck(data)
+	insertedID, err := c.daoC.InsertCheck(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +130,7 @@ func (c *vendorCheckService) InsertVendorCheck(user mjwt.CustomClaim) (*string, 
 	return insertedID, nil
 }
 
-func (c *vendorCheckService) DeleteVendorCheck(user mjwt.CustomClaim, id string) rest_err.APIError {
+func (c *vendorCheckService) DeleteVendorCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -138,7 +139,7 @@ func (c *vendorCheckService) DeleteVendorCheck(user mjwt.CustomClaim, id string)
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := c.daoC.DeleteCheck(dto.FilterIDBranchCreateGte{
+	_, err := c.daoC.DeleteCheck(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
 		FilterCreateGTE: timeMinusOneDay.Unix(),
@@ -150,7 +151,7 @@ func (c *vendorCheckService) DeleteVendorCheck(user mjwt.CustomClaim, id string)
 	return nil
 }
 
-func (c *vendorCheckService) UpdateVendorCheckItem(user mjwt.CustomClaim, input dto.VendorCheckItemUpdateRequest) (*dto.VendorCheck, rest_err.APIError) {
+func (c *vendorCheckService) UpdateVendorCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.VendorCheckItemUpdateRequest) (*dto.VendorCheck, rest_err.APIError) {
 	parentOid, errT := primitive.ObjectIDFromHex(input.ParentID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
@@ -171,14 +172,14 @@ func (c *vendorCheckService) UpdateVendorCheckItem(user mjwt.CustomClaim, input 
 		IsBlur:    input.IsBlur,
 		IsOffline: input.IsOffline,
 	}
-	vendorCheck, err := c.daoC.UpdateCheckItem(data)
+	vendorCheck, err := c.daoC.UpdateCheckItem(ctx, data)
 	if err != nil {
 		return nil, err
 	}
 	return vendorCheck, nil
 }
 
-func (c *vendorCheckService) BulkUpdateVendorItem(user mjwt.CustomClaim, inputs []dto.VendorCheckItemUpdateRequest) (string, rest_err.APIError) {
+func (c *vendorCheckService) BulkUpdateVendorItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.VendorCheckItemUpdateRequest) (string, rest_err.APIError) {
 	if len(inputs) == 0 {
 		return "", rest_err.NewBadRequestError("tidak ada perubahan")
 	}
@@ -205,14 +206,14 @@ func (c *vendorCheckService) BulkUpdateVendorItem(user mjwt.CustomClaim, inputs 
 			IsOffline: input.IsOffline,
 		}
 	}
-	result, err := c.daoC.BulkUpdateItem(inputDatas)
+	result, err := c.daoC.BulkUpdateItem(ctx, inputDatas)
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%d data telah diubah", result), nil
 }
 
-func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError) {
+func (c *vendorCheckService) FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VendorCheck, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(detailID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -221,7 +222,7 @@ func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 	timeNow := time.Now().Unix()
 
 	// 1. cek cctv existing, untuk mendapatkan keterangan apakah ada case
-	genItems, err := c.daoG.FindUnit(dto.GenUnitFilter{
+	genItems, err := c.daoG.FindUnit(ctx, dto.GenUnitFilter{
 		Branch:   user.Branch,
 		Category: category.Cctv,
 		Pings:    false,
@@ -241,7 +242,7 @@ func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 	// 3. filter items check yang memiliki is_offline atau is_blur true
 	var cctvBlurID []string
 	var cctvOfflineID []string
-	cctvChecklistDetail, err := c.daoC.GetCheckByID(oid, user.Branch)
+	cctvChecklistDetail, err := c.daoC.GetCheckByID(ctx, oid, user.Branch)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +263,7 @@ func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 		// Insert History isBlur
 		if len(cctvBlurID) != 0 {
 			for _, cctvID := range cctvBlurID {
-				_, _ = c.servHistory.InsertHistory(user, dto.HistoryRequest{
+				_, _ = c.servHistory.InsertHistory(ctx, user, dto.HistoryRequest{
 					ParentID:       cctvID,
 					Status:         "",
 					Problem:        "Display CCTV buram #isBlur",
@@ -278,7 +279,7 @@ func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 		// Insert History isoffline
 		if len(cctvOfflineID) != 0 {
 			for _, cctvID := range cctvOfflineID {
-				_, _ = c.servHistory.InsertHistory(user, dto.HistoryRequest{
+				_, _ = c.servHistory.InsertHistory(ctx, user, dto.HistoryRequest{
 					ParentID:       cctvID,
 					Status:         "",
 					Problem:        "CCTV Offline",
@@ -293,7 +294,7 @@ func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 	}()
 
 	// 7. tandai isFinish true dan end_date ke waktu sekarang
-	cctvChecklistDetail, err = c.daoC.EditCheck(dto.VendorCheckEdit{
+	cctvChecklistDetail, err = c.daoC.EditCheck(ctx, dto.VendorCheckEdit{
 		FilterIDBranch: dto.FilterIDBranch{
 			FilterID:     oid,
 			FilterBranch: user.Branch,
@@ -313,21 +314,21 @@ func (c *vendorCheckService) FinishCheck(user mjwt.CustomClaim, detailID string)
 	return cctvChecklistDetail, nil
 }
 
-func (c *vendorCheckService) GetVendorCheckByID(vendorCheckID string, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError) {
+func (c *vendorCheckService) GetVendorCheckByID(ctx context.Context, vendorCheckID string, branchIfSpecific string) (*dto.VendorCheck, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(vendorCheckID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	vendorCheck, err := c.daoC.GetCheckByID(oid, branchIfSpecific)
+	vendorCheck, err := c.daoC.GetCheckByID(ctx, oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}
 	return vendorCheck, nil
 }
 
-func (c *vendorCheckService) FindVendorCheck(branch string, filter dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError) {
-	vendorCheckList, err := c.daoC.FindCheck(branch, filter, false)
+func (c *vendorCheckService) FindVendorCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) ([]dto.VendorCheck, rest_err.APIError) {
+	vendorCheckList, err := c.daoC.FindCheck(ctx, branch, filter, false)
 	if err != nil {
 		return []dto.VendorCheck{}, err
 	}

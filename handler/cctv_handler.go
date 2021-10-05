@@ -40,7 +40,7 @@ func (ctv *cctvHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := ctv.service.InsertCctv(*claims, req)
+	insertID, apiErr := ctv.service.InsertCctv(c.Context(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -53,7 +53,7 @@ func (ctv *cctvHandler) Insert(c *fiber.Ctx) error {
 func (ctv *cctvHandler) GetCctv(c *fiber.Ctx) error {
 	cctvID := c.Params("id")
 
-	cctv, apiErr := ctv.service.GetCctvByID(cctvID, "")
+	cctv, apiErr := ctv.service.GetCctvByID(c.Context(), cctvID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -85,7 +85,7 @@ func (ctv *cctvHandler) Find(c *fiber.Ctx) error {
 		FilterDisable:  disable,
 	}
 
-	cctvList, generalList, apiErr := ctv.service.FindCctv(filterA)
+	cctvList, generalList, apiErr := ctv.service.FindCctv(c.Context(), filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -115,7 +115,7 @@ func (ctv *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 		statusBool = true
 	}
 
-	cctvList, apiErr := ctv.service.DisableCctv(userID, *claims, statusBool)
+	cctvList, apiErr := ctv.service.DisableCctv(c.Context(), userID, *claims, statusBool)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -127,7 +127,7 @@ func (ctv *cctvHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	apiErr := ctv.service.DeleteCctv(*claims, id)
+	apiErr := ctv.service.DeleteCctv(c.Context(), *claims, id)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -152,7 +152,7 @@ func (ctv *cctvHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	cctvEdited, apiErr := ctv.service.EditCctv(*claims, cctvID, req)
+	cctvEdited, apiErr := ctv.service.EditCctv(c.Context(), *claims, cctvID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -165,7 +165,7 @@ func (ctv *cctvHandler) UploadImage(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	// cek apakah ID cctv && branch ada
-	_, apiErr := ctv.service.GetCctvByID(id, claims.Branch)
+	_, apiErr := ctv.service.GetCctvByID(c.Context(), id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -178,7 +178,7 @@ func (ctv *cctvHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// update path image di database
-	cctvResult, apiErr := ctv.service.PutImage(*claims, id, pathInDb)
+	cctvResult, apiErr := ctv.service.PutImage(c.Context(), *claims, id, pathInDb)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

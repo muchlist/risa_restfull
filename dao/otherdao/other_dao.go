@@ -52,23 +52,11 @@ func NewOtherDao() OtherDaoAssumer {
 	return &otherDao{}
 }
 
-type otherDao struct {
-}
+type otherDao struct{}
 
-type OtherDaoAssumer interface {
-	InsertOther(input dto.Other) (*string, rest_err.APIError)
-	EditOther(input dto.OtherEdit) (*dto.Other, rest_err.APIError)
-	DeleteOther(input dto.FilterIDBranchCategoryCreateGte) (*dto.Other, rest_err.APIError)
-	DisableOther(pcID primitive.ObjectID, user mjwt.CustomClaim, subCategory string, value bool) (*dto.Other, rest_err.APIError)
-	UploadImage(pcID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Other, rest_err.APIError)
-
-	GetOtherByID(pcID primitive.ObjectID, branchIfSpecific string) (*dto.Other, rest_err.APIError)
-	FindOther(filter dto.FilterOther) (dto.OtherResponseMinList, rest_err.APIError)
-}
-
-func (c *otherDao) InsertOther(input dto.Other) (*string, rest_err.APIError) {
+func (c *otherDao) InsertOther(ctx context.Context, input dto.Other) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyOtherCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	input.Name = strings.ToUpper(input.Name)
@@ -79,7 +67,7 @@ func (c *otherDao) InsertOther(input dto.Other) (*string, rest_err.APIError) {
 	}
 	input.Disable = false
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError(fmt.Sprintf("Gagal menyimpan %s ke database", input.SubCategory), err)
 		logger.Error(fmt.Sprintf("Gagal menyimpan %s ke database (InsertOther)", input.SubCategory), err)
@@ -91,9 +79,9 @@ func (c *otherDao) InsertOther(input dto.Other) (*string, rest_err.APIError) {
 	return &insertID, nil
 }
 
-func (c *otherDao) EditOther(input dto.OtherEdit) (*dto.Other, rest_err.APIError) {
+func (c *otherDao) EditOther(ctx context.Context, input dto.OtherEdit) (*dto.Other, rest_err.APIError) {
 	coll := db.DB.Collection(keyOtherCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	input.Name = strings.ToUpper(input.Name)
@@ -138,7 +126,7 @@ func (c *otherDao) EditOther(input dto.OtherEdit) (*dto.Other, rest_err.APIError
 	}
 
 	var other dto.Other
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&other); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&other); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("%s tidak diupdate : validasi id branch category timestamp", input.FilterSubCategory))
 		}
@@ -151,9 +139,9 @@ func (c *otherDao) EditOther(input dto.OtherEdit) (*dto.Other, rest_err.APIError
 	return &other, nil
 }
 
-func (c *otherDao) DeleteOther(input dto.FilterIDBranchCategoryCreateGte) (*dto.Other, rest_err.APIError) {
+func (c *otherDao) DeleteOther(ctx context.Context, input dto.FilterIDBranchCategoryCreateGte) (*dto.Other, rest_err.APIError) {
 	coll := db.DB.Collection(keyOtherCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -164,7 +152,7 @@ func (c *otherDao) DeleteOther(input dto.FilterIDBranchCategoryCreateGte) (*dto.
 	}
 
 	var other dto.Other
-	err := coll.FindOneAndDelete(ctx, filter).Decode(&other)
+	err := coll.FindOneAndDelete(ctxt, filter).Decode(&other)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Data tidak diupdate : validasi id branch category time_reach")
@@ -179,9 +167,9 @@ func (c *otherDao) DeleteOther(input dto.FilterIDBranchCategoryCreateGte) (*dto.
 }
 
 // DisableOther if value true , other will disabled
-func (c *otherDao) DisableOther(otherID primitive.ObjectID, user mjwt.CustomClaim, subCategory string, value bool) (*dto.Other, rest_err.APIError) {
+func (c *otherDao) DisableOther(ctx context.Context, otherID primitive.ObjectID, user mjwt.CustomClaim, subCategory string, value bool) (*dto.Other, rest_err.APIError) {
 	coll := db.DB.Collection(keyOtherCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -203,7 +191,7 @@ func (c *otherDao) DisableOther(otherID primitive.ObjectID, user mjwt.CustomClai
 	}
 
 	var other dto.Other
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&other); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&other); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Data tidak diupdate : validasi id branch category")
 		}
@@ -216,9 +204,9 @@ func (c *otherDao) DisableOther(otherID primitive.ObjectID, user mjwt.CustomClai
 	return &other, nil
 }
 
-func (c *otherDao) UploadImage(pcID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Other, rest_err.APIError) {
+func (c *otherDao) UploadImage(ctx context.Context, pcID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Other, rest_err.APIError) {
 	coll := db.DB.Collection(keyOtherCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -235,7 +223,7 @@ func (c *otherDao) UploadImage(pcID primitive.ObjectID, imagePath string, filter
 	}
 
 	var other dto.Other
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&other); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&other); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, data dengan id %s tidak ditemukan", pcID.Hex()))
 		}
@@ -248,9 +236,9 @@ func (c *otherDao) UploadImage(pcID primitive.ObjectID, imagePath string, filter
 	return &other, nil
 }
 
-func (c *otherDao) GetOtherByID(pcID primitive.ObjectID, branchIfSpecific string) (*dto.Other, rest_err.APIError) {
+func (c *otherDao) GetOtherByID(ctx context.Context, pcID primitive.ObjectID, branchIfSpecific string) (*dto.Other, rest_err.APIError) {
 	coll := db.DB.Collection(keyOtherCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{keyOtherID: pcID}
@@ -259,7 +247,7 @@ func (c *otherDao) GetOtherByID(pcID primitive.ObjectID, branchIfSpecific string
 	}
 
 	var other dto.Other
-	if err := coll.FindOne(ctx, filter).Decode(&other); err != nil {
+	if err := coll.FindOne(ctxt, filter).Decode(&other); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Data dengan ID %s tidak ditemukan", pcID.Hex()))
 			return nil, apiErr
@@ -273,9 +261,9 @@ func (c *otherDao) GetOtherByID(pcID primitive.ObjectID, branchIfSpecific string
 	return &other, nil
 }
 
-func (c *otherDao) FindOther(filterA dto.FilterOther) (dto.OtherResponseMinList, rest_err.APIError) {
+func (c *otherDao) FindOther(ctx context.Context, filterA dto.FilterOther) (dto.OtherResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyOtherCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
@@ -323,7 +311,7 @@ func (c *otherDao) FindOther(filterA dto.FilterOther) (dto.OtherResponseMinList,
 	opts.SetSort(bson.D{{Key: keyOtherLocation, Value: -1}, {Key: keyOtherDivision, Value: -1}}) //nolint:govet
 	opts.SetLimit(500)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Gagal mendapatkan daftar %s dari database (FindOther)", filterA.FilterSubCategory), err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -331,7 +319,7 @@ func (c *otherDao) FindOther(filterA dto.FilterOther) (dto.OtherResponseMinList,
 	}
 
 	otherList := dto.OtherResponseMinList{}
-	if err = cursor.All(ctx, &otherList); err != nil {
+	if err = cursor.All(ctxt, &otherList); err != nil {
 		logger.Error("Gagal decode otherList cursor ke objek slice (FindOther)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.OtherResponseMinList{}, apiErr

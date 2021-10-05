@@ -58,20 +58,9 @@ func NewComputerDao() ComputerDaoAssumer {
 type computerDao struct {
 }
 
-type ComputerDaoAssumer interface {
-	InsertPc(input dto.Computer) (*string, rest_err.APIError)
-	EditPc(input dto.ComputerEdit) (*dto.Computer, rest_err.APIError)
-	DeletePc(input dto.FilterIDBranchCreateGte) (*dto.Computer, rest_err.APIError)
-	DisablePc(pcID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Computer, rest_err.APIError)
-	UploadImage(pcID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Computer, rest_err.APIError)
-
-	GetPcByID(pcID primitive.ObjectID, branchIfSpecific string) (*dto.Computer, rest_err.APIError)
-	FindPc(filter dto.FilterComputer) (dto.ComputerResponseMinList, rest_err.APIError)
-}
-
-func (c *computerDao) InsertPc(input dto.Computer) (*string, rest_err.APIError) {
+func (c *computerDao) InsertPc(ctx context.Context, input dto.Computer) (*string, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	input.Name = strings.ToUpper(input.Name)
@@ -81,7 +70,7 @@ func (c *computerDao) InsertPc(input dto.Computer) (*string, rest_err.APIError) 
 	}
 	input.Disable = false
 
-	result, err := coll.InsertOne(ctx, input)
+	result, err := coll.InsertOne(ctxt, input)
 	if err != nil {
 		apiErr := rest_err.NewInternalServerError("Gagal menyimpan pc ke database", err)
 		logger.Error("Gagal menyimpan pc ke database, (InsertPc)", err)
@@ -93,9 +82,9 @@ func (c *computerDao) InsertPc(input dto.Computer) (*string, rest_err.APIError) 
 	return &insertID, nil
 }
 
-func (c *computerDao) EditPc(input dto.ComputerEdit) (*dto.Computer, rest_err.APIError) {
+func (c *computerDao) EditPc(ctx context.Context, input dto.ComputerEdit) (*dto.Computer, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	input.Name = strings.ToUpper(input.Name)
@@ -142,7 +131,7 @@ func (c *computerDao) EditPc(input dto.ComputerEdit) (*dto.Computer, rest_err.AP
 	}
 
 	var pc dto.Computer
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&pc); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&pc); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Pc tidak diupdate : validasi id branch timestamp")
 		}
@@ -155,9 +144,9 @@ func (c *computerDao) EditPc(input dto.ComputerEdit) (*dto.Computer, rest_err.AP
 	return &pc, nil
 }
 
-func (c *computerDao) DeletePc(input dto.FilterIDBranchCreateGte) (*dto.Computer, rest_err.APIError) {
+func (c *computerDao) DeletePc(ctx context.Context, input dto.FilterIDBranchCreateGte) (*dto.Computer, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{
@@ -167,7 +156,7 @@ func (c *computerDao) DeletePc(input dto.FilterIDBranchCreateGte) (*dto.Computer
 	}
 
 	var pc dto.Computer
-	err := coll.FindOneAndDelete(ctx, filter).Decode(&pc)
+	err := coll.FindOneAndDelete(ctxt, filter).Decode(&pc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Pc tidak dihapus : validasi id branch time_reach")
@@ -182,9 +171,9 @@ func (c *computerDao) DeletePc(input dto.FilterIDBranchCreateGte) (*dto.Computer
 }
 
 // DisablePc if value true , pc will disabled
-func (c *computerDao) DisablePc(pcID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Computer, rest_err.APIError) {
+func (c *computerDao) DisablePc(ctx context.Context, pcID primitive.ObjectID, user mjwt.CustomClaim, value bool) (*dto.Computer, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -205,7 +194,7 @@ func (c *computerDao) DisablePc(pcID primitive.ObjectID, user mjwt.CustomClaim, 
 	}
 
 	var pc dto.Computer
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&pc); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&pc); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError("Pc tidak diupdate : validasi id branch")
 		}
@@ -218,9 +207,9 @@ func (c *computerDao) DisablePc(pcID primitive.ObjectID, user mjwt.CustomClaim, 
 	return &pc, nil
 }
 
-func (c *computerDao) UploadImage(pcID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Computer, rest_err.APIError) {
+func (c *computerDao) UploadImage(ctx context.Context, pcID primitive.ObjectID, imagePath string, filterBranch string) (*dto.Computer, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	opts := options.FindOneAndUpdate()
@@ -237,7 +226,7 @@ func (c *computerDao) UploadImage(pcID primitive.ObjectID, imagePath string, fil
 	}
 
 	var pc dto.Computer
-	if err := coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&pc); err != nil {
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&pc); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, pc dengan id %s tidak ditemukan", pcID.Hex()))
 		}
@@ -250,9 +239,9 @@ func (c *computerDao) UploadImage(pcID primitive.ObjectID, imagePath string, fil
 	return &pc, nil
 }
 
-func (c *computerDao) GetPcByID(pcID primitive.ObjectID, branchIfSpecific string) (*dto.Computer, rest_err.APIError) {
+func (c *computerDao) GetPcByID(ctx context.Context, pcID primitive.ObjectID, branchIfSpecific string) (*dto.Computer, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filter := bson.M{keyPCID: pcID}
@@ -261,7 +250,7 @@ func (c *computerDao) GetPcByID(pcID primitive.ObjectID, branchIfSpecific string
 	}
 
 	var pc dto.Computer
-	if err := coll.FindOne(ctx, filter).Decode(&pc); err != nil {
+	if err := coll.FindOne(ctxt, filter).Decode(&pc); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Pc dengan ID %s tidak ditemukan", pcID.Hex()))
 			return nil, apiErr
@@ -275,9 +264,9 @@ func (c *computerDao) GetPcByID(pcID primitive.ObjectID, branchIfSpecific string
 	return &pc, nil
 }
 
-func (c *computerDao) FindPc(filterA dto.FilterComputer) (dto.ComputerResponseMinList, rest_err.APIError) {
+func (c *computerDao) FindPc(ctx context.Context, filterA dto.FilterComputer) (dto.ComputerResponseMinList, rest_err.APIError) {
 	coll := db.DB.Collection(keyPCCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout*time.Second)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
 
 	filterA.FilterBranch = strings.ToUpper(filterA.FilterBranch)
@@ -321,7 +310,7 @@ func (c *computerDao) FindPc(filterA dto.FilterComputer) (dto.ComputerResponseMi
 	opts.SetSort(bson.D{{keyPCLocation, -1}, {keyPCDivision, -1}}) //nolint:govet
 	opts.SetLimit(500)
 
-	cursor, err := coll.Find(ctx, filter, opts)
+	cursor, err := coll.Find(ctxt, filter, opts)
 	if err != nil {
 		logger.Error("Gagal mendapatkan daftar pc dari database (FindPc)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
@@ -329,7 +318,7 @@ func (c *computerDao) FindPc(filterA dto.FilterComputer) (dto.ComputerResponseMi
 	}
 
 	pcList := dto.ComputerResponseMinList{}
-	if err = cursor.All(ctx, &pcList); err != nil {
+	if err = cursor.All(ctxt, &pcList); err != nil {
 		logger.Error("Gagal decode pcList cursor ke objek slice (FindPc)", err)
 		apiErr := rest_err.NewInternalServerError("Database error", err)
 		return dto.ComputerResponseMinList{}, apiErr

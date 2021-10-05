@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/roles"
 	"github.com/muchlist/risa_restfull/dao/improvedao"
@@ -21,16 +22,16 @@ type improveService struct {
 	daoS improvedao.ImproveDaoAssumer
 }
 type ImproveServiceAssumer interface {
-	InsertImprove(user mjwt.CustomClaim, input dto.ImproveRequest) (*string, rest_err.APIError)
-	EditImprove(user mjwt.CustomClaim, improveID string, input dto.ImproveEditRequest) (*dto.Improve, rest_err.APIError)
-	ActivateImprove(improveID string, user mjwt.CustomClaim, isEnable bool) (*dto.Improve, rest_err.APIError)
-	ChangeImprove(user mjwt.CustomClaim, improveID string, data dto.ImproveChangeRequest) (*dto.Improve, rest_err.APIError)
-	GetImproveByID(improveID string, branchIfSpecific string) (*dto.Improve, rest_err.APIError)
-	DeleteImprove(user mjwt.CustomClaim, id string) rest_err.APIError
-	FindImprove(filter dto.FilterBranchCompleteTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError)
+	InsertImprove(ctx context.Context, user mjwt.CustomClaim, input dto.ImproveRequest) (*string, rest_err.APIError)
+	EditImprove(ctx context.Context, user mjwt.CustomClaim, improveID string, input dto.ImproveEditRequest) (*dto.Improve, rest_err.APIError)
+	ActivateImprove(ctx context.Context, improveID string, user mjwt.CustomClaim, isEnable bool) (*dto.Improve, rest_err.APIError)
+	ChangeImprove(ctx context.Context, user mjwt.CustomClaim, improveID string, data dto.ImproveChangeRequest) (*dto.Improve, rest_err.APIError)
+	GetImproveByID(ctx context.Context, improveID string, branchIfSpecific string) (*dto.Improve, rest_err.APIError)
+	DeleteImprove(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	FindImprove(ctx context.Context, filter dto.FilterBranchCompleteTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError)
 }
 
-func (s *improveService) InsertImprove(user mjwt.CustomClaim, input dto.ImproveRequest) (*string, rest_err.APIError) {
+func (s *improveService) InsertImprove(ctx context.Context, user mjwt.CustomClaim, input dto.ImproveRequest) (*string, rest_err.APIError) {
 	// Filling data
 	// Ketika membuat improve juga menambahkan increment field untuk pertama kali
 	timeNow := time.Now().Unix()
@@ -58,7 +59,7 @@ func (s *improveService) InsertImprove(user mjwt.CustomClaim, input dto.ImproveR
 	}
 
 	// DB
-	insertedID, err := s.daoS.InsertImprove(data)
+	insertedID, err := s.daoS.InsertImprove(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func (s *improveService) InsertImprove(user mjwt.CustomClaim, input dto.ImproveR
 	return insertedID, nil
 }
 
-func (s *improveService) EditImprove(user mjwt.CustomClaim, improveID string, input dto.ImproveEditRequest) (*dto.Improve, rest_err.APIError) {
+func (s *improveService) EditImprove(ctx context.Context, user mjwt.CustomClaim, improveID string, input dto.ImproveEditRequest) (*dto.Improve, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(improveID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -93,7 +94,7 @@ func (s *improveService) EditImprove(user mjwt.CustomClaim, improveID string, in
 	}
 
 	// DB
-	improveEdited, err := s.daoS.EditImprove(data)
+	improveEdited, err := s.daoS.EditImprove(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -102,14 +103,14 @@ func (s *improveService) EditImprove(user mjwt.CustomClaim, improveID string, in
 }
 
 // DisableImprove if value true , improve will disabled
-func (s *improveService) ActivateImprove(improveID string, user mjwt.CustomClaim, isEnable bool) (*dto.Improve, rest_err.APIError) {
+func (s *improveService) ActivateImprove(ctx context.Context, improveID string, user mjwt.CustomClaim, isEnable bool) (*dto.Improve, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(improveID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
 	// set disable enable improve
-	improve, err := s.daoS.ActivateImprove(oid, user, isEnable)
+	improve, err := s.daoS.ActivateImprove(ctx, oid, user, isEnable)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +118,7 @@ func (s *improveService) ActivateImprove(improveID string, user mjwt.CustomClaim
 	return improve, nil
 }
 
-func (s *improveService) ChangeImprove(user mjwt.CustomClaim, improveID string, data dto.ImproveChangeRequest) (*dto.Improve, rest_err.APIError) {
+func (s *improveService) ChangeImprove(ctx context.Context, user mjwt.CustomClaim, improveID string, data dto.ImproveChangeRequest) (*dto.Improve, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(improveID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -142,7 +143,7 @@ func (s *improveService) ChangeImprove(user mjwt.CustomClaim, improveID string, 
 	}
 
 	// DB
-	improveEdited, err := s.daoS.ChangeImprove(filter, incDec)
+	improveEdited, err := s.daoS.ChangeImprove(ctx, filter, incDec)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +151,7 @@ func (s *improveService) ChangeImprove(user mjwt.CustomClaim, improveID string, 
 	return improveEdited, nil
 }
 
-func (s *improveService) DeleteImprove(user mjwt.CustomClaim, id string) rest_err.APIError {
+func (s *improveService) DeleteImprove(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -159,7 +160,7 @@ func (s *improveService) DeleteImprove(user mjwt.CustomClaim, id string) rest_er
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := s.daoS.DeleteImprove(dto.FilterIDBranchCreateGte{
+	_, err := s.daoS.DeleteImprove(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
 		FilterCreateGTE: timeMinusOneDay.Unix(),
@@ -170,21 +171,21 @@ func (s *improveService) DeleteImprove(user mjwt.CustomClaim, id string) rest_er
 	return nil
 }
 
-func (s *improveService) GetImproveByID(improveID string, branchIfSpecific string) (*dto.Improve, rest_err.APIError) {
+func (s *improveService) GetImproveByID(ctx context.Context, improveID string, branchIfSpecific string) (*dto.Improve, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(improveID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	improve, err := s.daoS.GetImproveByID(oid, branchIfSpecific)
+	improve, err := s.daoS.GetImproveByID(ctx, oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}
 	return improve, nil
 }
 
-func (s *improveService) FindImprove(filter dto.FilterBranchCompleteTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError) {
-	improveList, err := s.daoS.FindImprove(filter)
+func (s *improveService) FindImprove(ctx context.Context, filter dto.FilterBranchCompleteTimeRangeLimit) (dto.ImproveResponseMinList, rest_err.APIError) {
+	improveList, err := s.daoS.FindImprove(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

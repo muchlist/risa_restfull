@@ -17,7 +17,7 @@ type speedHandler struct {
 
 func (sh *speedHandler) Retrieve(c *fiber.Ctx) error {
 
-	speedList, apiErr := sh.service.RetrieveSpeed()
+	speedList, apiErr := sh.service.RetrieveSpeed(c.Context())
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

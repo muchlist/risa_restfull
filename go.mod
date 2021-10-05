@@ -5,7 +5,6 @@ go 1.15
 require (
 	firebase.google.com/go/v4 v4.6.0
 	github.com/andybalholm/brotli v1.0.1 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/go-co-op/gocron v1.6.2
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0

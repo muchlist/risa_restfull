@@ -41,7 +41,7 @@ func (u *genUnitHandler) Find(c *fiber.Ctx) error {
 		LastPing: lastPing,
 	}
 
-	userList, apiErr := u.service.FindUnit(payload)
+	userList, apiErr := u.service.FindUnit(c.Context(), payload)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -54,7 +54,7 @@ func (u *genUnitHandler) GetIPList(c *fiber.Ctx) error {
 	branch := c.Query("branch")
 	category := c.Query("category")
 
-	ipList, apiErr := u.service.GetIPList(branch, category)
+	ipList, apiErr := u.service.GetIPList(c.Context(), branch, category)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -76,7 +76,7 @@ func (u genUnitHandler) UpdatePingState(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	count, apiErr := u.service.AppendPingState(req)
+	count, apiErr := u.service.AppendPingState(c.Context(), req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

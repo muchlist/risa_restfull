@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
@@ -37,23 +38,23 @@ type checkService struct {
 	servHistory HistoryServiceAssumer
 }
 type CheckServiceAssumer interface {
-	InsertCheck(user mjwt.CustomClaim, input dto.CheckRequest) (*string, rest_err.APIError)
-	EditCheck(user mjwt.CustomClaim, checkID string, input dto.CheckEditRequest) (*dto.Check, rest_err.APIError)
-	DeleteCheck(user mjwt.CustomClaim, id string) rest_err.APIError
-	UpdateCheckItem(user mjwt.CustomClaim, input dto.CheckChildUpdateRequest) (*dto.Check, rest_err.APIError)
-	PutChildImage(user mjwt.CustomClaim, parentID string, childID string, imagePath string) (*dto.Check, rest_err.APIError)
+	InsertCheck(ctx context.Context, user mjwt.CustomClaim, input dto.CheckRequest) (*string, rest_err.APIError)
+	EditCheck(ctx context.Context, user mjwt.CustomClaim, checkID string, input dto.CheckEditRequest) (*dto.Check, rest_err.APIError)
+	DeleteCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	UpdateCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.CheckChildUpdateRequest) (*dto.Check, rest_err.APIError)
+	PutChildImage(ctx context.Context, user mjwt.CustomClaim, parentID string, childID string, imagePath string) (*dto.Check, rest_err.APIError)
 
-	GetCheckByID(checkID string, branchIfSpecific string) (*dto.Check, rest_err.APIError)
-	FindCheck(branch string, filter dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError)
+	GetCheckByID(ctx context.Context, checkID string, branchIfSpecific string) (*dto.Check, rest_err.APIError)
+	FindCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError)
 }
 
-func (c *checkService) InsertCheck(user mjwt.CustomClaim, input dto.CheckRequest) (*string, rest_err.APIError) {
+func (c *checkService) InsertCheck(ctx context.Context, user mjwt.CustomClaim, input dto.CheckRequest) (*string, rest_err.APIError) {
 	itemResultCheckItemChan := make(chan []dto.CheckItemEmbed)
 	//itemResultCctvChan := make(chan []dto.CheckItemEmbed)
 
 	go func() {
 		// ambil check item berdasarkan cabang yang di input
-		checkItems, err := c.daoCI.FindCheckItem(dto.FilterBranchNameDisable{
+		checkItems, err := c.daoCI.FindCheckItem(ctx, dto.FilterBranchNameDisable{
 			FilterBranch: user.Branch,
 		}, false)
 		if err != nil {
@@ -141,7 +142,7 @@ func (c *checkService) InsertCheck(user mjwt.CustomClaim, input dto.CheckRequest
 	}
 
 	// DB
-	insertedID, err := c.daoC.InsertCheck(data)
+	insertedID, err := c.daoC.InsertCheck(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +150,7 @@ func (c *checkService) InsertCheck(user mjwt.CustomClaim, input dto.CheckRequest
 	return insertedID, nil
 }
 
-func (c *checkService) EditCheck(user mjwt.CustomClaim, checkID string, input dto.CheckEditRequest) (*dto.Check, rest_err.APIError) {
+func (c *checkService) EditCheck(ctx context.Context, user mjwt.CustomClaim, checkID string, input dto.CheckEditRequest) (*dto.Check, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(checkID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -171,7 +172,7 @@ func (c *checkService) EditCheck(user mjwt.CustomClaim, checkID string, input dt
 	}
 
 	// DB
-	checkEdited, err := c.daoC.EditCheck(data)
+	checkEdited, err := c.daoC.EditCheck(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +202,7 @@ func (c *checkService) EditCheck(user mjwt.CustomClaim, checkID string, input dt
 					DateEnd:        timeNow,
 					Tag:            []string{},
 				}
-				_, err := c.servHistory.InsertHistory(user, dataHistory)
+				_, err := c.servHistory.InsertHistory(ctx, user, dataHistory)
 				if err != nil {
 					errorList = append(errorList, err)
 				}
@@ -222,7 +223,7 @@ func (c *checkService) EditCheck(user mjwt.CustomClaim, checkID string, input dt
 	return checkEdited, nil
 }
 
-func (c *checkService) DeleteCheck(user mjwt.CustomClaim, id string) rest_err.APIError {
+func (c *checkService) DeleteCheck(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -231,7 +232,7 @@ func (c *checkService) DeleteCheck(user mjwt.CustomClaim, id string) rest_err.AP
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := c.daoC.DeleteCheck(dto.FilterIDBranchCreateGte{
+	_, err := c.daoC.DeleteCheck(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
 		FilterCreateGTE: timeMinusOneDay.Unix(),
@@ -244,7 +245,7 @@ func (c *checkService) DeleteCheck(user mjwt.CustomClaim, id string) rest_err.AP
 }
 
 // PutImage memasukkan lokasi file (path) ke dalam database check dengan mengecek kesesuaian branch
-func (c *checkService) PutChildImage(user mjwt.CustomClaim, parentID string, childID string, imagePath string) (*dto.Check, rest_err.APIError) {
+func (c *checkService) PutChildImage(ctx context.Context, user mjwt.CustomClaim, parentID string, childID string, imagePath string) (*dto.Check, rest_err.APIError) {
 	parentOid, errT := primitive.ObjectIDFromHex(parentID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
@@ -256,14 +257,14 @@ func (c *checkService) PutChildImage(user mjwt.CustomClaim, parentID string, chi
 		FilterAuthorID: user.Identity,
 	}
 
-	check, err := c.daoC.UploadChildImage(filter, imagePath)
+	check, err := c.daoC.UploadChildImage(ctx, filter, imagePath)
 	if err != nil {
 		return nil, err
 	}
 	return check, nil
 }
 
-func (c *checkService) UpdateCheckItem(user mjwt.CustomClaim, input dto.CheckChildUpdateRequest) (*dto.Check, rest_err.APIError) {
+func (c *checkService) UpdateCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.CheckChildUpdateRequest) (*dto.Check, rest_err.APIError) {
 	parentOid, errT := primitive.ObjectIDFromHex(input.ParentID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("Parent ObjectID yang dimasukkan salah")
@@ -287,7 +288,7 @@ func (c *checkService) UpdateCheckItem(user mjwt.CustomClaim, input dto.CheckChi
 		HaveProblem:      input.HaveProblem,
 		CompleteStatus:   input.CompleteStatus,
 	}
-	check, err := c.daoC.UpdateCheckItem(data)
+	check, err := c.daoC.UpdateCheckItem(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +311,7 @@ func (c *checkService) UpdateCheckItem(user mjwt.CustomClaim, input dto.CheckChi
 	}
 
 	if updatedType != category.Cctv {
-		_, err = c.daoCI.EditCheckItemValue(
+		_, err = c.daoCI.EditCheckItemValue(ctx,
 			dto.CheckItemEditBySys{
 				FilterID:       childOid,
 				UpdatedAt:      0,
@@ -326,21 +327,21 @@ func (c *checkService) UpdateCheckItem(user mjwt.CustomClaim, input dto.CheckChi
 	return check, nil
 }
 
-func (c *checkService) GetCheckByID(checkID string, branchIfSpecific string) (*dto.Check, rest_err.APIError) {
+func (c *checkService) GetCheckByID(ctx context.Context, checkID string, branchIfSpecific string) (*dto.Check, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(checkID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	check, err := c.daoC.GetCheckByID(oid, branchIfSpecific)
+	check, err := c.daoC.GetCheckByID(ctx, oid, branchIfSpecific)
 	if err != nil {
 		return nil, err
 	}
 	return check, nil
 }
 
-func (c *checkService) FindCheck(branch string, filter dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError) {
-	checkList, err := c.daoC.FindCheck(branch, filter)
+func (c *checkService) FindCheck(ctx context.Context, branch string, filter dto.FilterTimeRangeLimit) (dto.CheckResponseMinList, rest_err.APIError) {
+	checkList, err := c.daoC.FindCheck(ctx, branch, filter)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
@@ -21,7 +22,7 @@ import (
 )
 
 func NewOtherService(otherDao otherdao.OtherDaoAssumer,
-	histDao historydao.HistoryDaoAssumer,
+	histDao historydao.HistorySaver,
 	genDao genunitdao.GenUnitDaoAssumer) OtherServiceAssumer {
 	return &otherService{
 		daoO: otherDao,
@@ -32,21 +33,21 @@ func NewOtherService(otherDao otherdao.OtherDaoAssumer,
 
 type otherService struct {
 	daoO otherdao.OtherDaoAssumer
-	daoH historydao.HistoryDaoAssumer
+	daoH historydao.HistorySaver
 	daoG genunitdao.GenUnitDaoAssumer
 }
 type OtherServiceAssumer interface {
-	InsertOther(user mjwt.CustomClaim, input dto.OtherRequest) (*string, rest_err.APIError)
-	EditOther(user mjwt.CustomClaim, otherID string, input dto.OtherEditRequest) (*dto.Other, rest_err.APIError)
-	DeleteOther(user mjwt.CustomClaim, subCategory string, id string) rest_err.APIError
-	DisableOther(otherID string, user mjwt.CustomClaim, subCategory string, value bool) (*dto.Other, rest_err.APIError)
-	PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Other, rest_err.APIError)
+	InsertOther(ctx context.Context, user mjwt.CustomClaim, input dto.OtherRequest) (*string, rest_err.APIError)
+	EditOther(ctx context.Context, user mjwt.CustomClaim, otherID string, input dto.OtherEditRequest) (*dto.Other, rest_err.APIError)
+	DeleteOther(ctx context.Context, user mjwt.CustomClaim, subCategory string, id string) rest_err.APIError
+	DisableOther(ctx context.Context, otherID string, user mjwt.CustomClaim, subCategory string, value bool) (*dto.Other, rest_err.APIError)
+	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.Other, rest_err.APIError)
 
-	GetOtherByID(otherID string, branchIfSpecific string) (*dto.Other, rest_err.APIError)
-	FindOther(filter dto.FilterOther) (dto.OtherResponseMinList, dto.GenUnitResponseList, rest_err.APIError)
+	GetOtherByID(ctx context.Context, otherID string, branchIfSpecific string) (*dto.Other, rest_err.APIError)
+	FindOther(ctx context.Context, filter dto.FilterOther) (dto.OtherResponseMinList, dto.GenUnitResponseList, rest_err.APIError)
 }
 
-func (c *otherService) InsertOther(user mjwt.CustomClaim, input dto.OtherRequest) (*string, rest_err.APIError) {
+func (c *otherService) InsertOther(ctx context.Context, user mjwt.CustomClaim, input dto.OtherRequest) (*string, rest_err.APIError) {
 	// FilterID digunakan juga oleh gen_unit_dao sehingga dibuat disini, bukan di database
 	idGenerated := primitive.NewObjectID()
 
@@ -105,7 +106,7 @@ func (c *otherService) InsertOther(user mjwt.CustomClaim, input dto.OtherRequest
 		}
 
 		// DB
-		insertedID, err := c.daoO.InsertOther(data)
+		insertedID, err := c.daoO.InsertOther(ctx, data)
 
 		resultChan <- result{
 			id:  insertedID,
@@ -117,7 +118,7 @@ func (c *otherService) InsertOther(user mjwt.CustomClaim, input dto.OtherRequest
 		defer wg.Done()
 		// Menambahkan juga General Unit dengan ID yang sama
 		// DB
-		insertedID, err := c.daoG.InsertUnit(
+		insertedID, err := c.daoG.InsertUnit(ctx,
 			dto.GenUnit{
 				ID:       idGenerated.Hex(),
 				Category: subCategory,
@@ -157,7 +158,7 @@ func (c *otherService) InsertOther(user mjwt.CustomClaim, input dto.OtherRequest
 	return resultID, nil
 }
 
-func (c *otherService) EditOther(user mjwt.CustomClaim, otherID string, input dto.OtherEditRequest) (*dto.Other, rest_err.APIError) {
+func (c *otherService) EditOther(ctx context.Context, user mjwt.CustomClaim, otherID string, input dto.OtherEditRequest) (*dto.Other, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(otherID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -200,7 +201,7 @@ func (c *otherService) EditOther(user mjwt.CustomClaim, otherID string, input dt
 	}
 
 	// DB
-	otherEdited, err := c.daoO.EditOther(data)
+	otherEdited, err := c.daoO.EditOther(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +213,7 @@ func (c *otherService) EditOther(user mjwt.CustomClaim, otherID string, input dt
 	editUnit := func() {
 		defer wg.Done()
 		// DB
-		_, err = c.daoG.EditUnit(otherID, dto.GenUnitEditRequest{
+		_, err = c.daoG.EditUnit(ctx, otherID, dto.GenUnitEditRequest{
 			Category: subCategory,
 			Name:     otherEdited.Name,
 			IP:       otherEdited.IP,
@@ -225,7 +226,7 @@ func (c *otherService) EditOther(user mjwt.CustomClaim, otherID string, input dt
 		isVendor := sfunc.InSlice(roles.RoleVendor, user.Roles)
 		defer wg.Done()
 		// DB
-		_, err = c.daoH.InsertHistory(
+		_, err = c.daoH.InsertHistory(ctx,
 			dto.History{
 				ID:             primitive.NewObjectID(),
 				CreatedAt:      timeNow,
@@ -275,7 +276,7 @@ func (c *otherService) EditOther(user mjwt.CustomClaim, otherID string, input dt
 	return otherEdited, nil
 }
 
-func (c *otherService) DeleteOther(user mjwt.CustomClaim, subCategory string, otherID string) rest_err.APIError {
+func (c *otherService) DeleteOther(ctx context.Context, user mjwt.CustomClaim, subCategory string, otherID string) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(otherID)
 	if errT != nil {
 		return rest_err.NewBadRequestError(errT.Error())
@@ -285,7 +286,7 @@ func (c *otherService) DeleteOther(user mjwt.CustomClaim, subCategory string, ot
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
 	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
 	// DB
-	_, err := c.daoO.DeleteOther(dto.FilterIDBranchCategoryCreateGte{
+	_, err := c.daoO.DeleteOther(ctx, dto.FilterIDBranchCategoryCreateGte{
 		FilterID:          oid,
 		FilterBranch:      user.Branch,
 		FilterSubCategory: subCategory,
@@ -297,7 +298,7 @@ func (c *otherService) DeleteOther(user mjwt.CustomClaim, subCategory string, ot
 
 	// Delete unit_gen
 	// DB
-	err = c.daoG.DeleteUnit(otherID)
+	err = c.daoG.DeleteUnit(ctx, otherID)
 	if err != nil {
 		return err
 	}
@@ -306,20 +307,20 @@ func (c *otherService) DeleteOther(user mjwt.CustomClaim, subCategory string, ot
 }
 
 // DisableOther if value true , other will disabled
-func (c *otherService) DisableOther(otherID string, user mjwt.CustomClaim, subCategory string, value bool) (*dto.Other, rest_err.APIError) {
+func (c *otherService) DisableOther(ctx context.Context, otherID string, user mjwt.CustomClaim, subCategory string, value bool) (*dto.Other, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(otherID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
 	// set disable enable other
-	other, err := c.daoO.DisableOther(oid, user, subCategory, value)
+	other, err := c.daoO.DisableOther(ctx, oid, user, subCategory, value)
 	if err != nil {
 		return nil, err
 	}
 
 	// set disable enable gen_unit
-	_, err = c.daoG.DisableUnit(oid.Hex(), value)
+	_, err = c.daoG.DisableUnit(ctx, oid.Hex(), value)
 	if err != nil {
 		return nil, err
 	}
@@ -328,20 +329,20 @@ func (c *otherService) DisableOther(otherID string, user mjwt.CustomClaim, subCa
 }
 
 // PutImage memasukkan lokasi file (path) ke dalam database other dengan mengecek kesesuaian branch
-func (c *otherService) PutImage(user mjwt.CustomClaim, id string, imagePath string) (*dto.Other, rest_err.APIError) {
+func (c *otherService) PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.Other, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	other, err := c.daoO.UploadImage(oid, imagePath, user.Branch)
+	other, err := c.daoO.UploadImage(ctx, oid, imagePath, user.Branch)
 	if err != nil {
 		return nil, err
 	}
 	return other, nil
 }
 
-func (c *otherService) GetOtherByID(otherID string, branchIfSpecific string) (*dto.Other, rest_err.APIError) {
+func (c *otherService) GetOtherByID(ctx context.Context, otherID string, branchIfSpecific string) (*dto.Other, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(otherID)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -366,7 +367,7 @@ func (c *otherService) GetOtherByID(otherID string, branchIfSpecific string) (*d
 	go func() {
 		defer wg.Done()
 		// DB
-		other, err := c.daoO.GetOtherByID(oid, branchIfSpecific)
+		other, err := c.daoO.GetOtherByID(ctx, oid, branchIfSpecific)
 		resultOtherChan <- resultOther{
 			data: other,
 			err:  err,
@@ -376,7 +377,7 @@ func (c *otherService) GetOtherByID(otherID string, branchIfSpecific string) (*d
 	go func() {
 		defer wg.Done()
 		// DB
-		other, err := c.daoG.GetUnitByID(otherID, branchIfSpecific)
+		other, err := c.daoG.GetUnitByID(ctx, otherID, branchIfSpecific)
 		resultGeneralChan <- resultGeneral{
 			data: other,
 			err:  err,
@@ -408,7 +409,7 @@ func (c *otherService) GetOtherByID(otherID string, branchIfSpecific string) (*d
 	return otherData, nil
 }
 
-func (c *otherService) FindOther(filter dto.FilterOther) (dto.OtherResponseMinList, dto.GenUnitResponseList, rest_err.APIError) {
+func (c *otherService) FindOther(ctx context.Context, filter dto.FilterOther) (dto.OtherResponseMinList, dto.GenUnitResponseList, rest_err.APIError) {
 	// cek apakah ip address valid, jika valid maka set filter.FilterName ke kosong supaya pencarian berdasarkan IP
 	if filter.FilterIP != "" {
 		if net.ParseIP(filter.FilterIP) == nil {
@@ -436,7 +437,7 @@ func (c *otherService) FindOther(filter dto.FilterOther) (dto.OtherResponseMinLi
 
 	go func() {
 		defer wg.Done()
-		otherList, err := c.daoO.FindOther(filter)
+		otherList, err := c.daoO.FindOther(ctx, filter)
 		otherListChan <- resultOther{
 			data: otherList,
 			err:  err,
@@ -455,7 +456,7 @@ func (c *otherService) FindOther(filter dto.FilterOther) (dto.OtherResponseMinLi
 			return
 		}
 
-		generalList, err := c.daoG.FindUnit(dto.GenUnitFilter{
+		generalList, err := c.daoG.FindUnit(ctx, dto.GenUnitFilter{
 			Branch:   filter.FilterBranch,
 			Category: filter.FilterSubCategory,
 			Pings:    false,

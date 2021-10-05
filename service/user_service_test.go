@@ -1,9 +1,10 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/constants/branches"
 	"github.com/muchlist/risa_restfull/dao/userdao"
@@ -32,7 +33,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	user, err := service.GetUser(userID)
+	user, err := service.GetUser(context.Background(), userID)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "muchlis", user.Name)
@@ -47,7 +48,7 @@ func TestUserService_GetUser_NoUserFound(t *testing.T) {
 	m.On("GetUserByID", objectID).Return(nil, rest_err.NewNotFoundError(fmt.Sprintf("User dengan FilterID %s tidak ditemukan", objectID)))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	user, err := service.GetUser(objectID)
+	user, err := service.GetUser(context.Background(), objectID)
 
 	assert.Nil(t, user)
 	assert.NotNil(t, err)
@@ -70,7 +71,7 @@ func TestUserService_GetUserByID_Found(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	user, err := service.GetUserByID(userID)
+	user, err := service.GetUserByID(context.Background(), userID)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Muchlis", user.Name)
@@ -86,7 +87,7 @@ func TestUserService_GetUserByID_NotFound(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	user, err := service.GetUserByID(userID)
+	user, err := service.GetUserByID(context.Background(), userID)
 
 	assert.Nil(t, user)
 	assert.NotNil(t, err)
@@ -96,7 +97,7 @@ func TestUserService_GetUserByID_NotFound(t *testing.T) {
 
 func TestUserService_FindUsers(t *testing.T) {
 	m := new(userdao.MockDao)
-	m.On("FindUser").Return(dto.UserResponseList{
+	m.On("FindUser", "").Return(dto.UserResponseList{
 		dto.UserResponse{
 			ID:        "12345",
 			Email:     "whois.muchlis@gmail.com",
@@ -109,7 +110,7 @@ func TestUserService_FindUsers(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	usersResult, err := service.FindUsers()
+	usersResult, err := service.FindUsers(context.Background())
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Muchlis", usersResult[0].Name)
@@ -118,11 +119,11 @@ func TestUserService_FindUsers(t *testing.T) {
 
 func TestUserService_FindUsers_errorDatabase(t *testing.T) {
 	m := new(userdao.MockDao)
-	m.On("FindUser").Return(dto.UserResponseList(nil), rest_err.NewInternalServerError("Database error", nil))
+	m.On("FindUser", "").Return(dto.UserResponseList(nil), rest_err.NewInternalServerError("Database error", nil))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	usersResult, err := service.FindUsers()
+	usersResult, err := service.FindUsers(context.Background())
 
 	assert.NotNil(t, err)
 	assert.Equal(t, dto.UserResponseList(nil), usersResult)
@@ -149,7 +150,7 @@ func TestUserService_InsertUser_Success(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	insertedId, err := service.InsertUser(userInput)
+	insertedId, err := service.InsertUser(context.Background(), userInput)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "12345", *insertedId)
@@ -176,7 +177,7 @@ func TestUserService_InsertUser_GenerateHashFailed(t *testing.T) {
 
 	service := NewUserService(m, c, mjwt.NewJwt())
 
-	insertedId, err := service.InsertUser(userInput)
+	insertedId, err := service.InsertUser(context.Background(), userInput)
 
 	assert.Nil(t, insertedId)
 	assert.NotNil(t, err)
@@ -203,7 +204,7 @@ func TestUserService_InsertUser_IDNotAvailable(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	insertedId, err := service.InsertUser(userInput)
+	insertedId, err := service.InsertUser(context.Background(), userInput)
 
 	assert.Nil(t, insertedId)
 	assert.NotNil(t, err)
@@ -230,7 +231,7 @@ func TestUserService_InsertUser_DBError(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	insertedId, err := service.InsertUser(userInput)
+	insertedId, err := service.InsertUser(context.Background(), userInput)
 
 	assert.Nil(t, insertedId)
 	assert.NotNil(t, err)
@@ -258,7 +259,7 @@ func TestUserService_EditUser(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	userResponse, err := service.EditUser(userID, userInput)
+	userResponse, err := service.EditUser(context.Background(), userID, userInput)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Muchlis", userResponse.Name)
@@ -278,7 +279,7 @@ func TestUserService_EditUser_TimeStampNotmatch(t *testing.T) {
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	userResponse, err := service.EditUser(userID, userInput)
+	userResponse, err := service.EditUser(context.Background(), userID, userInput)
 
 	assert.Nil(t, userResponse)
 	assert.NotNil(t, err)
@@ -293,7 +294,7 @@ func TestUserService_DeleteUser(t *testing.T) {
 	m.On("DeleteUser", userID).Return(nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	err := service.DeleteUser("12345")
+	err := service.DeleteUser(context.Background(), "12345")
 
 	assert.Nil(t, err)
 }
@@ -305,7 +306,7 @@ func TestUserService_DeleteUser_Failed(t *testing.T) {
 	m.On("DeleteUser", userID).Return(rest_err.NewBadRequestError("User gagal dihapus, dokumen tidak ditemukan"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	err := service.DeleteUser(userID)
+	err := service.DeleteUser(context.Background(), userID)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "User gagal dihapus, dokumen tidak ditemukan", err.Message())
@@ -329,7 +330,7 @@ func TestUserService_Login(t *testing.T) {
 	}, nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	userResult, err := service.Login(userRequest)
+	userResult, err := service.Login(context.Background(), userRequest)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, userRequest)
@@ -356,7 +357,7 @@ func TestUserService_Login_WrongPassword(t *testing.T) {
 	}, nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	userResult, err := service.Login(userRequest)
+	userResult, err := service.Login(context.Background(), userRequest)
 
 	assert.Nil(t, userResult)
 	assert.NotNil(t, err)
@@ -373,7 +374,7 @@ func TestUserService_Login_UserNotFound(t *testing.T) {
 	m.On("GetUserByIDWithPassword", userRequest.ID).Return(nil, rest_err.NewUnauthorizedError("Username atau password tidak valid"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	userResult, err := service.Login(userRequest)
+	userResult, err := service.Login(context.Background(), userRequest)
 
 	assert.Nil(t, userResult)
 	assert.NotNil(t, err)
@@ -401,7 +402,7 @@ func TestUserService_Login_GenerateTokenError(t *testing.T) {
 	j.On("GenerateToken", mock.Anything).Return("", rest_err.NewInternalServerError("gagal menandatangani token", nil))
 
 	service := NewUserService(m, crypt.NewCrypto(), j)
-	userResult, err := service.Login(userRequest)
+	userResult, err := service.Login(context.Background(), userRequest)
 
 	assert.Nil(t, userResult)
 	assert.NotNil(t, err)
@@ -423,7 +424,7 @@ func TestUserService_PutAvatar(t *testing.T) {
 	}, nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	userResult, err := service.PutAvatar("12345", "images/whowhos@gmail.com.jpg")
+	userResult, err := service.PutAvatar(context.Background(), "12345", "images/whowhos@gmail.com.jpg")
 
 	assert.Nil(t, err)
 	assert.Equal(t, "images/whowhos@gmail.com.jpg", userResult.Avatar)
@@ -437,7 +438,7 @@ func TestUserService_PutAvatar_UserNotFound(t *testing.T) {
 	m.On("PutAvatar", userID, filePath).Return(nil, rest_err.NewBadRequestError(fmt.Sprintf("User avatar gagal diupload, user dengan id %s tidak ditemukan", userID)))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	userResult, err := service.PutAvatar("12345", "images/whowhos@gmail.com.jpg")
+	userResult, err := service.PutAvatar(context.Background(), "12345", "images/whowhos@gmail.com.jpg")
 
 	assert.Nil(t, userResult)
 	assert.NotNil(t, err)
@@ -464,7 +465,7 @@ func TestUserService_ChangePassword_Success(t *testing.T) {
 	m.On("ChangePassword", mock.Anything).Return(nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	err := service.ChangePassword(data)
+	err := service.ChangePassword(context.Background(), data)
 
 	assert.Nil(t, err)
 }
@@ -493,7 +494,7 @@ func TestUserService_ChangePassword_HashNewPasswordErr(t *testing.T) {
 	c.On("IsPWAndHashPWMatch", mock.Anything, mock.Anything).Return(true)
 
 	service := NewUserService(m, c, mjwt.NewJwt())
-	err := service.ChangePassword(data)
+	err := service.ChangePassword(context.Background(), data)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, 500, err.Status())
@@ -508,7 +509,7 @@ func TestUserService_ChangePassword_FailPasswordSame(t *testing.T) {
 	}
 	m := new(userdao.MockDao)
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	err := service.ChangePassword(data)
+	err := service.ChangePassword(context.Background(), data)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "Gagal mengganti password, password tidak boleh sama dengan sebelumnya!", err.Message())
@@ -534,7 +535,7 @@ func TestUserService_ChangePassword_OldPasswordWrong(t *testing.T) {
 	m.On("ChangePassword", mock.Anything).Return(nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	err := service.ChangePassword(data)
+	err := service.ChangePassword(context.Background(), data)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "Gagal mengganti password, password salah!", err.Message())
@@ -550,7 +551,7 @@ func TestUserService_ChangePassword_EmailWrong(t *testing.T) {
 	m.On("GetUserByIDWithPassword", mock.Anything).Return(nil, rest_err.NewUnauthorizedError("Username atau password tidak valid"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	err := service.ChangePassword(data)
+	err := service.ChangePassword(context.Background(), data)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "Username atau password tidak valid", err.Message())
@@ -567,7 +568,7 @@ func TestUserService_ResetPassword(t *testing.T) {
 	m.On("ChangePassword", mock.Anything).Return(nil)
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
 
-	err := service.ResetPassword(data)
+	err := service.ResetPassword(context.Background(), data)
 
 	assert.Nil(t, err)
 }
@@ -582,7 +583,7 @@ func TestUserService_ResetPassword_EmailNotFound(t *testing.T) {
 	m.On("ChangePassword", mock.Anything).Return(rest_err.NewBadRequestError("Penggantian password gagal, email salah"))
 
 	service := NewUserService(m, crypt.NewCrypto(), mjwt.NewJwt())
-	err := service.ResetPassword(data)
+	err := service.ResetPassword(context.Background(), data)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "Penggantian password gagal, email salah", err.Message())
@@ -602,7 +603,7 @@ func TestUserService_ResetPassword_GenerateHashFailed(t *testing.T) {
 
 	service := NewUserService(m, c, mjwt.NewJwt())
 
-	err := service.ResetPassword(data)
+	err := service.ResetPassword(context.Background(), data)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, 500, err.Status())
@@ -631,7 +632,7 @@ func TestUserService_Refresh_Success(t *testing.T) {
 	j.On("GenerateToken", mock.Anything).Return("accessToken", nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), j)
-	res, err := service.Refresh(input)
+	res, err := service.Refresh(context.Background(), input)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, res)
@@ -653,7 +654,7 @@ func TestUserService_Refresh_User_Not_Found(t *testing.T) {
 	}, nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), j)
-	res, err := service.Refresh(input)
+	res, err := service.Refresh(context.Background(), input)
 
 	assert.Nil(t, res)
 	assert.NotNil(t, err)
@@ -669,7 +670,7 @@ func TestUserService_Refresh_Token_Not_Valid(t *testing.T) {
 	j := new(mjwt.MockJwt)
 	j.On("ValidateToken", mock.Anything).Return(nil, rest_err.NewAPIError("Token signing method salah", http.StatusUnprocessableEntity, "jwt_error", nil))
 	service := NewUserService(m, crypt.NewCrypto(), j)
-	res, err := service.Refresh(input)
+	res, err := service.Refresh(context.Background(), input)
 
 	assert.Nil(t, res)
 	assert.NotNil(t, err)
@@ -687,7 +688,7 @@ func TestUserService_Refresh_Token_Read_Error(t *testing.T) {
 	j.On("ReadToken", mock.Anything).Return(nil, rest_err.NewInternalServerError("gagal mapping token", nil))
 
 	service := NewUserService(m, crypt.NewCrypto(), j)
-	res, err := service.Refresh(input)
+	res, err := service.Refresh(context.Background(), input)
 
 	assert.Nil(t, res)
 	assert.NotNil(t, err)
@@ -707,7 +708,7 @@ func TestUserService_Refresh_Token_Not_Refresh_Token(t *testing.T) {
 	}, nil)
 
 	service := NewUserService(m, crypt.NewCrypto(), j)
-	res, err := service.Refresh(input)
+	res, err := service.Refresh(context.Background(), input)
 
 	assert.Nil(t, res)
 	assert.NotNil(t, err)
@@ -736,7 +737,7 @@ func TestUserService_Refresh_Token_Generate_Token_Error(t *testing.T) {
 	j.On("GenerateToken", mock.Anything).Return("", rest_err.NewInternalServerError("gagal menandatangani token", nil))
 
 	service := NewUserService(m, crypt.NewCrypto(), j)
-	res, err := service.Refresh(input)
+	res, err := service.Refresh(context.Background(), input)
 
 	assert.Nil(t, res)
 	assert.NotNil(t, err)

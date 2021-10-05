@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/dto"
@@ -25,23 +26,23 @@ type userService struct {
 }
 
 type UserServiceAssumer interface {
-	GetUser(userID string) (*dto.UserResponse, rest_err.APIError)
-	GetUserByID(email string) (*dto.UserResponse, rest_err.APIError)
-	InsertUser(dto.UserRequest) (*string, rest_err.APIError)
-	FindUsers() (dto.UserResponseList, rest_err.APIError)
-	EditUser(userID string, userEdit dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError)
-	EditFcm(userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError)
-	DeleteUser(userID string) rest_err.APIError
-	Login(dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError)
-	Refresh(login dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError)
-	PutAvatar(userID string, fileLocation string) (*dto.UserResponse, rest_err.APIError)
-	ChangePassword(data dto.UserChangePasswordRequest) rest_err.APIError
-	ResetPassword(data dto.UserChangePasswordRequest) rest_err.APIError
+	GetUser(ctx context.Context, userID string) (*dto.UserResponse, rest_err.APIError)
+	GetUserByID(ctx context.Context, email string) (*dto.UserResponse, rest_err.APIError)
+	InsertUser(ctx context.Context, user dto.UserRequest) (*string, rest_err.APIError)
+	FindUsers(ctx context.Context) (dto.UserResponseList, rest_err.APIError)
+	EditUser(ctx context.Context, userID string, userEdit dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError)
+	EditFcm(ctx context.Context, userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError)
+	DeleteUser(ctx context.Context, userID string) rest_err.APIError
+	Login(ctx context.Context, login dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError)
+	Refresh(ctx context.Context, login dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError)
+	PutAvatar(ctx context.Context, userID string, fileLocation string) (*dto.UserResponse, rest_err.APIError)
+	ChangePassword(ctx context.Context, data dto.UserChangePasswordRequest) rest_err.APIError
+	ResetPassword(ctx context.Context, data dto.UserChangePasswordRequest) rest_err.APIError
 }
 
 // GetUser mendapatkan user dari database
-func (u *userService) GetUser(userID string) (*dto.UserResponse, rest_err.APIError) {
-	user, err := u.dao.GetUserByID(userID)
+func (u *userService) GetUser(ctx context.Context, userID string) (*dto.UserResponse, rest_err.APIError) {
+	user, err := u.dao.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +50,8 @@ func (u *userService) GetUser(userID string) (*dto.UserResponse, rest_err.APIErr
 }
 
 // GetUserByEmail mendapatkan user berdasarkan email
-func (u *userService) GetUserByID(userID string) (*dto.UserResponse, rest_err.APIError) {
-	user, err := u.dao.GetUserByID(userID)
+func (u *userService) GetUserByID(ctx context.Context, userID string) (*dto.UserResponse, rest_err.APIError) {
+	user, err := u.dao.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +59,8 @@ func (u *userService) GetUserByID(userID string) (*dto.UserResponse, rest_err.AP
 }
 
 // FindUsers
-func (u *userService) FindUsers() (dto.UserResponseList, rest_err.APIError) {
-	userList, err := u.dao.FindUser("")
+func (u *userService) FindUsers(ctx context.Context) (dto.UserResponseList, rest_err.APIError) {
+	userList, err := u.dao.FindUser(ctx, "")
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +68,9 @@ func (u *userService) FindUsers() (dto.UserResponseList, rest_err.APIError) {
 }
 
 // InsertUser melakukan register user
-func (u *userService) InsertUser(user dto.UserRequest) (*string, rest_err.APIError) {
+func (u *userService) InsertUser(ctx context.Context, user dto.UserRequest) (*string, rest_err.APIError) {
 	// cek ketersediaan id
-	_, err := u.dao.CheckIDAvailable(user.ID)
+	_, err := u.dao.CheckIDAvailable(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +84,7 @@ func (u *userService) InsertUser(user dto.UserRequest) (*string, rest_err.APIErr
 	user.Password = hashPassword
 	user.Timestamp = time.Now().Unix()
 
-	insertedID, err := u.dao.InsertUser(user)
+	insertedID, err := u.dao.InsertUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -91,16 +92,16 @@ func (u *userService) InsertUser(user dto.UserRequest) (*string, rest_err.APIErr
 }
 
 // EditUser
-func (u *userService) EditUser(userID string, request dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
-	result, err := u.dao.EditUser(userID, request)
+func (u *userService) EditUser(ctx context.Context, userID string, request dto.UserEditRequest) (*dto.UserResponse, rest_err.APIError) {
+	result, err := u.dao.EditUser(ctx, userID, request)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (u *userService) EditFcm(userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError) {
-	result, err := u.dao.EditFcm(userID, fcmToken)
+func (u *userService) EditFcm(ctx context.Context, userID string, fcmToken string) (*dto.UserResponse, rest_err.APIError) {
+	result, err := u.dao.EditFcm(ctx, userID, fcmToken)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +109,8 @@ func (u *userService) EditFcm(userID string, fcmToken string) (*dto.UserResponse
 }
 
 // DeleteUser
-func (u *userService) DeleteUser(userID string) rest_err.APIError {
-	err := u.dao.DeleteUser(userID)
+func (u *userService) DeleteUser(ctx context.Context, userID string) rest_err.APIError {
+	err := u.dao.DeleteUser(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -118,8 +119,8 @@ func (u *userService) DeleteUser(userID string) rest_err.APIError {
 }
 
 // Login
-func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError) {
-	user, err := u.dao.GetUserByIDWithPassword(login.ID)
+func (u *userService) Login(ctx context.Context, login dto.UserLoginRequest) (*dto.UserLoginResponse, rest_err.APIError) {
+	user, err := u.dao.GetUserByIDWithPassword(ctx, login.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +177,7 @@ func (u *userService) Login(login dto.UserLoginRequest) (*dto.UserLoginResponse,
 }
 
 // Refresh token
-func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError) {
+func (u *userService) Refresh(ctx context.Context, payload dto.UserRefreshTokenRequest) (*dto.UserRefreshTokenResponse, rest_err.APIError) {
 	token, apiErr := u.jwt.ValidateToken(payload.RefreshToken)
 	if apiErr != nil {
 		return nil, apiErr
@@ -192,7 +193,7 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 	}
 
 	// mendapatkan data terbaru dari user
-	user, apiErr := u.dao.GetUserByID(claims.Identity)
+	user, apiErr := u.dao.GetUserByID(ctx, claims.Identity)
 	if apiErr != nil {
 		return nil, apiErr
 	}
@@ -225,8 +226,8 @@ func (u *userService) Refresh(payload dto.UserRefreshTokenRequest) (*dto.UserRef
 }
 
 // PutAvatar memasukkan lokasi file (path) ke dalam database user
-func (u *userService) PutAvatar(userID string, fileLocation string) (*dto.UserResponse, rest_err.APIError) {
-	user, err := u.dao.PutAvatar(userID, fileLocation)
+func (u *userService) PutAvatar(ctx context.Context, userID string, fileLocation string) (*dto.UserResponse, rest_err.APIError) {
+	user, err := u.dao.PutAvatar(ctx, userID, fileLocation)
 	if err != nil {
 		return nil, err
 	}
@@ -235,12 +236,12 @@ func (u *userService) PutAvatar(userID string, fileLocation string) (*dto.UserRe
 }
 
 // ChangePassword melakukan perbandingan hashpassword lama dan memasukkan hashpassword baru ke database
-func (u *userService) ChangePassword(data dto.UserChangePasswordRequest) rest_err.APIError {
+func (u *userService) ChangePassword(ctx context.Context, data dto.UserChangePasswordRequest) rest_err.APIError {
 	if data.Password == data.NewPassword {
 		return rest_err.NewBadRequestError("Gagal mengganti password, password tidak boleh sama dengan sebelumnya!")
 	}
 
-	userResult, err := u.dao.GetUserByIDWithPassword(data.ID)
+	userResult, err := u.dao.GetUserByIDWithPassword(ctx, data.ID)
 	if err != nil {
 		return err
 	}
@@ -255,21 +256,21 @@ func (u *userService) ChangePassword(data dto.UserChangePasswordRequest) rest_er
 	}
 	data.NewPassword = newPasswordHash
 
-	_ = u.dao.ChangePassword(data)
+	_ = u.dao.ChangePassword(ctx, data)
 
 	return nil
 }
 
 // ResetPassword . inputan password berada di level handler
 // hanya memproses field newPassword, mengabaikan field password
-func (u *userService) ResetPassword(data dto.UserChangePasswordRequest) rest_err.APIError {
+func (u *userService) ResetPassword(ctx context.Context, data dto.UserChangePasswordRequest) rest_err.APIError {
 	newPasswordHash, err := u.crypto.GenerateHash(data.NewPassword)
 	if err != nil {
 		return err
 	}
 	data.NewPassword = newPasswordHash
 
-	err = u.dao.ChangePassword(data)
+	err = u.dao.ChangePassword(ctx, data)
 	if err != nil {
 		return err
 	}
