@@ -52,6 +52,35 @@ func (pd *PendingReport) NormalizeValue() {
 
 }
 
+type PendingReportEdit struct {
+	FilterID        primitive.ObjectID
+	FilterBranch    string
+	FilterTimestamp int64
+
+	UpdatedAt    int64           `json:"updated_at" bson:"updated_at"`
+	UpdatedBy    string          `json:"updated_by" bson:"updated_by"`
+	UpdatedByID  string          `json:"updated_by_id" bson:"updated_by_id"`
+	Number       string          `json:"number" bson:"number"`
+	Title        string          `json:"title" bson:"title"`
+	Descriptions []PRDescription `json:"descriptions" bson:"descriptions"`
+	Date         int64           `json:"date" bson:"date"`
+	Equipments   []PREquipment   `json:"equipments" bson:"equipments"`
+	Location     string          `json:"location" bson:"location"`
+}
+
+func (pd *PendingReportEdit) NormalizeValue() {
+	if pd.Descriptions == nil {
+		pd.Descriptions = make([]PRDescription, 0)
+	}
+	if pd.Equipments == nil {
+		pd.Equipments = make([]PREquipment, 0)
+	}
+
+	pd.Title = strings.ToUpper(pd.Title)
+	pd.Number = strings.ToUpper(pd.Number)
+	pd.FilterBranch = strings.ToUpper(pd.FilterBranch)
+}
+
 type PendingReportRequest struct {
 	Branch       string          `json:"branch" bson:"branch"`
 	Number       string          `json:"number" bson:"number"`
@@ -84,4 +113,26 @@ type Participant struct {
 	UserID   string `json:"user_id" bson:"user_id"`
 	Sign     string `json:"sign" bson:"sign"`
 	SignAt   int64  `json:"sign_at" bson:"sign_at"`
+}
+
+// PendingReportResponse struct
+type PendingReportResponse struct {
+	ID             string          `json:"id"`
+	CreatedAt      int64           `json:"created_at"`
+	CreatedBy      string          `json:"created_by"`
+	CreatedByID    string          `json:"created_by_id"`
+	UpdatedAt      int64           `json:"updated_at"`
+	UpdatedBy      string          `json:"updated_by"`
+	UpdatedByID    string          `json:"updated_by_id"`
+	Branch         string          `json:"branch"`
+	Number         string          `json:"number"`
+	Title          string          `json:"title"`
+	Descriptions   []PRDescription `json:"descriptions"`
+	Date           int64           `json:"date"`
+	Participants   []Participant   `json:"participants"`
+	Approvers      []Participant   `json:"approvers"`
+	Equipments     []PREquipment   `json:"equipments"`
+	CompleteStatus int             `json:"complete_status"`
+	Location       string          `json:"location"`
+	Images         []string        `json:"images"`
 }

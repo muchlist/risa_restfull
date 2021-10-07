@@ -32,6 +32,7 @@ func mapUrls(app *fiber.App) {
 	configCheckHandler := handler.NewConfigCheckHandler(configCheckService)
 	speedHandler := handler.NewSpeedHandler(speedService)
 	reportHandler := handler.NewReportHandler(reportService)
+	prHandler := handler.NewPRHandler(prService)
 
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
@@ -218,6 +219,10 @@ func mapUrls(app *fiber.App) {
 	api.Get("/daily-vendor-auto", middleware.NormalAuth(), reportHandler.GeneratePDFVendorDailyStartFromLast)
 	api.Get("/generate-pdf-monthly", middleware.NormalAuth(), reportHandler.GeneratePDFVendorMonthly)
 	api.Get("/generate-pdf-stock", middleware.NormalAuth(), reportHandler.GeneratePDFStock)
+
+	// PENDING-REPORT
+	api.Post("/pending-report", middleware.NormalAuth(), prHandler.Insert)
+	api.Get("/pending-report/:id", middleware.NormalAuth(), prHandler.Get)
 
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)

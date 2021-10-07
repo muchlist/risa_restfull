@@ -13,6 +13,7 @@ import (
 	"github.com/muchlist/risa_restfull/dao/historydao"
 	"github.com/muchlist/risa_restfull/dao/improvedao"
 	"github.com/muchlist/risa_restfull/dao/otherdao"
+	"github.com/muchlist/risa_restfull/dao/pendingreportdao"
 	"github.com/muchlist/risa_restfull/dao/reportdao"
 	"github.com/muchlist/risa_restfull/dao/speedtestdao"
 	"github.com/muchlist/risa_restfull/dao/stockdao"
@@ -42,6 +43,7 @@ var (
 	configCheckService   service.ConfigCheckServiceAssumer
 	speedService         service.SpeedTestServiceAssumer
 	reportService        service.ReportServiceAssumer
+	prService            service.PRServiceAssumer
 )
 
 func setupDependency() {
@@ -67,6 +69,7 @@ func setupDependency() {
 	configCheckDao := configcheckdao.NewConfigCheckDao()
 	speedDao := speedtestdao.NewSpeedTestDao()
 	pdfDao := reportdao.NewPdfDao()
+	prDao := pendingreportdao.NewPR()
 
 	// api client
 	fcmClient := fcm.NewFcmClient()
@@ -88,6 +91,7 @@ func setupDependency() {
 	altaiPhyCheckService = service.NewAltaiPhyCheckService(altaiPhyCheckDao, genUnitDao, otherDao, historyService)
 	configCheckService = service.NewConfigCheckService(configCheckDao, genUnitDao, otherDao, historyService)
 	speedService = service.NewSpeedTestService(speedDao)
+	prService = service.NewPRService(prDao, genUnitDao)
 	reportService = service.NewReportService(service.ReportParams{
 		History:       historyDao,
 		CheckIT:       checkDao,
