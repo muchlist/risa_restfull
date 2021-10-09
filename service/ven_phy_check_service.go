@@ -44,6 +44,7 @@ type VenPhyCheckServiceAssumer interface {
 	UpdateVenPhyCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.VenPhyCheckItemUpdateRequest) (*dto.VenPhyCheck, rest_err.APIError)
 	BulkUpdateVenPhyItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.VenPhyCheckItemUpdateRequest) (string, rest_err.APIError)
 	FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError)
+	FreshUpdateNameCCTV(ctx context.Context, branch string) (string, rest_err.APIError)
 }
 
 func (vc *venPhyCheckService) InsertVenPhyCheck(ctx context.Context, user mjwt.CustomClaim, name string, isQuarterMode bool) (*string, rest_err.APIError) {
@@ -283,6 +284,66 @@ func (vc *venPhyCheckService) FinishCheck(ctx context.Context, user mjwt.CustomC
 	}
 
 	return cctvChecklistDetail, nil
+}
+
+func (vc *venPhyCheckService) FreshUpdateNameCCTV(ctx context.Context, branch string) (string, rest_err.APIError) {
+	if branch == "" {
+		return "", rest_err.NewBadRequestError("cabang harus di isi")
+	}
+
+	// mendapatkan list cek fisik cctv yang masih terbuka
+	vendorCheckList, err := vc.daoC.FindCheckStillOpen(ctx, strings.ToUpper(branch), true)
+	if err != nil {
+		return "", err
+	}
+
+	// mendapatkan nama cctv eksisting
+	cctvList, err := vc.daoCTV.FindCctv(ctx, dto.FilterBranchLocIPNameDisable{
+		FilterBranch:  strings.ToUpper(branch),
+		FilterDisable: false,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	// buat daftar nama cctv jadi map
+	cctvNameMap := make(map[string]string, len(cctvList))
+	for _, cctv := range cctvList {
+		cctvNameMap[cctv.ID.Hex()] = cctv.Name
+	}
+
+	totalChange := 0
+
+	// perulangan untuk setiap cek fisik cctv
+	for _, v := range vendorCheckList {
+		hasChanged := 0
+		// replace nama cctv untuk setiap vendorchecklist dengan yang baru
+		checklist := v.VenPhyCheckItems
+		for i, c := range checklist {
+			newCCTVName, exist := cctvNameMap[c.ID]
+			if !exist {
+				checklist[i].Name = "Deleted CCTV"
+				continue
+			} else {
+				if checklist[i].Name != newCCTVName {
+					checklist[i].Name = newCCTVName
+					hasChanged++
+				}
+			}
+		}
+
+		// override vendorchecklist jika hasChanged != 0
+		if hasChanged != 0 {
+			totalChange += hasChanged
+			_, err := vc.daoC.OverwriteChecklist(ctx, v.ID, checklist)
+			if err != nil {
+				// stop proses jika ada error
+				return "", err
+			}
+		}
+	}
+
+	return fmt.Sprintf("%d item-check has been affected", totalChange), nil
 }
 
 func (vc *venPhyCheckService) GetVenPhyCheckByID(ctx context.Context, vendorCheckID string, branchIfSpecific string) (*dto.VenPhyCheck, rest_err.APIError) {

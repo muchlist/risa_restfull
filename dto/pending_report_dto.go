@@ -52,6 +52,17 @@ func (pd *PendingReport) NormalizeValue() {
 
 }
 
+type PendingReportEditRequest struct {
+	FilterTimestamp int64 `json:"filter_timestamp"`
+
+	Number       string          `json:"number"`
+	Title        string          `json:"title"`
+	Descriptions []PRDescription `json:"descriptions"`
+	Date         int64           `json:"date"`
+	Equipments   []PREquipment   `json:"equipments"`
+	Location     string          `json:"location"`
+}
+
 type PendingReportEdit struct {
 	FilterID        primitive.ObjectID
 	FilterBranch    string

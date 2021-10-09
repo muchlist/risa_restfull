@@ -38,6 +38,9 @@ const (
 	keyCompleteStatus = "complete_status"
 	keyLocation       = "location"
 	keyImages         = "images"
+
+	keyParticipantsID = "id" // id inner participant
+
 )
 
 func NewPR() PRAssumer {
@@ -49,16 +52,17 @@ type PRAssumer interface {
 	EditPR(ctx context.Context, input dto.PendingReportEdit) (*dto.PendingReport, rest_err.APIError)
 	GetPRByID(ctx context.Context, id primitive.ObjectID, branchIfSpecific string) (*dto.PendingReport, rest_err.APIError)
 	ChangeCompleteStatus(ctx context.Context, id primitive.ObjectID, completeStatus int, filterBranch string) (*dto.PendingReport, rest_err.APIError)
-	AddApprover(ctx context.Context, input AddParticipantInput) (*dto.PendingReport, rest_err.APIError)
-	AddParticipant(ctx context.Context, input AddParticipantInput) (*dto.PendingReport, rest_err.APIError)
-	RemoveApprover(ctx context.Context, id primitive.ObjectID, participantID string, filterBranch string) (*dto.PendingReport, rest_err.APIError)
-	RemoveParticipant(ctx context.Context, id primitive.ObjectID, participantID string, filterBranch string) (*dto.PendingReport, rest_err.APIError)
+	AddApprover(ctx context.Context, input ParticipantParams) (*dto.PendingReport, rest_err.APIError)
+	AddParticipant(ctx context.Context, input ParticipantParams) (*dto.PendingReport, rest_err.APIError)
+	RemoveApprover(ctx context.Context, input ParticipantParams) (*dto.PendingReport, rest_err.APIError)
+	RemoveParticipant(ctx context.Context, input ParticipantParams) (*dto.PendingReport, rest_err.APIError)
 	UploadImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReport, rest_err.APIError)
 	DeleteImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReport, rest_err.APIError)
 }
 
 type prDao struct{}
 
+// todo edit tidak bisa dilakukan jika status komplit suda mencapai sekian
 func (pd *prDao) EditPR(ctx context.Context, input dto.PendingReportEdit) (*dto.PendingReport, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
@@ -136,7 +140,7 @@ func (pd *prDao) ChangeCompleteStatus(ctx context.Context, id primitive.ObjectID
 	return &res, nil
 }
 
-func (pd *prDao) AddApprover(ctx context.Context, input AddParticipantInput) (*dto.PendingReport, rest_err.APIError) {
+func (pd *prDao) AddApprover(ctx context.Context, input ParticipantParams) (*dto.PendingReport, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
@@ -174,7 +178,7 @@ func (pd *prDao) AddApprover(ctx context.Context, input AddParticipantInput) (*d
 	return &res, nil
 }
 
-func (pd *prDao) AddParticipant(ctx context.Context, input AddParticipantInput) (*dto.PendingReport, rest_err.APIError) {
+func (pd *prDao) AddParticipant(ctx context.Context, input ParticipantParams) (*dto.PendingReport, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
@@ -204,20 +208,92 @@ func (pd *prDao) AddParticipant(ctx context.Context, input AddParticipantInput) 
 			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch")
 		}
 
-		logger.Error("Gagal mendapatkan doc dari database (EditPR)", err)
-		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan doc dari database", err)
+		logger.Error("Gagal menambahkan approver ke database (AddParticipant)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal menambahkan approver ke database (AddParticipant)", err)
 		return nil, apiErr
 	}
 
 	return &res, nil
 }
 
-func (pd *prDao) RemoveApprover(ctx context.Context, id primitive.ObjectID, participantID string, filterBranch string) (*dto.PendingReport, rest_err.APIError) {
-	panic("implement me")
+func (pd *prDao) RemoveApprover(ctx context.Context, input ParticipantParams) (*dto.PendingReport, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyID:     input.ID,
+		keyBranch: input.FilterBranch,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			keyUpdatedBy:   input.UpdatedBy,
+			keyUpdatedByID: input.UpdatedByID,
+			keyUpdatedAt:   input.UpdatedAt,
+		},
+		"$pull": bson.M{
+			keyApprovers: bson.M{
+				keyParticipantsID: input.Participant.ID,
+			},
+		},
+	}
+
+	var res dto.PendingReport
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&res); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch")
+		}
+
+		logger.Error("Gagal mengahapus approver doc dari database (RemoveApprover)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mengahapus approver doc dari database", err)
+		return nil, apiErr
+	}
+
+	return &res, nil
 }
 
-func (pd *prDao) RemoveParticipant(ctx context.Context, id primitive.ObjectID, participantID string, filterBranch string) (*dto.PendingReport, rest_err.APIError) {
-	panic("implement me")
+func (pd *prDao) RemoveParticipant(ctx context.Context, input ParticipantParams) (*dto.PendingReport, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyID:     input.ID,
+		keyBranch: input.FilterBranch,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			keyUpdatedBy:   input.UpdatedBy,
+			keyUpdatedByID: input.UpdatedByID,
+			keyUpdatedAt:   input.UpdatedAt,
+		},
+		"$pull": bson.M{
+			keyParticipants: bson.M{
+				keyParticipantsID: input.Participant.ID,
+			},
+		},
+	}
+
+	var res dto.PendingReport
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&res); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch")
+		}
+
+		logger.Error("Gagal mengahapus partisipan doc dari database (RemoveParticipant)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mengahapus partisipan doc dari database", err)
+		return nil, apiErr
+	}
+
+	return &res, nil
 }
 
 func (pd *prDao) UploadImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReport, rest_err.APIError) {

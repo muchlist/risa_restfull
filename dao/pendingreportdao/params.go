@@ -5,7 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type AddParticipantInput struct {
+type ParticipantParams struct {
 	ID           primitive.ObjectID
 	Participant  dto.Participant
 	FilterBranch string

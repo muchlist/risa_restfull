@@ -177,6 +177,7 @@ func mapUrls(app *fiber.App) {
 	api.Post("/phy-check-update", middleware.NormalAuth(roles.RoleVendor), venPhyCheckHandler.UpdateCheckItem)
 	api.Post("/bulk-phy-update", middleware.NormalAuth(roles.RoleVendor), venPhyCheckHandler.BulkUpdateCheckItem)
 	api.Get("/phy-check-finish/:id", middleware.NormalAuth(), venPhyCheckHandler.Finish)
+	api.Get("/phy-check-sync/:branch", middleware.NormalAuth(roles.RoleAdmin), venPhyCheckHandler.FreshUpdateNameCCTV)
 
 	// ALTAI CHECK FISIK
 	api.Post("/altai-phy-check", middleware.NormalAuth(), altaiPhyCheckHandler.Insert)
@@ -223,6 +224,7 @@ func mapUrls(app *fiber.App) {
 	// PENDING-REPORT
 	api.Post("/pending-report", middleware.NormalAuth(), prHandler.Insert)
 	api.Get("/pending-report/:id", middleware.NormalAuth(), prHandler.Get)
+	api.Put("/pending-report/:id", middleware.NormalAuth(), prHandler.Edit)
 
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)

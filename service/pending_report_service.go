@@ -29,6 +29,7 @@ type prService struct {
 type PRServiceAssumer interface {
 	InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError)
 	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReport, rest_err.APIError)
+	EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReport, rest_err.APIError)
 }
 
 func (ps *prService) InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError) {
@@ -73,4 +74,26 @@ func (ps *prService) GetPRByID(ctx context.Context, id string, branchIfSpecific 
 	}
 
 	return ps.daoP.GetPRByID(ctx, oid, branchIfSpecific)
+}
+
+func (ps *prService) EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReport, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	return ps.daoP.EditPR(ctx, dto.PendingReportEdit{
+		FilterID:        oid,
+		FilterBranch:    user.Branch,
+		FilterTimestamp: input.FilterTimestamp,
+		UpdatedAt:       time.Now().Unix(),
+		UpdatedBy:       user.Name,
+		UpdatedByID:     user.Identity,
+		Number:          input.Number,
+		Title:           input.Title,
+		Descriptions:    input.Descriptions,
+		Date:            input.Date,
+		Equipments:      input.Equipments,
+		Location:        input.Location,
+	})
 }
