@@ -22,7 +22,7 @@ import (
 )
 
 func NewCctvService(cctvDao cctvdao.CctvDaoAssumer,
-	histDao historydao.HistorySaver,
+	histDao historydao.HistoryDaoAssumer,
 	genDao genunitdao.GenUnitDaoAssumer) CctvServiceAssumer {
 	return &cctvService{
 		daoC: cctvDao,
@@ -33,7 +33,7 @@ func NewCctvService(cctvDao cctvdao.CctvDaoAssumer,
 
 type cctvService struct {
 	daoC cctvdao.CctvDaoAssumer
-	daoH historydao.HistorySaver
+	daoH historydao.HistoryDaoAssumer
 	daoG genunitdao.GenUnitDaoAssumer
 }
 type CctvServiceAssumer interface {
@@ -45,6 +45,7 @@ type CctvServiceAssumer interface {
 
 	GetCctvByID(ctx context.Context, cctvID string, branchIfSpecific string) (*dto.Cctv, rest_err.APIError)
 	FindCctv(ctx context.Context, filter dto.FilterBranchLocIPNameDisable) (dto.CctvResponseMinList, dto.GenUnitResponseList, rest_err.APIError)
+	MergeCctv(ctx context.Context, cctvID1, cctvID2 string) (*string, rest_err.APIError)
 }
 
 func (c *cctvService) InsertCctv(ctx context.Context, user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError) {
@@ -465,6 +466,105 @@ func (c *cctvService) FindCctv(ctx context.Context, filter dto.FilterBranchLocIP
 
 	filterGeneralList(&generalList.data)
 	return cctvList.data, generalList.data, nil
+}
+
+// MergeCctv akan menggabungkan cctv 1 ke cctv 2 dan menghapus cctv 1
+// mungkin memerlukan bantuan developer untuk menghapus keberadaan cctv 1 pada checklist bulanan dan triwulanan
+func (c *cctvService) MergeCctv(ctx context.Context, cctvID1, cctvID2 string) (*string, rest_err.APIError) {
+	oid1, errT := primitive.ObjectIDFromHex(cctvID1)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+	oid2, errT := primitive.ObjectIDFromHex(cctvID2)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// mendapatkan detail cctvID2
+	cctv1Detail, apiErr := c.daoC.GetCctvByID(ctx, oid1, "")
+	if apiErr != nil {
+		return nil, apiErr
+	}
+
+	// mendapatkan detail cctvID2
+	cctv2Detail, apiErr := c.daoC.GetCctvByID(ctx, oid2, "")
+	if apiErr != nil {
+		return nil, apiErr
+	}
+
+	// cek history in cctvID1 , untuk setiap historynya maka masukkan ke cctvID2
+	history1, apiErr := c.daoH.FindHistoryForParent(ctx, cctvID1)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+
+	if len(history1) > 0 {
+		for _, history := range history1 {
+			generateHistID := primitive.NewObjectID()
+			_, apiErr = c.daoH.InsertHistory(ctx, dto.History{
+				Version:        history.Version,
+				ID:             generateHistID,
+				CreatedAt:      history.CreatedAt,
+				CreatedBy:      history.CreatedBy,
+				UpdatedAt:      history.UpdatedAt,
+				UpdatedBy:      history.UpdatedBy,
+				Category:       history.Category,
+				Branch:         history.Branch,
+				ParentID:       cctvID2,
+				ParentName:     cctv2Detail.Name,
+				Status:         history.Status,
+				Problem:        history.Problem,
+				ProblemResolve: history.ProblemResolve,
+				CompleteStatus: history.CompleteStatus,
+				DateStart:      history.DateStart,
+				DateEnd:        history.DateEnd,
+				Tag:            history.Tag,
+				Image:          history.Image,
+				Updates:        history.Updates,
+			}, false)
+
+			if apiErr != nil {
+				return nil, apiErr
+			}
+
+			historyIsComplete := history.CompleteStatus == enum.HComplete
+			historyIsInfo := history.CompleteStatus == enum.HInfo
+			historyIsDataInfo := history.CompleteStatus == enum.HDataInfo
+			if !(historyIsComplete || historyIsInfo || historyIsDataInfo) {
+				// DB
+				_, apiErr = c.daoG.InsertCase(ctx, dto.GenUnitCaseRequest{
+					UnitID:       cctvID2,
+					FilterBranch: cctv2Detail.Branch,
+					CaseID:       generateHistID.Hex(), // gunakan History id sebagai caseID
+					CaseNote:     fmt.Sprintf("#%s# %s : %s", enum.GetProgressString(history.CompleteStatus), history.Status, history.Problem),
+				})
+				if apiErr != nil {
+					return nil, apiErr
+				}
+			}
+		}
+	}
+
+	// hapus cctvID 1
+	// hapus gen Unit cctvID 1
+	_, apiErr = c.daoC.DeleteCctv(ctx, dto.FilterIDBranchCreateGte{
+		FilterID:        oid1,
+		FilterBranch:    cctv1Detail.Branch,
+		FilterCreateGTE: 0,
+	})
+	if apiErr != nil {
+		return nil, apiErr
+	}
+
+	apiErr = c.daoG.DeleteUnit(ctx, cctvID1)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+
+	msg := fmt.Sprintf(
+		"Cctv dengan id %s berhasil digabungkan dengan id %s, cctv %s telah dihapus dari database, mohon melakukan pengecekan ulang pada checklist bulanan dan triwulanan",
+		cctvID1, cctvID2, cctvID1)
+	return &msg, nil
 }
 
 // hanya mereturn unit yang memiliki case atau sedang down.

@@ -102,6 +102,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/cctv", middleware.NormalAuth(), cctvHandler.Find)
 	api.Get("/cctv-avail/:id/:status", middleware.NormalAuth(), cctvHandler.DisableCctv)
 	api.Post("/cctv-image/:id", middleware.NormalAuth(), cctvHandler.UploadImage)
+	api.Get("/cctv-merge/:cctv1/to/:cctv2", middleware.NormalAuth(roles.RoleAdmin), cctvHandler.Merge)
 
 	// COMPUTER
 	api.Post("/computer", middleware.NormalAuth(), computerHandler.Insert)
