@@ -94,6 +94,7 @@ func (c *altaiCheckService) InsertAltaiCheck(ctx context.Context, user mjwt.Cust
 			CheckedBy: user.Name,
 			IsChecked: true,
 			IsOffline: isOffline,
+			DisVendor: v.DisVendor,
 		})
 	}
 

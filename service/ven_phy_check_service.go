@@ -100,6 +100,7 @@ func (vc *venPhyCheckService) InsertVenPhyCheck(ctx context.Context, user mjwt.C
 			IsMaintained: false,
 			IsBlur:       isBlur,
 			IsOffline:    isOffline,
+			DisVendor:    v.DisVendor,
 		})
 	}
 

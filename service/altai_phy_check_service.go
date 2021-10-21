@@ -99,6 +99,7 @@ func (vc *altaiPhyCheckService) InsertAltaiPhyCheck(ctx context.Context, user mj
 			IsChecked:    false,
 			IsMaintained: false,
 			IsOffline:    isOffline,
+			DisVendor:    v.DisVendor,
 		})
 	}
 
