@@ -28,6 +28,7 @@ type AltaiCheckItemEmbed struct {
 	IsChecked bool   `json:"is_checked" bson:"is_checked"`
 	IsOffline bool   `json:"is_offline" bson:"is_offline"`
 	ImagePath string `json:"image_path" bson:"image_path"`
+	DisVendor bool   `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 }
 
 type AltaiCheckEdit struct {

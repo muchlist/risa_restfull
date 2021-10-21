@@ -30,6 +30,7 @@ type AltaiPhyCheckItemEmbed struct {
 	IsMaintained bool   `json:"is_maintained" bson:"is_maintained"`
 	IsOffline    bool   `json:"is_offline" bson:"is_offline"`
 	ImagePath    string `json:"image_path" bson:"image_path"`
+	DisVendor    bool   `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 }
 
 type AltaiPhyCheckEdit struct {

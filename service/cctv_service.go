@@ -97,6 +97,7 @@ func (c *cctvService) InsertCctv(ctx context.Context, user mjwt.CustomClaim, inp
 			Brand:           input.Brand,
 			Type:            input.Type,
 			Note:            input.Note,
+			DisVendor:       input.DisVendor,
 		}
 
 		// DB

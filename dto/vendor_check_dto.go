@@ -30,6 +30,7 @@ type VendorCheckItemEmbed struct {
 	ImagePath string `json:"image_path" bson:"image_path"`
 	IsBlur    bool   `json:"is_blur" bson:"is_blur"`
 	IsOffline bool   `json:"is_offline" bson:"is_offline"`
+	DisVendor bool   `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 }
 
 type VendorCheckEdit struct {
