@@ -198,6 +198,7 @@ func (c *otherService) EditOther(ctx context.Context, user mjwt.CustomClaim, oth
 		Brand:             input.Brand,
 		Type:              input.Type,
 		Note:              input.Note,
+		DisVendor:         input.DisVendor,
 	}
 
 	// DB

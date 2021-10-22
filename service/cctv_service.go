@@ -188,6 +188,7 @@ func (c *cctvService) EditCctv(ctx context.Context, user mjwt.CustomClaim, cctvI
 		Brand:           input.Brand,
 		Type:            input.Type,
 		Note:            input.Note,
+		DisVendor:       input.DisVendor,
 	}
 
 	// DB
