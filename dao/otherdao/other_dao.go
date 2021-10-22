@@ -30,6 +30,7 @@ const (
 	keyOtherUpdatedByID = "updated_by_id"
 	keyOtherBranch      = "branch"
 	keyOtherDisable     = "disable"
+	keyOtherDisVendor   = "dis_vendor"
 
 	keyOtherDetail      = "detail"
 	keyOtherDivision    = "division"
@@ -117,11 +118,12 @@ func (c *otherDao) EditOther(ctx context.Context, input dto.OtherEdit) (*dto.Oth
 			keyOtherDivision: input.Division,
 			keyOtherDetail:   input.Detail,
 
-			keyOtherDate:  input.Date,
-			keyOtherTag:   input.Tag,
-			keyOtherBrand: input.Brand,
-			keyOtherType:  input.Type,
-			keyOtherNote:  input.Note,
+			keyOtherDate:      input.Date,
+			keyOtherTag:       input.Tag,
+			keyOtherBrand:     input.Brand,
+			keyOtherType:      input.Type,
+			keyOtherNote:      input.Note,
+			keyOtherDisVendor: input.DisVendor,
 		},
 	}
 

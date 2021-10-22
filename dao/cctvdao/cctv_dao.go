@@ -29,6 +29,7 @@ const (
 	keyCtvUpdatedByID = "updated_by_id"
 	keyCtvBranch      = "branch"
 	keyCtvDisable     = "disable"
+	keyCtvDisVendor   = "dis_vendor"
 
 	keyCtvIP              = "ip"
 	keyCtvInventoryNumber = "inventory_number"
@@ -106,11 +107,12 @@ func (c *cctvDao) EditCctv(ctx context.Context, input dto.CctvEdit) (*dto.Cctv, 
 			keyCtvLocationLat:     input.LocationLat,
 			keyCtvLocationLon:     input.LocationLon,
 
-			keyCtvDate:  input.Date,
-			keyCtvTag:   input.Tag,
-			keyCtvBrand: input.Brand,
-			keyCtvType:  input.Type,
-			keyCtvNote:  input.Note,
+			keyCtvDate:      input.Date,
+			keyCtvTag:       input.Tag,
+			keyCtvBrand:     input.Brand,
+			keyCtvType:      input.Type,
+			keyCtvNote:      input.Note,
+			keyCtvDisVendor: input.DisVendor,
 		},
 	}
 
