@@ -162,3 +162,18 @@ func (vc *venPhyCheckHandler) Finish(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"error": nil, "data": result})
 }
+
+func (vc *venPhyCheckHandler) FreshUpdateNameCCTV(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	branch := c.Params("branch")
+	if branch == "" {
+		branch = claims.Branch
+	}
+
+	result, apiErr := vc.service.FreshUpdateNameCCTV(c.Context(), branch)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": result})
+}

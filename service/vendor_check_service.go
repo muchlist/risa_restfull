@@ -101,6 +101,7 @@ func (c *vendorCheckService) InsertVendorCheck(ctx context.Context, user mjwt.Cu
 			IsChecked: true,
 			IsBlur:    isBlur,
 			IsOffline: isOffline,
+			DisVendor: v.DisVendor,
 		})
 	}
 

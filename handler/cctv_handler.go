@@ -185,3 +185,14 @@ func (ctv *cctvHandler) UploadImage(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"error": nil, "data": cctvResult})
 }
+
+func (ctv *cctvHandler) Merge(c *fiber.Ctx) error {
+	cctvID1 := c.Params("cctv1")
+	cctvID2 := c.Params("cctv2")
+
+	message, apiErr := ctv.service.MergeCctv(c.Context(), cctvID1, cctvID2)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	return c.JSON(fiber.Map{"error": nil, "data": message})
+}

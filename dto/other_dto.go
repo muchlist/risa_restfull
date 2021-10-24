@@ -31,6 +31,7 @@ type Other struct {
 	Type            string   `json:"type" bson:"type"`
 	Note            string   `json:"note" bson:"note"`
 	Extra           GenExtra `json:"extra" bson:"extra,omitempty"`
+	DisVendor       bool     `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 }
 
 // OtherRequest user input, id tidak diinput oleh user
@@ -49,9 +50,10 @@ type OtherRequest struct {
 	Tag             []string `json:"tag" bson:"tag"`
 	Image           string   `json:"image" bson:"image"`
 
-	Brand string `json:"brand" bson:"brand"`
-	Type  string `json:"type" bson:"type"`
-	Note  string `json:"note" bson:"note"`
+	Brand     string `json:"brand" bson:"brand"`
+	Type      string `json:"type" bson:"type"`
+	Note      string `json:"note" bson:"note"`
+	DisVendor bool   `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 }
 
 type OtherEdit struct {
@@ -75,9 +77,10 @@ type OtherEdit struct {
 	Date            int64
 	Tag             []string
 
-	Brand string
-	Type  string
-	Note  string
+	Brand     string
+	Type      string
+	Note      string
+	DisVendor bool `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 }
 
 // OtherEditRequest user input
@@ -97,9 +100,10 @@ type OtherEditRequest struct {
 	Date            int64    `json:"date" bson:"date"`
 	Tag             []string `json:"tag" bson:"tag"`
 
-	Brand string `json:"brand" bson:"brand"`
-	Type  string `json:"type" bson:"type"`
-	Note  string `json:"note" bson:"note"`
+	Brand     string `json:"brand" bson:"brand"`
+	Type      string `json:"type" bson:"type"`
+	Note      string `json:"note" bson:"note"`
+	DisVendor bool   `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 }
 
 type OtherResponseMinList []OtherResponseMin
@@ -116,4 +120,5 @@ type OtherResponseMin struct {
 	IP          string             `json:"ip" bson:"ip"`
 	Location    string             `json:"location" bson:"location"`
 	Tag         []string           `json:"tag" bson:"tag"`
+	DisVendor   bool               `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 }

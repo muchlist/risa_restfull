@@ -19,6 +19,7 @@ type CheckVenPhySaver interface {
 	UploadChildImage(ctx context.Context, filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.VenPhyCheck, rest_err.APIError)
 	UpdateCheckItem(ctx context.Context, input dto.VenPhyCheckItemUpdate) (*dto.VenPhyCheck, rest_err.APIError)
 	BulkUpdateItem(ctx context.Context, inputs []dto.VenPhyCheckItemUpdate) (int64, rest_err.APIError)
+	OverwriteChecklist(ctx context.Context, id primitive.ObjectID, checkItems []dto.VenPhyCheckItemEmbed) (*dto.VenPhyCheck, rest_err.APIError)
 }
 
 type CheckVenPhyLoader interface {

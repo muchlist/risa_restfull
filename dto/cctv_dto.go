@@ -26,6 +26,7 @@ type Cctv struct {
 	Type            string             `json:"type" bson:"type"`
 	Note            string             `json:"note" bson:"note"`
 	Extra           GenExtra           `json:"extra" bson:"extra,omitempty"`
+	DisVendor       bool               `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 }
 
 // CctvRequest user input, id tidak diinput oleh user
@@ -40,6 +41,7 @@ type CctvRequest struct {
 	Date            int64    `json:"date" bson:"date"`
 	Tag             []string `json:"tag" bson:"tag"`
 	Image           string   `json:"image" bson:"image"`
+	DisVendor       bool     `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 
 	Brand string `json:"brand" bson:"brand"`
 	Type  string `json:"type" bson:"type"`
@@ -63,6 +65,7 @@ type CctvEdit struct {
 	LocationLon     string
 	Date            int64
 	Tag             []string
+	DisVendor       bool `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 
 	Brand string
 	Type  string
@@ -81,6 +84,7 @@ type CctvEditRequest struct {
 	LocationLon     string   `json:"location_lon" bson:"location_lon"`
 	Date            int64    `json:"date" bson:"date"`
 	Tag             []string `json:"tag" bson:"tag"`
+	DisVendor       bool     `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 
 	Brand string `json:"brand" bson:"brand"`
 	Type  string `json:"type" bson:"type"`
@@ -90,11 +94,12 @@ type CctvEditRequest struct {
 type CctvResponseMinList []CctvResponseMin
 
 type CctvResponseMin struct {
-	ID       primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Branch   string             `json:"branch" bson:"branch"`
-	Disable  bool               `json:"disable" bson:"disable"`
-	Name     string             `json:"name" bson:"name"`
-	IP       string             `json:"ip" bson:"ip"`
-	Location string             `json:"location" bson:"location"`
-	Tag      []string           `json:"tag" bson:"tag"`
+	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Branch    string             `json:"branch" bson:"branch"`
+	Disable   bool               `json:"disable" bson:"disable"`
+	Name      string             `json:"name" bson:"name"`
+	IP        string             `json:"ip" bson:"ip"`
+	Location  string             `json:"location" bson:"location"`
+	Tag       []string           `json:"tag" bson:"tag"`
+	DisVendor bool               `json:"dis_vendor" bson:"dis_vendor"` // if true, disable from report vendor
 }

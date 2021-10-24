@@ -150,6 +150,11 @@ func buildHeadingVendor(m pdf.Maroto, subtitle string) error {
 
 	})
 	m.Row(20, func() {
+		m.ColSpace(2)
+		m.Col(8, func() {
+			textH1(m, "Rekap Laporan Pekerjaan di Regional Kalimantan")
+			textBodyCenter(m, subtitle, 12)
+		})
 		m.Col(2, func() {
 			err := m.FileImage("static/image/pelindo3.png", props.Rect{
 				Percent: 100,
@@ -160,11 +165,6 @@ func buildHeadingVendor(m pdf.Maroto, subtitle string) error {
 				errTemp = err
 			}
 		})
-		m.Col(8, func() {
-			textH1(m, "Rekap Laporan Pekerjaan di Regional Kalimantan")
-			textBodyCenter(m, subtitle, 12)
-		})
-		m.ColSpace(2)
 	})
 	return errTemp
 }
