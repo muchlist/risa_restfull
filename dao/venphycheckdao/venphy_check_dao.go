@@ -272,17 +272,77 @@ func (c *checkVenPhyDao) BulkUpdateItem(ctx context.Context, inputs []dto.VenPhy
 			keyIsFinish: false,
 		}
 
-		update := bson.M{
-			"$set": bson.M{
-				keyUpdatedAt:       input.CheckedAt,
-				keyChXCheckedAt:    input.CheckedAt,
-				keyChXCheckedBy:    input.CheckedBy,
-				keyChXIsChecked:    input.IsChecked,
-				keyChXIsMaintained: input.IsMaintained,
-				keyChXIsBlur:       input.IsBlur,
-				keyChXIsOffline:    input.IsOffline,
-			},
+		setMap := bson.M{
+			keyUpdatedAt:       input.CheckedAt,
+			keyChXCheckedAt:    input.CheckedAt,
+			keyChXCheckedBy:    input.CheckedBy,
+			keyChXIsBlur:       input.IsBlur,
+			keyChXIsOffline:    input.IsOffline,
+			keyChXIsChecked:    input.IsChecked,
+			keyChXIsMaintained: input.IsMaintained,
 		}
+
+		update := bson.M{
+			"$set": setMap,
+		}
+
+		operations[i] = mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update).SetUpsert(false)
+	}
+
+	opts := options.BulkWrite().SetOrdered(false)
+	result, err := coll.BulkWrite(ctxt, operations, opts)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return 0, rest_err.NewBadRequestError("vendor check fisik tidak diupdate : validasi id branch isFinish")
+		}
+
+		logger.Error("gagal bulk write checkItem dari database (BulkUpdateItem)", err)
+		apiErr := rest_err.NewInternalServerError("gagal bulk write vendor check fisik dari database", err)
+		return 0, apiErr
+	}
+
+	return result.ModifiedCount, nil
+}
+
+// BulkUpdateItemForUpdateCheckItem
+// jika ismaintenance false, atau ischecked false maka tidak akan merubah nilai
+func (c *checkVenPhyDao) BulkUpdateItemForUpdateCheckItem(ctx context.Context, inputs []dto.VenPhyCheckItemUpdate) (int64, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
+	defer cancel()
+
+	if len(inputs) == 0 {
+		return 0, rest_err.NewBadRequestError("input tidak boleh kosong")
+	}
+
+	operations := make([]mongo.WriteModel, len(inputs))
+	for i, input := range inputs {
+		filter := bson.M{
+			keyID:       input.FilterParentID,
+			keyChXId:    input.FilterChildID,
+			keyBranch:   strings.ToUpper(input.FilterBranch),
+			keyIsFinish: false,
+		}
+
+		setMap := bson.M{
+			keyUpdatedAt:    input.CheckedAt,
+			keyChXCheckedAt: input.CheckedAt,
+			keyChXCheckedBy: input.CheckedBy,
+			keyChXIsBlur:    input.IsBlur,
+			keyChXIsOffline: input.IsOffline,
+		}
+
+		if input.IsChecked {
+			setMap[keyChXIsChecked] = input.IsChecked
+		}
+		if input.IsMaintained {
+			setMap[keyChXIsMaintained] = input.IsMaintained
+		}
+
+		update := bson.M{
+			"$set": setMap,
+		}
+
 		operations[i] = mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update).SetUpsert(false)
 	}
 

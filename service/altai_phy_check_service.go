@@ -208,7 +208,7 @@ func (vc *altaiPhyCheckService) UpdateAltaiPhyCheckItem(ctx context.Context, use
 		if len(checkStillOpensValid) == 0 {
 			return
 		}
-		updatedCount, err := vc.daoC.BulkUpdateItem(ctx, checkStillOpensValid)
+		updatedCount, err := vc.daoC.BulkUpdateItemForCheckUpdate(ctx, checkStillOpensValid)
 		if err != nil {
 			logger.Error("gagal bulk update pada (UpdateAltaiPhyCheckItem)", err)
 		}

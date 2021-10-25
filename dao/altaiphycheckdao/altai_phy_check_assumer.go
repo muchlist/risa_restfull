@@ -19,6 +19,7 @@ type CheckAltaiPhySaver interface {
 	UploadChildImage(ctx context.Context, filterA dto.FilterParentIDChildIDAuthor, imagePath string) (*dto.AltaiPhyCheck, rest_err.APIError)
 	UpdateCheckItem(ctx context.Context, input dto.AltaiPhyCheckItemUpdate) (*dto.AltaiPhyCheck, rest_err.APIError)
 	BulkUpdateItem(ctx context.Context, inputs []dto.AltaiPhyCheckItemUpdate) (int64, rest_err.APIError)
+	BulkUpdateItemForCheckUpdate(ctx context.Context, inputs []dto.AltaiPhyCheckItemUpdate) (int64, rest_err.APIError)
 }
 
 type CheckAltaiPhyLoader interface {

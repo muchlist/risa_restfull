@@ -211,7 +211,7 @@ func (vc *venPhyCheckService) UpdateVenPhyCheckItem(ctx context.Context, user mj
 		if len(checkStillOpensValid) == 0 {
 			return
 		}
-		updatedCount, err := vc.daoC.BulkUpdateItem(ctx, checkStillOpensValid)
+		updatedCount, err := vc.daoC.BulkUpdateItemForUpdateCheckItem(ctx, checkStillOpensValid)
 		if err != nil {
 			logger.Error("gagal bulk update pada (UpdateVenPhyCheckItem)", err)
 		}
