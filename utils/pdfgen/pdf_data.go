@@ -154,6 +154,7 @@ func convertMonthlyViewData(cctv *dto.VenPhyCheck, altai *dto.AltaiPhyCheck) (cc
 
 	if altai != nil {
 		checkedTemp := 0
+		totalTemp := 0
 
 		for _, check := range altai.AltaiPhyCheckItems {
 			if check.DisVendor {
@@ -162,12 +163,13 @@ func convertMonthlyViewData(cctv *dto.VenPhyCheck, altai *dto.AltaiPhyCheck) (cc
 			if check.IsChecked {
 				checkedTemp++
 			}
+			totalTemp++
 		}
 
 		altaiRes.created, _ = timegen.GetTimeWithYearWITA(altai.CreatedAt)
-		altaiRes.total = strconv.Itoa(len(altai.AltaiPhyCheckItems))
+		altaiRes.total = strconv.Itoa(totalTemp)
 		altaiRes.checked = strconv.Itoa(checkedTemp)
-		altaiRes.notChecked = strconv.Itoa(len(altai.AltaiPhyCheckItems) - checkedTemp)
+		altaiRes.notChecked = strconv.Itoa(totalTemp - checkedTemp)
 	}
 
 	return

@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// PendingReport struct utama Pending reports
-type PendingReport struct {
+// PendingReportModel struct utama Pending reports
+type PendingReportModel struct {
 	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	CreatedAt      int64              `json:"created_at" bson:"created_at"`
 	CreatedBy      string             `json:"created_by" bson:"created_by"`
@@ -29,7 +29,7 @@ type PendingReport struct {
 
 // NormalizeValue digunakan untuk mencegah ada nilai nil pada struct, terutama saat dimasukkan ke database mongodb yang bisa
 // menyebabkan error
-func (pd *PendingReport) NormalizeValue() {
+func (pd *PendingReportModel) NormalizeValue() {
 	if pd.Descriptions == nil {
 		pd.Descriptions = make([]PRDescription, 0)
 	}
@@ -63,7 +63,7 @@ type PendingReportEditRequest struct {
 	Location     string          `json:"location"`
 }
 
-type PendingReportEdit struct {
+type PendingReportEditModel struct {
 	FilterID        primitive.ObjectID
 	FilterBranch    string
 	FilterTimestamp int64
@@ -79,7 +79,7 @@ type PendingReportEdit struct {
 	Location     string          `json:"location" bson:"location"`
 }
 
-func (pd *PendingReportEdit) NormalizeValue() {
+func (pd *PendingReportEditModel) NormalizeValue() {
 	if pd.Descriptions == nil {
 		pd.Descriptions = make([]PRDescription, 0)
 	}
