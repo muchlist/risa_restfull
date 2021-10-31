@@ -351,15 +351,13 @@ func (vc *venPhyCheckService) FreshUpdateNameCCTV(ctx context.Context, branch st
 			}
 		}
 
-		// override vendorchecklist jika hasChanged != 0
-		if hasChanged != 0 {
-			totalChange += hasChanged
-			_, err := vc.daoC.OverwriteChecklist(ctx, v.ID, checklist)
-			if err != nil {
-				// stop proses jika ada error
-				return "", err
-			}
+		totalChange += hasChanged
+		_, err := vc.daoC.OverwriteChecklist(ctx, v.ID, checklist)
+		if err != nil {
+			// stop proses jika ada error
+			return "", err
 		}
+
 	}
 
 	return fmt.Sprintf("%d item-check has been affected", totalChange), nil
