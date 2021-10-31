@@ -61,6 +61,9 @@ func (c *configCheckService) InsertConfigCheck(ctx context.Context, user mjwt.Cu
 	// translit networkItem menjadi checkItem
 	configCheckItem := make([]dto.ConfigCheckItemEmbed, len(networkItems))
 	for i, networkItem := range networkItems {
+		if networkItem.DisVendor {
+			continue
+		}
 		configCheckItem[i] = dto.ConfigCheckItemEmbed{
 			ID:       networkItem.ID.Hex(),
 			Name:     networkItem.Name,
