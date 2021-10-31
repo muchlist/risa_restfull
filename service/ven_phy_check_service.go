@@ -309,8 +309,10 @@ func (vc *venPhyCheckService) FreshUpdateNameCCTV(ctx context.Context, branch st
 
 	// buat daftar nama cctv jadi map
 	cctvNameMap := make(map[string]string, len(cctvList))
+	cctvDisVendorMap := make(map[string]bool, len(cctvList))
 	for _, cctv := range cctvList {
 		cctvNameMap[cctv.ID.Hex()] = cctv.Name
+		cctvDisVendorMap[cctv.ID.Hex()] = cctv.DisVendor
 	}
 
 	totalChange := 0
@@ -330,6 +332,7 @@ func (vc *venPhyCheckService) FreshUpdateNameCCTV(ctx context.Context, branch st
 					checklist[i].Name = newCCTVName
 					hasChanged++
 				}
+				checklist[i].DisVendor = cctvDisVendorMap[c.ID]
 			}
 		}
 

@@ -62,6 +62,25 @@ type PRAssumer interface {
 
 type prDao struct{}
 
+func (pd *prDao) InsertPR(ctx context.Context, input dto.PendingReportModel) (*string, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
+	defer cancel()
+
+	input.NormalizeValue()
+
+	result, err := coll.InsertOne(ctxt, input)
+	if err != nil {
+		apiErr := rest_err.NewInternalServerError("Gagal menyimpan doc ke database", err)
+		logger.Error("Gagal menyimpan cctv ke database, (InsertPR)", err)
+		return nil, apiErr
+	}
+
+	insertID := result.InsertedID.(primitive.ObjectID).Hex()
+
+	return &insertID, nil
+}
+
 // todo edit tidak bisa dilakukan jika status komplit suda mencapai sekian
 func (pd *prDao) EditPR(ctx context.Context, input dto.PendingReportEditModel) (*dto.PendingReportModel, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
@@ -302,25 +321,6 @@ func (pd *prDao) UploadImage(ctx context.Context, id primitive.ObjectID, imagePa
 
 func (pd *prDao) DeleteImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReportModel, rest_err.APIError) {
 	panic("implement me")
-}
-
-func (pd *prDao) InsertPR(ctx context.Context, input dto.PendingReportModel) (*string, rest_err.APIError) {
-	coll := db.DB.Collection(keyCollection)
-	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
-	defer cancel()
-
-	input.NormalizeValue()
-
-	result, err := coll.InsertOne(ctxt, input)
-	if err != nil {
-		apiErr := rest_err.NewInternalServerError("Gagal menyimpan doc ke database", err)
-		logger.Error("Gagal menyimpan cctv ke database, (InsertPR)", err)
-		return nil, apiErr
-	}
-
-	insertID := result.InsertedID.(primitive.ObjectID).Hex()
-
-	return &insertID, nil
 }
 
 func (pd *prDao) GetPRByID(ctx context.Context, id primitive.ObjectID, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError) {

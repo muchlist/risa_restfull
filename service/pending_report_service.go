@@ -26,6 +26,9 @@ type prService struct {
 	daoG genunitdao.GenUnitLoader
 }
 
+// TODO insertPR validation
+//
+
 type PRServiceAssumer interface {
 	InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError)
 	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)

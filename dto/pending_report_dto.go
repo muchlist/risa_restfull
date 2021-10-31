@@ -21,7 +21,7 @@ type PendingReportModel struct {
 	Date           int64              `json:"date" bson:"date"`
 	Participants   []Participant      `json:"participants" bson:"participants"`
 	Approvers      []Participant      `json:"approvers" bson:"approvers"`
-	Equipments     []PREquipment      `json:"equipments" bson:"equipments"`
+	Equipments     []PREquipment      `json:"equipments" bson:"equipments"` // equipment position akan ditentukan di description dengan type equip
 	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
 	Location       string             `json:"location" bson:"location"`
 	Images         []string           `json:"images" bson:"images"`
@@ -103,17 +103,17 @@ type PendingReportRequest struct {
 }
 
 type PRDescription struct {
-	Description     string `json:"description" bson:"description"`
-	DescriptionType string `json:"description_type" bson:"description_type"`
-	Position        int    `json:"position" bson:"position"`
+	Description     string `json:"description" bson:"description"`           // isi dari suratnya
+	DescriptionType string `json:"description_type" bson:"description_type"` // tipe tampilan, [???]
+	Position        int    `json:"position" bson:"position"`                 // posisi urutan
 }
 
 type PREquipment struct {
-	ID            string `json:"id" bson:"id"`
-	EquipmentName string `json:"equipment_name" bson:"equipment_name"`
-	AttachTo      string `json:"attach_to" bson:"attach_to"`
-	Description   string `json:"description" bson:"description"`
-	Qty           int    `json:"qty" bson:"qty"`
+	ID            string `json:"id" bson:"id"`                         // id alat sesuai database
+	EquipmentName string `json:"equipment_name" bson:"equipment_name"` // equip penamaan [] maybe stok
+	AttachTo      string `json:"attach_to" bson:"attach_to"`           // dipasang di mesin mana ?
+	Description   string `json:"description" bson:"description"`       // deskripsi alat
+	Qty           int    `json:"qty" bson:"qty"`                       // jumlah stok yang berkurang
 }
 
 type Participant struct {

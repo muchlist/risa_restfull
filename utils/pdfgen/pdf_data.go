@@ -135,15 +135,13 @@ func convertMonthlyViewData(cctv *dto.VenPhyCheck, altai *dto.AltaiPhyCheck) (cc
 		totalTemp := 0
 
 		for _, check := range cctv.VenPhyCheckItems {
-			if check.DisVendor {
+			if check.DisVendor || check.Location == location.Pulpis {
 				continue
-			}
-			if check.Location != location.Pulpis {
-				totalTemp++
 			}
 			if check.IsChecked {
 				checkedTemp++
 			}
+			totalTemp++
 		}
 
 		cctvRes.created, _ = timegen.GetTimeWithYearWITA(cctv.CreatedAt)
