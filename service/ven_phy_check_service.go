@@ -44,6 +44,7 @@ type VenPhyCheckServiceAssumer interface {
 	UpdateVenPhyCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.VenPhyCheckItemUpdateRequest) (*dto.VenPhyCheck, rest_err.APIError)
 	BulkUpdateVenPhyItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.VenPhyCheckItemUpdateRequest) (string, rest_err.APIError)
 	FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError)
+	UndoFinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError)
 	FreshUpdateNameCCTV(ctx context.Context, branch string) (string, rest_err.APIError)
 }
 
@@ -280,6 +281,20 @@ func (vc *venPhyCheckService) FinishCheck(ctx context.Context, user mjwt.CustomC
 		IsFinish:    true,
 		Note:        "",
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return cctvChecklistDetail, nil
+}
+
+func (vc *venPhyCheckService) UndoFinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(detailID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	cctvChecklistDetail, err := vc.daoC.UndoFinishCheck(ctx, oid, user.Branch)
 	if err != nil {
 		return nil, err
 	}
