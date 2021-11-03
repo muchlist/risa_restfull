@@ -26,8 +26,15 @@ type prService struct {
 	daoG genunitdao.GenUnitLoader
 }
 
-// TODO insertPR validation
-//
+// TODO insertPR validation V
+// TODO Insert participant itu gimana atuh , apakah dari user yang sudah ada atau input sendiri ?
+// jika user ID ada maka ambil dari user, jika tidak ada maka inputan dari user. atau buat dua service yang berbeda ?
+// TODO Description type ,
+// TODO Complete status report ada berapa level
+// TODO insert approver sama dengan insert participant
+// hapus participant dan approver
+// geser2 level complete status
+// bikin pdf
 
 type PRServiceAssumer interface {
 	InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError)
