@@ -51,9 +51,9 @@ type ReportServiceAssumer interface {
 	GenerateReportPDFVendor(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError)
 	GenerateReportPDFVendorStartFromLast(ctx context.Context, name string, branch string) (*string, rest_err.APIError)
 	FindPdf(ctx context.Context, branch string, typePdf string) ([]dto.PdfFile, rest_err.APIError)
-	GenerateReportVendorDaily(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError)
-	GenerateReportVendorDailyStartFromLast(ctx context.Context, name string, branch string) (*string, rest_err.APIError)
-	GenerateReportPDFVendorMonthly(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError)
+	GenerateReportVendorDaily(ctx context.Context, name string, branch string, start int64, end int64, dataReal bool) (*string, rest_err.APIError)
+	GenerateReportVendorDailyStartFromLast(ctx context.Context, name string, branch string, dataReal bool) (*string, rest_err.APIError)
+	GenerateReportPDFVendorMonthly(ctx context.Context, name string, branch string, start int64, end int64, dataReal bool) (*string, rest_err.APIError)
 	GenerateStockReportRestock(ctx context.Context, name, branch, category string, start, end int64) (*string, rest_err.APIError)
 }
 
@@ -355,7 +355,7 @@ func (r *reportService) FindPdf(ctx context.Context, branch string, typePdf stri
 	return r.dao.Pdf.FindPdf(ctx, branch, typePdf)
 }
 
-func (r *reportService) GenerateReportVendorDaily(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportVendorDaily(ctx context.Context, name string, branch string, start int64, end int64, dataReal bool) (*string, rest_err.APIError) {
 	if start > end {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
 	}
@@ -440,7 +440,9 @@ func (r *reportService) GenerateReportVendorDaily(ctx context.Context, name stri
 		HistoryList: historiesCombined,
 		Start:       targetMinDaily,
 		End:         end,
-	})
+	},
+		dataReal,
+	)
 
 	if errPDF != nil {
 		return nil, rest_err.NewInternalServerError("gagal membuat Pdf", errPDF)
@@ -449,7 +451,7 @@ func (r *reportService) GenerateReportVendorDaily(ctx context.Context, name stri
 	return &name, nil
 }
 
-func (r *reportService) GenerateReportVendorDailyStartFromLast(ctx context.Context, name string, branch string) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportVendorDailyStartFromLast(ctx context.Context, name string, branch string, dataReal bool) (*string, rest_err.APIError) {
 	currentTime := time.Now().Unix()
 	lastPDF, err := r.dao.Pdf.FindLastPdf(ctx, branch, pdftype.Vendor)
 	if err != nil {
@@ -532,7 +534,8 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(ctx context.Conte
 		HistoryList: historiesCombined,
 		Start:       lastPDFEndTime,
 		End:         currentTime,
-	})
+	}, dataReal,
+	)
 
 	if errPDF != nil {
 		return nil, rest_err.NewInternalServerError("gagal membuat Pdf", errPDF)
@@ -542,7 +545,7 @@ func (r *reportService) GenerateReportVendorDailyStartFromLast(ctx context.Conte
 }
 
 // GenerateReportPDFVendorMonthly membuat Pdf untuk vendor multinet
-func (r *reportService) GenerateReportPDFVendorMonthly(ctx context.Context, name string, branch string, start int64, end int64) (*string, rest_err.APIError) {
+func (r *reportService) GenerateReportPDFVendorMonthly(ctx context.Context, name string, branch string, start int64, end int64, dataReal bool) (*string, rest_err.APIError) {
 	if start > end && start < 0 {
 		return nil, rest_err.NewBadRequestError("tanggal awal tidak boleh lebih besar dari tanggal akhir")
 	}
@@ -619,6 +622,7 @@ func (r *reportService) GenerateReportPDFVendorMonthly(ctx context.Context, name
 		AltaiQuarterly: altaiQuarter,
 	},
 		*lastCheckConfig,
+		dataReal,
 	)
 	if errPDF != nil {
 		return nil, rest_err.NewInternalServerError("gagal membuat Pdf", errPDF)

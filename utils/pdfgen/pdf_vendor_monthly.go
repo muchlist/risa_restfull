@@ -22,7 +22,7 @@ type PDFReqMonth struct {
 }
 
 func GeneratePDFVendorMonthly(
-	data PDFReqMonth, dataMaint dto.ReportResponse, dataCheckConf dto.ConfigCheck,
+	data PDFReqMonth, dataMaint dto.ReportResponse, dataCheckConf dto.ConfigCheck, dataReal bool,
 ) error {
 	// slice yang sudah di filter dan dimodifikasi isinya
 	var allListComputed []dto.HistoryUnwindResponse
@@ -116,7 +116,7 @@ func GeneratePDFVendorMonthly(
 
 	// MONTHLY
 	//----------convert data
-	cctvMonthlyViewData, altaiMonthlyViewData := convertMonthlyViewData(dataMaint.CctvMonthly, dataMaint.AltaiMonthly)
+	cctvMonthlyViewData, altaiMonthlyViewData := convertMonthlyViewData(dataMaint.CctvMonthly, dataMaint.AltaiMonthly, dataReal)
 	buildTitleHeadingView(m, " Cek Fisik Bulanan", getTealColor())
 	buildCCTVMonthlyViewLand(m, cctvMonthlyViewData, altaiMonthlyViewData)
 
@@ -128,8 +128,8 @@ func GeneratePDFVendorMonthly(
 
 	// QUARTERLY
 	//----------convert data
-	regCctvQuarterlyViewData, pulpisCctvQuarterlyViewData := convertQuarterlyViewDataCctv(dataMaint.CctvQuarterly)
-	altaiQuarterlyViewData := convertQuarterlyViewDataAltai(dataMaint.AltaiQuarterly)
+	regCctvQuarterlyViewData, pulpisCctvQuarterlyViewData := convertQuarterlyViewDataCctv(dataMaint.CctvQuarterly, dataReal)
+	altaiQuarterlyViewData := convertQuarterlyViewDataAltai(dataMaint.AltaiQuarterly, dataReal)
 	buildTitleHeadingView(m, " Cek Fisik Triwulan", getOrangeColor())
 	buildCCTVQuarterlyViewLand(m, regCctvQuarterlyViewData, altaiQuarterlyViewData)
 
