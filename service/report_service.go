@@ -595,19 +595,19 @@ func (r *reportService) GenerateReportPDFVendorMonthly(ctx context.Context, name
 	historiesCombined := append(historyList04, historyList123...)
 
 	// cek fisik cctv bulanan
-	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(ctx, targetMinMonthly, currentTime, branch, false)
+	cctvMonthly, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(ctx, targetMinMonthly, end, branch, false)
 
 	// cek fisik cctv 3 bulanan
-	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(ctx, targetMinQuarter, currentTime, branch, true)
+	cctvQuarter, _ := r.dao.CheckCCTVPhy.GetLastCheckCreateRange(ctx, targetMinQuarter, end, branch, true)
 
 	// cek fisik altai bulanan
-	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(ctx, targetMinMonthly, currentTime, branch, false)
+	altaiMonthly, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(ctx, targetMinMonthly, end, branch, false)
 
 	// cek fisik altai 3 bulanan
-	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(ctx, targetMinQuarter, currentTime, branch, true)
+	altaiQuarter, _ := r.dao.CheckAltaiPhy.GetLastCheckCreateRange(ctx, targetMinQuarter, end, branch, true)
 
 	// checklist backup config
-	lastCheckConfig, _ := r.dao.CheckConfig.GetLastCheckCreateRange(ctx, targetMinMonthly, currentTime, branch)
+	lastCheckConfig, _ := r.dao.CheckConfig.GetLastCheckCreateRange(ctx, targetMinMonthly, end, branch)
 
 	errPDF := pdfgen.GeneratePDFVendorMonthly(pdfgen.PDFReqMonth{
 		Name:        name,
