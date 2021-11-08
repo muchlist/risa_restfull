@@ -29,6 +29,8 @@ const (
 	keyUserRoles     = "roles"
 	keyUserBranch    = "branch"
 	keyUserAvatar    = "avatar"
+	keyUserPosition  = "position"
+	keyUserDivision  = "division"
 	keyUserFcmToken  = "fcm_token"
 	keyUserTimeStamp = "timestamp"
 )
@@ -61,6 +63,8 @@ func (u *userDao) InsertUser(ctx context.Context, user dto.UserRequest) (*string
 		{keyUserRoles, user.Roles},
 		{keyUserBranch, user.Branch},
 		{keyUserAvatar, user.Avatar},
+		{keyUserPosition, user.Position},
+		{keyUserDivision, user.Division},
 		{keyUserHashPw, user.Password},
 		{keyUserTimeStamp, user.Timestamp},
 	}
@@ -102,6 +106,8 @@ func (u *userDao) EditUser(ctx context.Context, userID string, userRequest dto.U
 			keyUserName:      userRequest.Name,
 			keyUserRoles:     userRequest.Roles,
 			keyUserBranch:    userRequest.Branch,
+			keyUserPosition:  userRequest.Position,
+			keyUserDivision:  userRequest.Division,
 			keyUserTimeStamp: time.Now().Unix(),
 		},
 	}

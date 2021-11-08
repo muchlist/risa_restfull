@@ -9,6 +9,8 @@ type User struct {
 	Roles     []string `json:"roles" bson:"roles"`
 	Avatar    string   `json:"avatar" bson:"avatar"`
 	HashPw    string   `json:"hash_pw,omitempty" bson:"hash_pw,omitempty"`
+	Position  string   `json:"position" bson:"position"`
+	Division  string   `json:"division" bson:"division"`
 	FcmToken  string   `json:"fcm_token" bson:"fcm_token"`
 	Timestamp int64    `json:"timestamp" bson:"timestamp"`
 }
@@ -24,6 +26,8 @@ type UserResponse struct {
 	Branch    string   `json:"branch" bson:"branch"`
 	Roles     []string `json:"roles" bson:"roles"`
 	Avatar    string   `json:"avatar" bson:"avatar"`
+	Position  string   `json:"position" bson:"position"`
+	Division  string   `json:"division" bson:"division"`
 	FcmToken  string   `json:"-" bson:"fcm_token"`
 	Timestamp int64    `json:"timestamp" bson:"timestamp"`
 }
@@ -36,6 +40,8 @@ type UserRequest struct {
 	Branch    string   `json:"branch" bson:"branch"`
 	Roles     []string `json:"roles" bson:"roles"`
 	Avatar    string   `json:"avatar" bson:"avatar"`
+	Position  string   `json:"position" bson:"position"`
+	Division  string   `json:"division" bson:"division"`
 	Password  string   `json:"password" bson:"password"`
 	Timestamp int64    `json:"timestamp" bson:"timestamp"`
 }
@@ -45,6 +51,8 @@ type UserEditRequest struct {
 	Name            string   `json:"name" bson:"name"`
 	Branch          string   `json:"branch" bson:"branch"`
 	Roles           []string `json:"roles" bson:"roles"`
+	Position        string   `json:"position" bson:"position"`
+	Division        string   `json:"division" bson:"division"`
 	TimestampFilter int64    `json:"timestamp_filter" bson:"timestamp"`
 }
 
