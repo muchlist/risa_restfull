@@ -43,6 +43,7 @@ type prService struct {
 type PRServiceAssumer interface {
 	InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError)
 	AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
+	AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
 	EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReportModel, rest_err.APIError)
 }
@@ -146,6 +147,56 @@ func (ps *prService) AddParticipant(ctx context.Context, user mjwt.CustomClaim, 
 	}
 
 	return ps.daoP.AddParticipant(ctx, pendingreportdao.ParticipantParams{
+		ID: oid,
+		Participant: dto.Participant{
+			ID:       userResult.ID,
+			Name:     userResult.Name,
+			Position: userResult.Position,
+			Division: userResult.Division,
+			UserID:   userResult.ID,
+			Sign:     "",
+			SignAt:   0,
+		},
+		FilterBranch: user.Branch,
+		UpdatedAt:    time.Now().Unix(),
+		UpdatedBy:    user.Name,
+		UpdatedByID:  user.Identity,
+	})
+}
+
+func (ps *prService) AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// cek ketersediaan user
+	userResult, restErr := ps.daoU.GetUserByID(ctx, userID)
+	if restErr != nil {
+		return nil, rest_err.NewNotFoundError("user yang dimasukkan tidak tersedia")
+	}
+
+	// cek apakah user tersebut sudah ada didalam daftar participant
+	pendingReport, restErr := ps.daoP.GetPRByID(ctx, oid, "")
+	if restErr != nil {
+		return nil, rest_err.NewNotFoundError("dokumen yang dimasukkan tidak tersedia")
+	}
+	if pendingReport.Participants != nil && len(pendingReport.Participants) != 0 {
+		for _, val := range pendingReport.Participants {
+			if val.ID == userID {
+				return nil, rest_err.NewBadRequestError("Approver yang dimasukkan sudah ada pada dokumen eksisting")
+			}
+		}
+	}
+	if pendingReport.Approvers != nil && len(pendingReport.Approvers) != 0 {
+		for _, val := range pendingReport.Approvers {
+			if val.ID == userID {
+				return nil, rest_err.NewBadRequestError("Approver yang dimasukkan sudah ada pada dokumen eksisting")
+			}
+		}
+	}
+
+	return ps.daoP.AddApprover(ctx, pendingreportdao.ParticipantParams{
 		ID: oid,
 		Participant: dto.Participant{
 			ID:       userResult.ID,

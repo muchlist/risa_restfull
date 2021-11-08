@@ -228,6 +228,7 @@ func mapUrls(app *fiber.App) {
 	api.Get("/pending-report/:id", middleware.NormalAuth(), prHandler.Get)
 	api.Put("/pending-report/:id", middleware.NormalAuth(), prHandler.Edit)
 	api.Get("/add-party-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.AddParticipant)
+	api.Get("/add-approver-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.AddApprover)
 
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)
