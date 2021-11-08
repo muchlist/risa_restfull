@@ -256,7 +256,7 @@ func (pd *prDao) RemoveApprover(ctx context.Context, input ParticipantParams) (*
 		},
 		"$pull": bson.M{
 			keyApprovers: bson.M{
-				keyParticipantsID: input.Participant.ID,
+				keyParticipantsID: strings.ToUpper(input.Participant.ID),
 			},
 		},
 	}
@@ -296,7 +296,7 @@ func (pd *prDao) RemoveParticipant(ctx context.Context, input ParticipantParams)
 		},
 		"$pull": bson.M{
 			keyParticipants: bson.M{
-				keyParticipantsID: input.Participant.ID,
+				keyParticipantsID: strings.ToUpper(input.Participant.ID),
 			},
 		},
 	}

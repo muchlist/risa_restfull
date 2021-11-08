@@ -45,6 +45,8 @@ type PRServiceAssumer interface {
 	AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
+	RemoveParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
+	RemoveApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReportModel, rest_err.APIError)
 }
 
@@ -206,6 +208,42 @@ func (ps *prService) AddApprover(ctx context.Context, user mjwt.CustomClaim, id 
 			UserID:   userResult.ID,
 			Sign:     "",
 			SignAt:   0,
+		},
+		FilterBranch: user.Branch,
+		UpdatedAt:    time.Now().Unix(),
+		UpdatedBy:    user.Name,
+		UpdatedByID:  user.Identity,
+	})
+}
+
+func (ps *prService) RemoveParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	return ps.daoP.RemoveParticipant(ctx, pendingreportdao.ParticipantParams{
+		ID: oid,
+		Participant: dto.Participant{
+			ID: userID,
+		},
+		FilterBranch: user.Branch,
+		UpdatedAt:    time.Now().Unix(),
+		UpdatedBy:    user.Name,
+		UpdatedByID:  user.Identity,
+	})
+}
+
+func (ps *prService) RemoveApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	return ps.daoP.RemoveApprover(ctx, pendingreportdao.ParticipantParams{
+		ID: oid,
+		Participant: dto.Participant{
+			ID: userID,
 		},
 		FilterBranch: user.Branch,
 		UpdatedAt:    time.Now().Unix(),

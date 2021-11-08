@@ -108,3 +108,27 @@ func (pr *prHandler) AddApprover(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
+
+func (pr *prHandler) RemoveParticipant(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+	userID := c.Params("userid")
+
+	res, apiErr := pr.service.RemoveParticipant(c.Context(), *claims, id, userID)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	return c.JSON(fiber.Map{"error": nil, "data": res})
+}
+
+func (pr *prHandler) RemoveApprover(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+	userID := c.Params("userid")
+
+	res, apiErr := pr.service.RemoveApprover(c.Context(), *claims, id, userID)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	return c.JSON(fiber.Map{"error": nil, "data": res})
+}
