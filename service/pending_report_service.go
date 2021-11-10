@@ -47,6 +47,7 @@ type PRServiceAssumer interface {
 	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
+	SignDocument(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
 	EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReportModel, rest_err.APIError)
 }
 
@@ -246,6 +247,52 @@ func (ps *prService) RemoveApprover(ctx context.Context, user mjwt.CustomClaim, 
 			ID: userID,
 		},
 		FilterBranch: user.Branch,
+		UpdatedAt:    time.Now().Unix(),
+		UpdatedBy:    user.Name,
+		UpdatedByID:  user.Identity,
+	})
+}
+
+func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	// get document dan cek apakah user tersebut ada didalam participant atau approver
+	doc, restErr := ps.daoP.GetPRByID(ctx, oid, "")
+	if restErr != nil {
+		return nil, restErr
+	}
+
+	var userExist bool
+
+	for index, val := range doc.Participants {
+		if val.UserID == user.Identity {
+			userExist = true
+			doc.Participants[index].Sign = "SIGNED"
+			doc.Participants[index].SignAt = time.Now().Unix()
+		}
+	}
+
+	for index, val := range doc.Approvers {
+		if val.UserID == user.Identity {
+			userExist = true
+			doc.Approvers[index].Sign = "SIGNED"
+			doc.Approvers[index].SignAt = time.Now().Unix()
+		}
+	}
+
+	if !userExist {
+		return nil, rest_err.NewBadRequestError("User tidak termasuk kedalam dokumen")
+	}
+
+	// update pending report dengan data approvers dan participant terbaru
+	return ps.daoP.EditParticipantApprover(ctx, pendingreportdao.EditParticipantParams{
+		ID:           oid,
+		FilterBranch: user.Branch,
+		Participant:  doc.Participants,
+		Approver:     doc.Approvers,
 		UpdatedAt:    time.Now().Unix(),
 		UpdatedBy:    user.Name,
 		UpdatedByID:  user.Identity,

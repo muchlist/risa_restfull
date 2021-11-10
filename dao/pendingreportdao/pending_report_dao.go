@@ -39,8 +39,13 @@ const (
 	keyLocation       = "location"
 	keyImages         = "images"
 
-	keyParticipantsID = "id" // id inner participant
-
+	keyParticipantsID     = "id" // id inner participant
+	keyParticipantXID     = "participants.id"
+	keyApproverXID        = "approvers.id"
+	keyParticipantXSign   = "participants.$.sign"
+	keyParticipantXSignAt = "participants.$.sign_at"
+	keyApproverXSign      = "approvers.$.sign"
+	keyApproverXSignAt    = "approvers.$.sign_at"
 )
 
 func NewPR() PRAssumer {
@@ -54,6 +59,7 @@ type PRAssumer interface {
 	ChangeCompleteStatus(ctx context.Context, id primitive.ObjectID, completeStatus int, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
 	AddApprover(ctx context.Context, input ParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
 	AddParticipant(ctx context.Context, input ParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
+	EditParticipantApprover(ctx context.Context, input EditParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveApprover(ctx context.Context, input ParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveParticipant(ctx context.Context, input ParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
 	UploadImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
@@ -309,6 +315,43 @@ func (pd *prDao) RemoveParticipant(ctx context.Context, input ParticipantParams)
 
 		logger.Error("Gagal mengahapus partisipan doc dari database (RemoveParticipant)", err)
 		apiErr := rest_err.NewInternalServerError("Gagal mengahapus partisipan doc dari database", err)
+		return nil, apiErr
+	}
+
+	return &res, nil
+}
+
+func (pd *prDao) EditParticipantApprover(ctx context.Context, input EditParticipantParams) (*dto.PendingReportModel, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyID:     input.ID,
+		keyBranch: input.FilterBranch,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			keyParticipants: input.Participant,
+			keyApprovers:    input.Approver,
+			keyUpdatedByID:  input.UpdatedByID,
+			keyUpdatedBy:    input.UpdatedBy,
+			keyUpdatedAt:    input.UpdatedAt,
+		},
+	}
+
+	var res dto.PendingReportModel
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&res); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch")
+		}
+
+		logger.Error("Gagal mendapatkan doc dari database (Sign)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan doc dari database", err)
 		return nil, apiErr
 	}
 
