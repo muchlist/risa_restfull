@@ -44,6 +44,7 @@ type VenPhyCheckServiceAssumer interface {
 	UpdateVenPhyCheckItem(ctx context.Context, user mjwt.CustomClaim, input dto.VenPhyCheckItemUpdateRequest) (*dto.VenPhyCheck, rest_err.APIError)
 	BulkUpdateVenPhyItem(ctx context.Context, user mjwt.CustomClaim, inputs []dto.VenPhyCheckItemUpdateRequest) (string, rest_err.APIError)
 	FinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError)
+	UndoFinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError)
 	FreshUpdateNameCCTV(ctx context.Context, branch string) (string, rest_err.APIError)
 }
 
@@ -287,6 +288,20 @@ func (vc *venPhyCheckService) FinishCheck(ctx context.Context, user mjwt.CustomC
 	return cctvChecklistDetail, nil
 }
 
+func (vc *venPhyCheckService) UndoFinishCheck(ctx context.Context, user mjwt.CustomClaim, detailID string) (*dto.VenPhyCheck, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(detailID)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	cctvChecklistDetail, err := vc.daoC.UndoFinishCheck(ctx, oid, user.Branch)
+	if err != nil {
+		return nil, err
+	}
+
+	return cctvChecklistDetail, nil
+}
+
 func (vc *venPhyCheckService) FreshUpdateNameCCTV(ctx context.Context, branch string) (string, rest_err.APIError) {
 	if branch == "" {
 		return "", rest_err.NewBadRequestError("cabang harus di isi")
@@ -309,8 +324,10 @@ func (vc *venPhyCheckService) FreshUpdateNameCCTV(ctx context.Context, branch st
 
 	// buat daftar nama cctv jadi map
 	cctvNameMap := make(map[string]string, len(cctvList))
+	cctvDisVendorMap := make(map[string]bool, len(cctvList))
 	for _, cctv := range cctvList {
 		cctvNameMap[cctv.ID.Hex()] = cctv.Name
+		cctvDisVendorMap[cctv.ID.Hex()] = cctv.DisVendor
 	}
 
 	totalChange := 0
@@ -330,18 +347,17 @@ func (vc *venPhyCheckService) FreshUpdateNameCCTV(ctx context.Context, branch st
 					checklist[i].Name = newCCTVName
 					hasChanged++
 				}
+				checklist[i].DisVendor = cctvDisVendorMap[c.ID]
 			}
 		}
 
-		// override vendorchecklist jika hasChanged != 0
-		if hasChanged != 0 {
-			totalChange += hasChanged
-			_, err := vc.daoC.OverwriteChecklist(ctx, v.ID, checklist)
-			if err != nil {
-				// stop proses jika ada error
-				return "", err
-			}
+		totalChange += hasChanged
+		_, err := vc.daoC.OverwriteChecklist(ctx, v.ID, checklist)
+		if err != nil {
+			// stop proses jika ada error
+			return "", err
 		}
+
 	}
 
 	return fmt.Sprintf("%d item-check has been affected", totalChange), nil

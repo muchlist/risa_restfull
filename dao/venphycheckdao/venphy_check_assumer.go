@@ -21,6 +21,7 @@ type CheckVenPhySaver interface {
 	BulkUpdateItem(ctx context.Context, inputs []dto.VenPhyCheckItemUpdate) (int64, rest_err.APIError)
 	BulkUpdateItemForUpdateCheckItem(ctx context.Context, inputs []dto.VenPhyCheckItemUpdate) (int64, rest_err.APIError)
 	OverwriteChecklist(ctx context.Context, id primitive.ObjectID, checkItems []dto.VenPhyCheckItemEmbed) (*dto.VenPhyCheck, rest_err.APIError)
+	UndoFinishCheck(ctx context.Context, filterID primitive.ObjectID, filterBranch string) (*dto.VenPhyCheck, rest_err.APIError)
 }
 
 type CheckVenPhyLoader interface {

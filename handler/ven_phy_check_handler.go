@@ -163,6 +163,18 @@ func (vc *venPhyCheckHandler) Finish(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": result})
 }
 
+func (vc *venPhyCheckHandler) UndoFinish(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+
+	result, apiErr := vc.service.UndoFinishCheck(c.Context(), *claims, id)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": result})
+}
+
 func (vc *venPhyCheckHandler) FreshUpdateNameCCTV(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	branch := c.Params("branch")

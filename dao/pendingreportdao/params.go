@@ -13,3 +13,13 @@ type ParticipantParams struct {
 	UpdatedBy    string
 	UpdatedByID  string
 }
+
+type EditParticipantParams struct {
+	ID           primitive.ObjectID
+	FilterBranch string
+	Participant  []dto.Participant
+	Approver     []dto.Participant
+	UpdatedAt    int64
+	UpdatedBy    string
+	UpdatedByID  string
+}

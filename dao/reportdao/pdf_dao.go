@@ -76,7 +76,7 @@ func (c *pdfDao) FindPdf(ctx context.Context, branch string, typePdf string) ([]
 
 	opts := options.Find()
 	opts.SetSort(bson.D{{Key: keyPdfCreatedAt, Value: -1}})
-	opts.SetLimit(10)
+	opts.SetLimit(100)
 
 	cursor, err := coll.Find(ctxtt, filter, opts)
 	if err != nil {

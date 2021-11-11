@@ -178,6 +178,7 @@ func mapUrls(app *fiber.App) {
 	api.Post("/phy-check-update", middleware.NormalAuth(roles.RoleVendor), venPhyCheckHandler.UpdateCheckItem)
 	api.Post("/bulk-phy-update", middleware.NormalAuth(roles.RoleVendor), venPhyCheckHandler.BulkUpdateCheckItem)
 	api.Get("/phy-check-finish/:id", middleware.NormalAuth(), venPhyCheckHandler.Finish)
+	api.Get("/phy-check-unfinish/:id", middleware.NormalAuth(roles.RoleAdmin), venPhyCheckHandler.UndoFinish)
 	api.Get("/phy-check-sync/:branch", middleware.NormalAuth(roles.RoleAdmin), venPhyCheckHandler.FreshUpdateNameCCTV)
 
 	// ALTAI CHECK FISIK
@@ -225,7 +226,17 @@ func mapUrls(app *fiber.App) {
 	// PENDING-REPORT
 	api.Post("/pending-report", middleware.NormalAuth(), prHandler.Insert)
 	api.Get("/pending-report/:id", middleware.NormalAuth(), prHandler.Get)
+	api.Get("/pending-report", middleware.NormalAuth(), prHandler.Find)
 	api.Put("/pending-report/:id", middleware.NormalAuth(), prHandler.Edit)
+	api.Get("/add-party-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.AddParticipant)
+	api.Get("/add-approver-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.AddApprover)
+	api.Get("/remove-party-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.RemoveParticipant)
+	api.Get("/remove-approver-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.RemoveApprover)
+	api.Post("/send-sign/:id", middleware.NormalAuth(), prHandler.SendToSignMode)
+	api.Post("/send-draft/:id", middleware.NormalAuth(), prHandler.SendToDraftMode)
+	api.Post("/sign-pending-report/:id", middleware.NormalAuth(), prHandler.SigningDoc)
+	api.Post("/pending-report-image/:id", middleware.NormalAuth(), prHandler.UploadImage)
+	api.Post("/delete-pending-report-image/:id/:image", middleware.NormalAuth(), prHandler.DeleteImage)
 
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)

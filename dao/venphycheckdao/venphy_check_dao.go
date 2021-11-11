@@ -119,6 +119,43 @@ func (c *checkVenPhyDao) EditCheck(ctx context.Context, input dto.VenPhyCheckEdi
 	return &check, nil
 }
 
+func (c *checkVenPhyDao) UndoFinishCheck(ctx context.Context, filterID primitive.ObjectID, filterBranch string) (*dto.VenPhyCheck, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
+	defer cancel()
+
+	// Default value for slice
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyID:     filterID,
+		keyBranch: filterBranch,
+	}
+
+	set := bson.M{
+		keyIsFinish: false,
+	}
+
+	update := bson.M{
+		"$set": set,
+	}
+
+	var check dto.VenPhyCheck
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&check); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, rest_err.NewBadRequestError("vendor check fisik tidak diupdate : validasi id branch isFinish")
+		}
+
+		logger.Error("Gagal mendapatkan vendor check fisik dari database (UndoFinishCheck)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan vendor check fisik dari database", err)
+		return nil, apiErr
+	}
+
+	return &check, nil
+}
+
 // OverwriteChecklist akan menindih hasil checklist sebelumnya, digunakan untuk system merename ulang nama cctv yang sudah di edit pada parrent
 func (c *checkVenPhyDao) OverwriteChecklist(ctx context.Context, id primitive.ObjectID, checkItems []dto.VenPhyCheckItemEmbed) (*dto.VenPhyCheck, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)

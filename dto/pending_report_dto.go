@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// PendingReport struct utama Pending reports
-type PendingReport struct {
+// PendingReportModel struct utama Pending reports
+type PendingReportModel struct {
 	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	CreatedAt      int64              `json:"created_at" bson:"created_at"`
 	CreatedBy      string             `json:"created_by" bson:"created_by"`
@@ -21,7 +21,7 @@ type PendingReport struct {
 	Date           int64              `json:"date" bson:"date"`
 	Participants   []Participant      `json:"participants" bson:"participants"`
 	Approvers      []Participant      `json:"approvers" bson:"approvers"`
-	Equipments     []PREquipment      `json:"equipments" bson:"equipments"`
+	Equipments     []PREquipment      `json:"equipments" bson:"equipments"` // equipment position akan ditentukan di description dengan type equip
 	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
 	Location       string             `json:"location" bson:"location"`
 	Images         []string           `json:"images" bson:"images"`
@@ -29,7 +29,7 @@ type PendingReport struct {
 
 // NormalizeValue digunakan untuk mencegah ada nilai nil pada struct, terutama saat dimasukkan ke database mongodb yang bisa
 // menyebabkan error
-func (pd *PendingReport) NormalizeValue() {
+func (pd *PendingReportModel) NormalizeValue() {
 	if pd.Descriptions == nil {
 		pd.Descriptions = make([]PRDescription, 0)
 	}
@@ -63,7 +63,7 @@ type PendingReportEditRequest struct {
 	Location     string          `json:"location"`
 }
 
-type PendingReportEdit struct {
+type PendingReportEditModel struct {
 	FilterID        primitive.ObjectID
 	FilterBranch    string
 	FilterTimestamp int64
@@ -79,7 +79,7 @@ type PendingReportEdit struct {
 	Location     string          `json:"location" bson:"location"`
 }
 
-func (pd *PendingReportEdit) NormalizeValue() {
+func (pd *PendingReportEditModel) NormalizeValue() {
 	if pd.Descriptions == nil {
 		pd.Descriptions = make([]PRDescription, 0)
 	}
@@ -103,17 +103,17 @@ type PendingReportRequest struct {
 }
 
 type PRDescription struct {
-	Description     string `json:"description" bson:"description"`
-	DescriptionType string `json:"description_type" bson:"description_type"`
-	Position        int    `json:"position" bson:"position"`
+	Description     string `json:"description" bson:"description"`           // isi dari suratnya
+	DescriptionType string `json:"description_type" bson:"description_type"` // tipe tampilan, [???]
+	Position        int    `json:"position" bson:"position"`                 // posisi urutan
 }
 
 type PREquipment struct {
-	ID            string `json:"id" bson:"id"`
-	EquipmentName string `json:"equipment_name" bson:"equipment_name"`
-	AttachTo      string `json:"attach_to" bson:"attach_to"`
-	Description   string `json:"description" bson:"description"`
-	Qty           int    `json:"qty" bson:"qty"`
+	ID            string `json:"id" bson:"id"`                         // id alat sesuai database
+	EquipmentName string `json:"equipment_name" bson:"equipment_name"` // equip penamaan [] maybe stok
+	AttachTo      string `json:"attach_to" bson:"attach_to"`           // dipasang di mesin mana ?
+	Description   string `json:"description" bson:"description"`       // deskripsi alat
+	Qty           int    `json:"qty" bson:"qty"`                       // jumlah stok yang berkurang
 }
 
 type Participant struct {
@@ -146,4 +146,23 @@ type PendingReportResponse struct {
 	CompleteStatus int             `json:"complete_status"`
 	Location       string          `json:"location"`
 	Images         []string        `json:"images"`
+}
+
+type PendingReportMin struct {
+	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	CreatedAt      int64              `json:"created_at" bson:"created_at"`
+	CreatedBy      string             `json:"created_by" bson:"created_by"`
+	CreatedByID    string             `json:"created_by_id" bson:"created_by_id"`
+	UpdatedAt      int64              `json:"updated_at" bson:"updated_at"`
+	UpdatedBy      string             `json:"updated_by" bson:"updated_by"`
+	UpdatedByID    string             `json:"updated_by_id" bson:"updated_by_id"`
+	Branch         string             `json:"branch" bson:"branch"`
+	Number         string             `json:"number" bson:"number"`
+	Title          string             `json:"title" bson:"title"`
+	Date           int64              `json:"date" bson:"date"`
+	Participants   []Participant      `json:"participants" bson:"participants"`
+	Approvers      []Participant      `json:"approvers" bson:"approvers"`
+	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
+	Location       string             `json:"location" bson:"location"`
+	Images         []string           `json:"images" bson:"images"`
 }

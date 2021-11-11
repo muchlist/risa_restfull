@@ -224,7 +224,7 @@ func (h *reportHandler) GeneratePDFDailyReportVendor(c *fiber.Ctx) error {
 	}
 	pdfName = fmt.Sprintf("daily-vendor-%s", pdfName)
 
-	_, apiErr := h.service.GenerateReportVendorDaily(c.Context(), pdfName, branch, start, end)
+	_, apiErr := h.service.GenerateReportVendorDaily(c.Context(), pdfName, branch, start, end, false)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -266,7 +266,7 @@ func (h *reportHandler) GeneratePDFVendorDailyStartFromLast(c *fiber.Ctx) error 
 	}
 	pdfName = fmt.Sprintf("daily-vendor-%s", pdfName)
 
-	_, apiErr := h.service.GenerateReportVendorDailyStartFromLast(c.Context(), pdfName, branch)
+	_, apiErr := h.service.GenerateReportVendorDailyStartFromLast(c.Context(), pdfName, branch, false)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -297,6 +297,13 @@ func (h *reportHandler) GeneratePDFVendorMonthly(c *fiber.Ctx) error {
 	if branch == "" {
 		branch = claims.Branch
 	}
+	dataReal := false
+	realStr := c.Query("real")
+	if realStr == "" {
+		dataReal = false
+	} else {
+		dataReal = true
+	}
 
 	start := stringToInt(c.Query("start"))
 	end := stringToInt(c.Query("end"))
@@ -306,9 +313,13 @@ func (h *reportHandler) GeneratePDFVendorMonthly(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": rest_err.NewBadRequestError("gagal membuat nama pdf"), "data": nil})
 	}
-	pdfName = fmt.Sprintf("vendor-monthly%s", pdfName)
+	if dataReal {
+		pdfName = fmt.Sprintf("vendor-monthly-r%s", pdfName)
+	} else {
+		pdfName = fmt.Sprintf("vendor-monthly%s", pdfName)
+	}
 
-	_, apiErr := h.service.GenerateReportPDFVendorMonthly(c.Context(), pdfName, branch, int64(start), int64(end))
+	_, apiErr := h.service.GenerateReportPDFVendorMonthly(c.Context(), pdfName, branch, int64(start), int64(end), dataReal)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

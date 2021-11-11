@@ -36,7 +36,7 @@ type virtualTrouble struct {
 	item     string
 }
 
-func convertDailyToDailyViewData(cctv *dto.VendorCheck, altai *dto.AltaiCheck) (cctvDailyData, altaiDailyData, []virtualTrouble) {
+func convertDailyToDailyViewData(cctv *dto.VendorCheck, altai *dto.AltaiCheck, dataReal bool) (cctvDailyData, altaiDailyData, []virtualTrouble) {
 	resCctv := cctvDailyData{}
 	resAltai := altaiDailyData{}
 	deviceTroubleData := make([]virtualTrouble, 0)
@@ -51,7 +51,7 @@ func convertDailyToDailyViewData(cctv *dto.VendorCheck, altai *dto.AltaiCheck) (
 
 		for _, check := range cctv.VendorCheckItems {
 			// jika DisVendor maka kecualikan dari laporan
-			if check.DisVendor {
+			if check.DisVendor && !dataReal {
 				continue
 			}
 			if check.IsChecked {
@@ -87,7 +87,7 @@ func convertDailyToDailyViewData(cctv *dto.VendorCheck, altai *dto.AltaiCheck) (
 
 		for _, check := range altai.AltaiCheckItems {
 			// jika DisVendor maka kecualikan dari laporan
-			if check.DisVendor {
+			if check.DisVendor && !dataReal {
 				continue
 			}
 			if check.IsChecked {
@@ -129,21 +129,19 @@ type summaryMonthlyData struct {
 	notChecked string
 }
 
-func convertMonthlyViewData(cctv *dto.VenPhyCheck, altai *dto.AltaiPhyCheck) (cctvRes summaryMonthlyData, altaiRes summaryMonthlyData) {
+func convertMonthlyViewData(cctv *dto.VenPhyCheck, altai *dto.AltaiPhyCheck, dataReal bool) (cctvRes summaryMonthlyData, altaiRes summaryMonthlyData) {
 	if cctv != nil {
 		checkedTemp := 0
 		totalTemp := 0
 
 		for _, check := range cctv.VenPhyCheckItems {
-			if check.DisVendor {
+			if (check.DisVendor && !dataReal) || check.Location == location.Pulpis {
 				continue
-			}
-			if check.Location != location.Pulpis {
-				totalTemp++
 			}
 			if check.IsChecked {
 				checkedTemp++
 			}
+			totalTemp++
 		}
 
 		cctvRes.created, _ = timegen.GetTimeWithYearWITA(cctv.CreatedAt)
@@ -154,20 +152,22 @@ func convertMonthlyViewData(cctv *dto.VenPhyCheck, altai *dto.AltaiPhyCheck) (cc
 
 	if altai != nil {
 		checkedTemp := 0
+		totalTemp := 0
 
 		for _, check := range altai.AltaiPhyCheckItems {
-			if check.DisVendor {
+			if check.DisVendor && !dataReal {
 				continue
 			}
 			if check.IsChecked {
 				checkedTemp++
 			}
+			totalTemp++
 		}
 
 		altaiRes.created, _ = timegen.GetTimeWithYearWITA(altai.CreatedAt)
-		altaiRes.total = strconv.Itoa(len(altai.AltaiPhyCheckItems))
+		altaiRes.total = strconv.Itoa(totalTemp)
 		altaiRes.checked = strconv.Itoa(checkedTemp)
-		altaiRes.notChecked = strconv.Itoa(len(altai.AltaiPhyCheckItems) - checkedTemp)
+		altaiRes.notChecked = strconv.Itoa(totalTemp - checkedTemp)
 	}
 
 	return
@@ -182,7 +182,7 @@ type summaryQuarterlyData struct {
 	notMaintained string
 }
 
-func convertQuarterlyViewDataCctv(cctv *dto.VenPhyCheck) (cctvReg summaryQuarterlyData, cctvPulpis summaryQuarterlyData) {
+func convertQuarterlyViewDataCctv(cctv *dto.VenPhyCheck, dataReal bool) (cctvReg summaryQuarterlyData, cctvPulpis summaryQuarterlyData) {
 	if cctv != nil {
 		regTotal := 0
 		pulpisTotal := 0
@@ -190,7 +190,7 @@ func convertQuarterlyViewDataCctv(cctv *dto.VenPhyCheck) (cctvReg summaryQuarter
 		pulpisMaintTemp := 0
 
 		for _, check := range cctv.VenPhyCheckItems {
-			if check.DisVendor {
+			if check.DisVendor && !dataReal {
 				continue
 			}
 			// cek puplis
@@ -220,7 +220,7 @@ func convertQuarterlyViewDataCctv(cctv *dto.VenPhyCheck) (cctvReg summaryQuarter
 	return
 }
 
-func convertQuarterlyViewDataAltai(altai *dto.AltaiPhyCheck) summaryQuarterlyData {
+func convertQuarterlyViewDataAltai(altai *dto.AltaiPhyCheck, dataReal bool) summaryQuarterlyData {
 	altaiRes := summaryQuarterlyData{}
 
 	if altai != nil {
@@ -228,7 +228,7 @@ func convertQuarterlyViewDataAltai(altai *dto.AltaiPhyCheck) summaryQuarterlyDat
 		total := 0
 
 		for _, check := range altai.AltaiPhyCheckItems {
-			if check.DisVendor {
+			if check.DisVendor && !dataReal {
 				continue
 			}
 			if check.IsMaintained {

@@ -127,3 +127,10 @@ type FilterOther struct {
 	FilterName        string
 	FilterDisable     bool
 }
+
+type FilterFindPendingReport struct {
+	FilterBranch   string `json:"branch"`
+	FilterTitle    string `json:"title"`
+	CompleteStatus string `json:"complete_status"`
+	Limit          int64  `json:"limit"`
+}

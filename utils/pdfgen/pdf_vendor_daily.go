@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func GeneratePDFVendorDaily(name string, data dto.ReportResponse, pdfVendorStruct PDFVendorReq) error {
+func GeneratePDFVendorDaily(name string, data dto.ReportResponse, pdfVendorStruct PDFVendorReq, dataReal bool) error {
 
 	m := pdf.NewMaroto(consts.Portrait, consts.A4)
 	m.SetPageMargins(10, 10, 10)
@@ -32,7 +32,7 @@ func GeneratePDFVendorDaily(name string, data dto.ReportResponse, pdfVendorStruc
 	buildTitleHeadingView(m, " Cek Virtual Harian", getTealColor())
 	// ---- body
 	// ----------convert data
-	cctvDailyViewData, altaiDailyViewData, deviceProblemMap := convertDailyToDailyViewData(data.CctvDaily, data.AltaiDaily)
+	cctvDailyViewData, altaiDailyViewData, deviceProblemMap := convertDailyToDailyViewData(data.CctvDaily, data.AltaiDaily, dataReal)
 	buildCCTVDailyView(m, cctvDailyViewData, altaiDailyViewData)
 	// ---- rekap perangkat yang perlu ditangani
 	if len(deviceProblemMap) != 0 {
@@ -47,7 +47,7 @@ func GeneratePDFVendorDaily(name string, data dto.ReportResponse, pdfVendorStruc
 
 	// MONTHLY
 	//----------convert data
-	cctvMonthlyViewData, altaiMonthlyViewData := convertMonthlyViewData(data.CctvMonthly, data.AltaiMonthly)
+	cctvMonthlyViewData, altaiMonthlyViewData := convertMonthlyViewData(data.CctvMonthly, data.AltaiMonthly, dataReal)
 	buildTitleHeadingView(m, " Cek Fisik Bulanan", getOrangeColor())
 	buildCCTVMonthlyView(m, cctvMonthlyViewData, altaiMonthlyViewData)
 
@@ -59,8 +59,8 @@ func GeneratePDFVendorDaily(name string, data dto.ReportResponse, pdfVendorStruc
 
 	// QUARTERLY
 	//----------convert data
-	regCctvQuarterlyViewData, pulpisCctvQuarterlyViewData := convertQuarterlyViewDataCctv(data.CctvQuarterly)
-	altaiQuarterlyViewData := convertQuarterlyViewDataAltai(data.AltaiQuarterly)
+	regCctvQuarterlyViewData, pulpisCctvQuarterlyViewData := convertQuarterlyViewDataCctv(data.CctvQuarterly, dataReal)
+	altaiQuarterlyViewData := convertQuarterlyViewDataAltai(data.AltaiQuarterly, dataReal)
 	buildTitleHeadingView(m, " Cek Fisik Triwulan", getPinkColor())
 	buildCCTVQuarterlyView(m, regCctvQuarterlyViewData, altaiQuarterlyViewData)
 
