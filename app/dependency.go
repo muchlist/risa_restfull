@@ -91,7 +91,7 @@ func setupDependency() {
 	altaiPhyCheckService = service.NewAltaiPhyCheckService(altaiPhyCheckDao, genUnitDao, otherDao, historyService)
 	configCheckService = service.NewConfigCheckService(configCheckDao, genUnitDao, otherDao, historyService)
 	speedService = service.NewSpeedTestService(speedDao)
-	prService = service.NewPRService(prDao, genUnitDao, userDao)
+	prService = service.NewPRService(prDao, genUnitDao, userDao, fcmClient)
 	reportService = service.NewReportService(service.ReportParams{
 		History:       historyDao,
 		CheckIT:       checkDao,

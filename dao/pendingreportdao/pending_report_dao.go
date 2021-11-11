@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/db"
 	"github.com/muchlist/risa_restfull/dto"
 	"go.mongodb.org/mongo-driver/bson"
@@ -50,7 +51,7 @@ func NewPR() PRAssumer {
 type PRAssumer interface {
 	InsertPR(ctx context.Context, input dto.PendingReportModel) (*string, rest_err.APIError)
 	EditPR(ctx context.Context, input dto.PendingReportEditModel) (*dto.PendingReportModel, rest_err.APIError)
-	ChangeCompleteStatus(ctx context.Context, id primitive.ObjectID, completeStatus int, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
+	ChangeCompleteStatus(ctx context.Context, id primitive.ObjectID, completeStatus int, filterCompleteStatus int, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
 	AddApprover(ctx context.Context, input ParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
 	AddParticipant(ctx context.Context, input ParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
 	EditParticipantApprover(ctx context.Context, input EditParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
@@ -83,7 +84,6 @@ func (pd *prDao) InsertPR(ctx context.Context, input dto.PendingReportModel) (*s
 	return &insertID, nil
 }
 
-// todo edit tidak bisa dilakukan jika status komplit suda mencapai sekian
 func (pd *prDao) EditPR(ctx context.Context, input dto.PendingReportEditModel) (*dto.PendingReportModel, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
@@ -95,9 +95,10 @@ func (pd *prDao) EditPR(ctx context.Context, input dto.PendingReportEditModel) (
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyID:        input.FilterID,
-		keyBranch:    input.FilterBranch,
-		keyUpdatedAt: input.FilterTimestamp,
+		keyID:             input.FilterID,
+		keyBranch:         input.FilterBranch,
+		keyUpdatedAt:      input.FilterTimestamp,
+		keyCompleteStatus: enum.Draft,
 	}
 
 	update := bson.M{
@@ -117,7 +118,7 @@ func (pd *prDao) EditPR(ctx context.Context, input dto.PendingReportEditModel) (
 	var res dto.PendingReportModel
 	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&res); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch timestamp")
+			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch timestamp complete_status")
 		}
 
 		logger.Error("Gagal mendapatkan doc dari database (EditPR)", err)
@@ -128,7 +129,7 @@ func (pd *prDao) EditPR(ctx context.Context, input dto.PendingReportEditModel) (
 	return &res, nil
 }
 
-func (pd *prDao) ChangeCompleteStatus(ctx context.Context, id primitive.ObjectID, completeStatus int, filterBranch string) (*dto.PendingReportModel, rest_err.APIError) {
+func (pd *prDao) ChangeCompleteStatus(ctx context.Context, id primitive.ObjectID, completeStatus int, filterCompleteStatus int, filterBranch string) (*dto.PendingReportModel, rest_err.APIError) {
 	coll := db.DB.Collection(keyCollection)
 	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
 	defer cancel()
@@ -137,23 +138,25 @@ func (pd *prDao) ChangeCompleteStatus(ctx context.Context, id primitive.ObjectID
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyID:     id,
-		keyBranch: filterBranch,
+		keyID:             id,
+		keyBranch:         filterBranch,
+		keyCompleteStatus: filterCompleteStatus,
 	}
 
 	update := bson.M{
 		"$set": bson.M{
 			keyCompleteStatus: completeStatus,
+			keyUpdatedAt:      time.Now().Unix(),
 		},
 	}
 
 	var res dto.PendingReportModel
 	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&res); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch")
+			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch complete_status")
 		}
 
-		logger.Error("Gagal mendapatkan doc dari database (EditPR)", err)
+		logger.Error("Gagal mendapatkan doc dari database (ChangeCompleteStatus)", err)
 		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan doc dari database", err)
 		return nil, apiErr
 	}
@@ -363,8 +366,9 @@ func (pd *prDao) UploadImage(ctx context.Context, id primitive.ObjectID, imagePa
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyID:     id,
-		keyBranch: strings.ToUpper(filterBranch),
+		keyID:             id,
+		keyBranch:         strings.ToUpper(filterBranch),
+		keyCompleteStatus: enum.Draft,
 	}
 
 	update := bson.M{
@@ -376,7 +380,7 @@ func (pd *prDao) UploadImage(ctx context.Context, id primitive.ObjectID, imagePa
 	var res dto.PendingReportModel
 	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&res); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch")
+			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch complete_status")
 		}
 
 		logger.Error("Gagal mendapatkan doc dari database (UploadImage)", err)
@@ -396,8 +400,9 @@ func (pd *prDao) DeleteImage(ctx context.Context, id primitive.ObjectID, imagePa
 	opts.SetReturnDocument(1)
 
 	filter := bson.M{
-		keyID:     id,
-		keyBranch: strings.ToUpper(filterBranch),
+		keyID:             id,
+		keyBranch:         strings.ToUpper(filterBranch),
+		keyCompleteStatus: enum.Draft,
 	}
 
 	var pr dto.PendingReportModel

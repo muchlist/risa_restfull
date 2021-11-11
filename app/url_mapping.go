@@ -232,7 +232,9 @@ func mapUrls(app *fiber.App) {
 	api.Get("/add-approver-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.AddApprover)
 	api.Get("/remove-party-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.RemoveParticipant)
 	api.Get("/remove-approver-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.RemoveApprover)
-	api.Get("/sign-pending-report/:id", middleware.NormalAuth(), prHandler.SigningDoc)
+	api.Post("/send-sign/:id", middleware.NormalAuth(), prHandler.SendToSignMode)
+	api.Post("/send-draft/:id", middleware.NormalAuth(), prHandler.SendToDraftMode)
+	api.Post("/sign-pending-report/:id", middleware.NormalAuth(), prHandler.SigningDoc)
 	api.Post("/pending-report-image/:id", middleware.NormalAuth(), prHandler.UploadImage)
 	api.Post("/delete-pending-report-image/:id/:image", middleware.NormalAuth(), prHandler.DeleteImage)
 

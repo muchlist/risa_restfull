@@ -119,6 +119,28 @@ func (pr *prHandler) RemoveApprover(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
 
+func (pr *prHandler) SendToSignMode(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+
+	res, apiErr := pr.service.SendToSigningMode(c.Context(), *claims, id)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	return c.JSON(fiber.Map{"error": nil, "data": res})
+}
+
+func (pr *prHandler) SendToDraftMode(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+
+	res, apiErr := pr.service.SendToDraftMode(c.Context(), *claims, id)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	return c.JSON(fiber.Map{"error": nil, "data": res})
+}
+
 func (pr *prHandler) SigningDoc(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")

@@ -2,7 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
+	"github.com/muchlist/risa_restfull/clients/fcm"
+	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/pendingreportdao"
 	"github.com/muchlist/risa_restfull/dao/userdao"
@@ -16,11 +20,13 @@ func NewPRService(
 	prDao pendingreportdao.PRAssumer,
 	genDao genunitdao.GenUnitLoader,
 	userDao userdao.UserLoader,
+	fcmClient fcm.ClientAssumer,
 ) PRServiceAssumer {
 	return &prService{
 		daoP: prDao,
 		daoG: genDao,
 		daoU: userDao,
+		fcm:  fcmClient,
 	}
 }
 
@@ -28,6 +34,7 @@ type prService struct {
 	daoP pendingreportdao.PRAssumer
 	daoG genunitdao.GenUnitLoader
 	daoU userdao.UserLoader
+	fcm  fcm.ClientAssumer
 }
 
 // hapus participant dan approver
@@ -40,6 +47,8 @@ type PRServiceAssumer interface {
 	AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
+	SendToSigningMode(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
+	SendToDraftMode(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
 	SignDocument(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
 	EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReportModel, rest_err.APIError)
 	DeleteImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
@@ -247,10 +256,18 @@ func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	// get document dan cek apakah user tersebut ada didalam participant atau approver
+	// get document dan cek apakah levelnya memenuhi syarat
+	// dan user ada didalam participant atau approver
 	doc, restErr := ps.daoP.GetPRByID(ctx, oid, "")
 	if restErr != nil {
 		return nil, restErr
+	}
+
+	if doc.CompleteStatus != enum.NeedSign {
+		if doc.CompleteStatus == enum.CompletedSign {
+			return nil, rest_err.NewBadRequestError("Dokumen yang sudah selesai tidak dapat ditandatangani")
+		}
+		return nil, rest_err.NewBadRequestError("Dokumen masih dalam status draft")
 	}
 
 	var userExist bool
@@ -292,14 +309,113 @@ func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id
 	// cek apakah participant sudah ttd semua
 	// jika iya kirim notif ke approver
 	completeParticipantSign := true
-	for _, val := range doc.Approvers {
+	completeApproverSign := true
+	for _, val := range doc.Participants {
 		if val.Sign == "" {
 			completeParticipantSign = false
 		}
 	}
 
 	if completeParticipantSign {
-		// todo kirim notif
+		// create map string approver id
+		approverMaps := make(map[string]struct{}, 0)
+		for _, apr := range doc.Approvers {
+			if apr.Sign == "" {
+				approverMaps[apr.UserID] = struct{}{}
+				completeApproverSign = false
+			}
+		}
+
+		go func(aprMap map[string]struct{}) {
+			users, err := ps.daoU.FindUser(ctx, user.Branch)
+			if err != nil {
+				logger.Error("mendapatkan user gagal saat menambahkan fcm (SignDocument)", err)
+			}
+			var tokens []string
+			for _, u := range users {
+				// skip jika user == user yang mengirim
+				if u.ID == user.Identity {
+					continue
+				}
+				_, exist := aprMap[u.ID]
+				if exist {
+					tokens = append(tokens, u.FcmToken)
+				}
+			}
+			// firebase
+			ps.fcm.SendMessage(fcm.Payload{
+				Title:          fmt.Sprint("Dokumen memerlukan persetujuan"),
+				Message:        fmt.Sprintf("Dokumen dengan judul %s memerlukan persetujuan", doc.Title),
+				ReceiverTokens: tokens,
+			})
+		}(approverMaps)
+	}
+
+	if completeApproverSign {
+		doc, restErr = ps.daoP.ChangeCompleteStatus(ctx, oid, enum.CompletedSign, enum.NeedSign, user.Branch)
+		if restErr != nil {
+			logger.Error(fmt.Sprintf("gagal melakukan complete status document berita acara dengan oid : %s", id), restErr)
+		}
+	}
+
+	return doc, restErr
+}
+
+func (ps *prService) SendToSigningMode(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	doc, restErr := ps.daoP.ChangeCompleteStatus(ctx, oid, enum.NeedSign, enum.Draft, user.Branch)
+	if restErr != nil {
+		return nil, restErr
+	}
+
+	// create map string approver id
+	participantMaps := make(map[string]struct{}, 0)
+	for _, apr := range doc.Participants {
+		participantMaps[apr.UserID] = struct{}{}
+	}
+
+	go func(partyMap map[string]struct{}) {
+		users, err := ps.daoU.FindUser(ctx, user.Branch)
+		if err != nil {
+			logger.Error("mendapatkan user gagal saat menambahkan fcm (SendToSigningMode)", err)
+		}
+		var tokens []string
+		for _, u := range users {
+			// skip jika user == user yang mengirim
+			if u.ID == user.Identity {
+				continue
+			}
+			_, exist := partyMap[u.ID]
+			if exist {
+				tokens = append(tokens, u.FcmToken)
+			}
+		}
+		// firebase
+		ps.fcm.SendMessage(fcm.Payload{
+			Title:          fmt.Sprint("Dokumen memerlukan tanda tangan"),
+			Message:        fmt.Sprintf("Dokumen dengan judul %s memerlukan tanda tangan", doc.Title),
+			ReceiverTokens: tokens,
+		})
+	}(participantMaps)
+
+	// kirim notif ke participant
+
+	return doc, restErr
+}
+
+func (ps *prService) SendToDraftMode(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	doc, restErr := ps.daoP.ChangeCompleteStatus(ctx, oid, enum.Draft, enum.NeedSign, user.Branch)
+	if restErr != nil {
+		return nil, restErr
 	}
 
 	return doc, restErr
