@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -58,6 +59,7 @@ type PRAssumer interface {
 	UploadImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
 	DeleteImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
 	GetPRByID(ctx context.Context, id primitive.ObjectID, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
+	FindDoc(ctx context.Context, inFilter dto.FilterFindPendingReport) ([]dto.PendingReportMin, rest_err.APIError)
 }
 
 type prDao struct{}
@@ -464,4 +466,73 @@ func (pd *prDao) GetPRByID(ctx context.Context, id primitive.ObjectID, branchIfS
 	}
 
 	return &res, nil
+}
+
+func (pd *prDao) FindDoc(ctx context.Context, inFilter dto.FilterFindPendingReport) ([]dto.PendingReportMin, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
+	defer cancel()
+
+	inFilter.FilterBranch = strings.ToUpper(inFilter.FilterBranch)
+
+	// filter
+	filter := bson.M{}
+
+	if inFilter.FilterBranch != "" {
+		filter[keyBranch] = inFilter.FilterBranch
+	}
+
+	// complete status
+	if inFilter.CompleteStatus != "" {
+		// cek jika multi status (pisah dengan koma)
+		if strings.Contains(inFilter.CompleteStatus, ",") {
+			completeString := strings.Split(inFilter.CompleteStatus, ",")
+			completeInts := make([]int, 0)
+			for _, val := range completeString {
+				completeInt, err := strconv.Atoi(val)
+				if err != nil {
+					continue
+				}
+				completeInts = append(completeInts, completeInt)
+			}
+			filter[keyCompleteStatus] = bson.M{"$in": completeInts}
+		} else {
+			completeStatus, err := strconv.Atoi(inFilter.CompleteStatus)
+			if err == nil {
+				// hanya jika error nil , pasang filter
+				filter[keyCompleteStatus] = completeStatus
+			}
+		}
+	}
+
+	// filter title
+	if inFilter.FilterTitle != "" {
+		filter[keyTitle] = bson.M{
+			"$regex": fmt.Sprintf(".*%s", inFilter.FilterTitle),
+		}
+	}
+
+	if inFilter.Limit == 0 {
+		inFilter.Limit = 100
+	}
+
+	opts := options.Find()
+	opts.SetSort(bson.D{{Key: keyID, Value: -1}})
+	opts.SetLimit(inFilter.Limit)
+
+	cursor, err := coll.Find(ctxt, filter, opts)
+	if err != nil {
+		logger.Error("Gagal mendapatkan daftar document dari database (FindDoc)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return []dto.PendingReportMin{}, apiErr
+	}
+
+	docList := make([]dto.PendingReportMin, 0)
+	if err = cursor.All(ctxt, &docList); err != nil {
+		logger.Error("Gagal decode docList cursor ke objek slice (FindDoc)", err)
+		apiErr := rest_err.NewInternalServerError("Database error", err)
+		return []dto.PendingReportMin{}, apiErr
+	}
+
+	return docList, nil
 }

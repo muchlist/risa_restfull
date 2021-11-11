@@ -198,3 +198,18 @@ func (pr *prHandler) Get(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
+
+func (pr *prHandler) Find(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	var filter dto.FilterFindPendingReport
+	filter.FilterBranch = c.Query("branch")
+	filter.Limit = int64(sfunc.StrToInt(c.Query("limit"), 100))
+	filter.CompleteStatus = c.Query("complete")
+	filter.FilterTitle = c.Query("title")
+
+	res, apiErr := pr.service.FindDocs(c.Context(), *claims, filter)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	return c.JSON(fiber.Map{"error": nil, "data": res})
+}

@@ -45,6 +45,7 @@ type PRServiceAssumer interface {
 	DeleteImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
 	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
 	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
+	FindDocs(ctx context.Context, user mjwt.CustomClaim, filter dto.FilterFindPendingReport) ([]dto.PendingReportMin, rest_err.APIError)
 }
 
 func (ps *prService) InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError) {
@@ -331,4 +332,11 @@ func (ps *prService) GetPRByID(ctx context.Context, id string, branchIfSpecific 
 	}
 
 	return ps.daoP.GetPRByID(ctx, oid, branchIfSpecific)
+}
+
+func (ps *prService) FindDocs(ctx context.Context, user mjwt.CustomClaim, filter dto.FilterFindPendingReport) ([]dto.PendingReportMin, rest_err.APIError) {
+	if filter.FilterBranch == "" {
+		filter.FilterBranch = user.Branch
+	}
+	return ps.daoP.FindDoc(ctx, filter)
 }

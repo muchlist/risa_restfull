@@ -226,6 +226,7 @@ func mapUrls(app *fiber.App) {
 	// PENDING-REPORT
 	api.Post("/pending-report", middleware.NormalAuth(), prHandler.Insert)
 	api.Get("/pending-report/:id", middleware.NormalAuth(), prHandler.Get)
+	api.Get("/pending-report", middleware.NormalAuth(), prHandler.Find)
 	api.Put("/pending-report/:id", middleware.NormalAuth(), prHandler.Edit)
 	api.Get("/add-party-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.AddParticipant)
 	api.Get("/add-approver-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.AddApprover)

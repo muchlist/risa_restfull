@@ -147,3 +147,22 @@ type PendingReportResponse struct {
 	Location       string          `json:"location"`
 	Images         []string        `json:"images"`
 }
+
+type PendingReportMin struct {
+	ID             primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	CreatedAt      int64              `json:"created_at" bson:"created_at"`
+	CreatedBy      string             `json:"created_by" bson:"created_by"`
+	CreatedByID    string             `json:"created_by_id" bson:"created_by_id"`
+	UpdatedAt      int64              `json:"updated_at" bson:"updated_at"`
+	UpdatedBy      string             `json:"updated_by" bson:"updated_by"`
+	UpdatedByID    string             `json:"updated_by_id" bson:"updated_by_id"`
+	Branch         string             `json:"branch" bson:"branch"`
+	Number         string             `json:"number" bson:"number"`
+	Title          string             `json:"title" bson:"title"`
+	Date           int64              `json:"date" bson:"date"`
+	Participants   []Participant      `json:"participants" bson:"participants"`
+	Approvers      []Participant      `json:"approvers" bson:"approvers"`
+	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
+	Location       string             `json:"location" bson:"location"`
+	Images         []string           `json:"images" bson:"images"`
+}
