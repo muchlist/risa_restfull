@@ -272,7 +272,7 @@ func (s *stockDao) FindStock(ctx context.Context, filterA dto.FilterBranchNameCa
 	}
 
 	opts := options.Find()
-	opts.SetSort(bson.D{{keyStoCategory, -1}}) //nolint:govet
+	opts.SetSort(bson.D{{Key: keyStoCategory, Value: -1}, {Key: keyStoName, Value: 1}})
 	opts.SetLimit(500)
 
 	cursor, err := coll.Find(ctxt, filter, opts)
