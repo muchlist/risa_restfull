@@ -39,7 +39,7 @@ type cctvService struct {
 type CctvServiceAssumer interface {
 	InsertCctv(ctx context.Context, user mjwt.CustomClaim, input dto.CctvRequest) (*string, rest_err.APIError)
 	EditCctv(ctx context.Context, user mjwt.CustomClaim, cctvID string, input dto.CctvEditRequest) (*dto.Cctv, rest_err.APIError)
-	DeleteCctv(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	DeleteCctv(ctx context.Context, user mjwt.CustomClaim, id string, force bool) rest_err.APIError
 	DisableCctv(ctx context.Context, cctvID string, user mjwt.CustomClaim, value bool) (*dto.Cctv, rest_err.APIError)
 	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.Cctv, rest_err.APIError)
 
@@ -266,19 +266,23 @@ func (c *cctvService) EditCctv(ctx context.Context, user mjwt.CustomClaim, cctvI
 	return cctvEdited, nil
 }
 
-func (c *cctvService) DeleteCctv(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
+func (c *cctvService) DeleteCctv(ctx context.Context, user mjwt.CustomClaim, id string, force bool) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
-	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
+	timeMinusOneDay := time.Now().AddDate(0, 0, -1).Unix()
+	if force {
+		timeMinusOneDay = 0
+	}
+
 	// DB
 	_, err := c.daoC.DeleteCctv(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
-		FilterCreateGTE: timeMinusOneDay.Unix(),
+		FilterCreateGTE: timeMinusOneDay,
 	})
 	if err != nil {
 		return err

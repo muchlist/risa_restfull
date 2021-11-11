@@ -39,7 +39,7 @@ type stockService struct {
 type StockServiceAssumer interface {
 	InsertStock(ctx context.Context, user mjwt.CustomClaim, input dto.StockRequest) (*string, rest_err.APIError)
 	EditStock(ctx context.Context, user mjwt.CustomClaim, stockID string, input dto.StockEditRequest) (*dto.Stock, rest_err.APIError)
-	DeleteStock(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	DeleteStock(ctx context.Context, user mjwt.CustomClaim, id string, force bool) rest_err.APIError
 	DisableStock(ctx context.Context, stockID string, user mjwt.CustomClaim, value bool) (*dto.Stock, rest_err.APIError)
 	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.Stock, rest_err.APIError)
 	ChangeQtyStock(ctx context.Context, user mjwt.CustomClaim, stockID string, data dto.StockChangeRequest) (*dto.Stock, rest_err.APIError)
@@ -156,19 +156,22 @@ func (s *stockService) EditStock(ctx context.Context, user mjwt.CustomClaim, sto
 	return stockEdited, nil
 }
 
-func (s *stockService) DeleteStock(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
+func (s *stockService) DeleteStock(ctx context.Context, user mjwt.CustomClaim, id string, force bool) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
-	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
+	timeMinusOneDay := time.Now().AddDate(0, 0, -1).Unix()
+	if force {
+		timeMinusOneDay = 0
+	}
 	// DB
 	_, err := s.daoS.DeleteStock(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
-		FilterCreateGTE: timeMinusOneDay.Unix(),
+		FilterCreateGTE: timeMinusOneDay,
 	})
 	if err != nil {
 		return err

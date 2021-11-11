@@ -46,7 +46,7 @@ type historyService struct {
 type HistoryServiceAssumer interface {
 	InsertHistory(ctx context.Context, user mjwt.CustomClaim, input dto.HistoryRequest) (*string, rest_err.APIError)
 	EditHistory(ctx context.Context, user mjwt.CustomClaim, historyID string, input dto.HistoryEditRequest) (*dto.HistoryResponse, rest_err.APIError)
-	DeleteHistory(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	DeleteHistory(ctx context.Context, user mjwt.CustomClaim, id string, force bool) rest_err.APIError
 	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.HistoryResponse, rest_err.APIError)
 
 	GetHistory(ctx context.Context, parentID string, branchIfSpecific string) (*dto.HistoryResponse, rest_err.APIError)
@@ -280,26 +280,27 @@ func (h *historyService) EditHistory(ctx context.Context, user mjwt.CustomClaim,
 	return historyEdited, nil
 }
 
-func (h *historyService) DeleteHistory(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
+func (h *historyService) DeleteHistory(ctx context.Context, user mjwt.CustomClaim, id string, force bool) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
-	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
-	timeUnix := timeMinusOneDay.Unix()
-
+	timeMinusOneDay := time.Now().AddDate(0, 0, -1).Unix()
+	if force {
+		timeMinusOneDay = 0
+	}
 	// if admin can delete history without limit time
 	if sfunc.InSlice(roles.RoleAdmin, user.Roles) {
-		timeUnix = 0
+		timeMinusOneDay = 0
 	}
 
 	// DB
 	history, err := h.daoH.DeleteHistory(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
-		FilterCreateGTE: timeUnix,
+		FilterCreateGTE: timeMinusOneDay,
 	})
 	if err != nil {
 		return err

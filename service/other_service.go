@@ -39,7 +39,7 @@ type otherService struct {
 type OtherServiceAssumer interface {
 	InsertOther(ctx context.Context, user mjwt.CustomClaim, input dto.OtherRequest) (*string, rest_err.APIError)
 	EditOther(ctx context.Context, user mjwt.CustomClaim, otherID string, input dto.OtherEditRequest) (*dto.Other, rest_err.APIError)
-	DeleteOther(ctx context.Context, user mjwt.CustomClaim, subCategory string, id string) rest_err.APIError
+	DeleteOther(ctx context.Context, user mjwt.CustomClaim, subCategory string, id string, force bool) rest_err.APIError
 	DisableOther(ctx context.Context, otherID string, user mjwt.CustomClaim, subCategory string, value bool) (*dto.Other, rest_err.APIError)
 	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.Other, rest_err.APIError)
 
@@ -277,7 +277,7 @@ func (c *otherService) EditOther(ctx context.Context, user mjwt.CustomClaim, oth
 	return otherEdited, nil
 }
 
-func (c *otherService) DeleteOther(ctx context.Context, user mjwt.CustomClaim, subCategory string, otherID string) rest_err.APIError {
+func (c *otherService) DeleteOther(ctx context.Context, user mjwt.CustomClaim, subCategory string, otherID string, force bool) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(otherID)
 	if errT != nil {
 		return rest_err.NewBadRequestError(errT.Error())
@@ -285,13 +285,16 @@ func (c *otherService) DeleteOther(ctx context.Context, user mjwt.CustomClaim, s
 	}
 
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
-	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
+	timeMinusOneDay := time.Now().AddDate(0, 0, -1).Unix()
+	if force {
+		timeMinusOneDay = int64(0)
+	}
 	// DB
 	_, err := c.daoO.DeleteOther(ctx, dto.FilterIDBranchCategoryCreateGte{
 		FilterID:          oid,
 		FilterBranch:      user.Branch,
 		FilterSubCategory: subCategory,
-		FilterCreateGTE:   timeMinusOneDay.Unix(),
+		FilterCreateGTE:   timeMinusOneDay,
 	})
 	if err != nil {
 		return err

@@ -145,13 +145,18 @@ func (ot *otherHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 	cat := c.Params("cat")
+	forceStr := c.Query("force")
+	var force bool
+	if forceStr == "1" {
+		force = true
+	}
 
 	// cat validation
 	if apiErr := subCategoryValidation(cat); apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	apiErr := ot.service.DeleteOther(c.Context(), *claims, cat, id)
+	apiErr := ot.service.DeleteOther(c.Context(), *claims, cat, id, force)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

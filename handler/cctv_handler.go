@@ -126,8 +126,13 @@ func (ctv *cctvHandler) DisableCctv(c *fiber.Ctx) error {
 func (ctv *cctvHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
+	forceStr := c.Query("force")
+	var force bool
+	if forceStr == "1" {
+		force = true
+	}
 
-	apiErr := ctv.service.DeleteCctv(c.Context(), *claims, id)
+	apiErr := ctv.service.DeleteCctv(c.Context(), *claims, id, force)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
