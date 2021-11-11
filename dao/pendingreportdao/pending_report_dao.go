@@ -39,13 +39,7 @@ const (
 	keyLocation       = "location"
 	keyImages         = "images"
 
-	keyParticipantsID     = "id" // id inner participant
-	keyParticipantXID     = "participants.id"
-	keyApproverXID        = "approvers.id"
-	keyParticipantXSign   = "participants.$.sign"
-	keyParticipantXSignAt = "participants.$.sign_at"
-	keyApproverXSign      = "approvers.$.sign"
-	keyApproverXSignAt    = "approvers.$.sign_at"
+	keyParticipantsID = "id" // id inner participant
 )
 
 func NewPR() PRAssumer {
@@ -55,7 +49,6 @@ func NewPR() PRAssumer {
 type PRAssumer interface {
 	InsertPR(ctx context.Context, input dto.PendingReportModel) (*string, rest_err.APIError)
 	EditPR(ctx context.Context, input dto.PendingReportEditModel) (*dto.PendingReportModel, rest_err.APIError)
-	GetPRByID(ctx context.Context, id primitive.ObjectID, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
 	ChangeCompleteStatus(ctx context.Context, id primitive.ObjectID, completeStatus int, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
 	AddApprover(ctx context.Context, input ParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
 	AddParticipant(ctx context.Context, input ParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
@@ -64,6 +57,7 @@ type PRAssumer interface {
 	RemoveParticipant(ctx context.Context, input ParticipantParams) (*dto.PendingReportModel, rest_err.APIError)
 	UploadImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
 	DeleteImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
+	GetPRByID(ctx context.Context, id primitive.ObjectID, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
 }
 
 type prDao struct{}

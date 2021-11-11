@@ -30,12 +30,6 @@ type prService struct {
 	daoU userdao.UserLoader
 }
 
-// TODO insertPR validation V
-// TODO Insert participant itu gimana atuh, apakah dari user yang sudah ada atau input sendiri ?
-// jika user ID ada maka ambil dari user, jika tidak ada maka inputan dari user. atau buat dua service yang berbeda ?
-// TODO Description type ,
-// TODO Complete status report ada berapa level
-// TODO insert approver sama dengan insert participant
 // hapus participant dan approver
 // geser2 level complete status
 // bikin pdf
@@ -44,11 +38,13 @@ type PRServiceAssumer interface {
 	InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError)
 	AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
-	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	SignDocument(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
 	EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReportModel, rest_err.APIError)
+	DeleteImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
+	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
+	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
 }
 
 func (ps *prService) InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError) {
@@ -84,15 +80,6 @@ func (ps *prService) InsertPR(ctx context.Context, user mjwt.CustomClaim, input 
 	})
 
 	return res, err
-}
-
-func (ps *prService) GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError) {
-	oid, errT := primitive.ObjectIDFromHex(id)
-	if errT != nil {
-		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
-	}
-
-	return ps.daoP.GetPRByID(ctx, oid, branchIfSpecific)
 }
 
 func (ps *prService) EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReportModel, rest_err.APIError) {
@@ -315,4 +302,33 @@ func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id
 	}
 
 	return doc, restErr
+}
+
+// PutImage memasukkan lokasi file (path) ke dalam database violation dengan mengecek kesesuaian branch
+func (ps *prService) PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	return ps.daoP.UploadImage(ctx, oid, imagePath, user.Branch)
+}
+
+// DeleteImage menghapus lokasi file (path) ke dalam database violation dengan mengecek kesesuaian branch
+func (ps *prService) DeleteImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	return ps.daoP.DeleteImage(ctx, oid, imagePath, user.Branch)
+}
+
+func (ps *prService) GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError) {
+	oid, errT := primitive.ObjectIDFromHex(id)
+	if errT != nil {
+		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
+	}
+
+	return ps.daoP.GetPRByID(ctx, oid, branchIfSpecific)
 }

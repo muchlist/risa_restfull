@@ -8,6 +8,8 @@ import (
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/service"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
+	"time"
 )
 
 func NewPRHandler(prService service.PRServiceAssumer) *prHandler {
@@ -42,22 +44,6 @@ func (pr *prHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 	res := fmt.Sprintf("Menambahkan doc berhasil, ID: %s", *insertID)
-	return c.JSON(fiber.Map{"error": nil, "data": res})
-}
-
-func (pr *prHandler) Get(c *fiber.Ctx) error {
-	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
-	id := c.Params("id")
-	branch := c.Query("branch")
-
-	if branch == "" {
-		branch = claims.Branch
-	}
-
-	res, apiErr := pr.service.GetPRByID(c.Context(), id, branch)
-	if apiErr != nil {
-		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
-	}
 	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
 
@@ -138,6 +124,75 @@ func (pr *prHandler) SigningDoc(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	res, apiErr := pr.service.SignDocument(c.Context(), *claims, id)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	return c.JSON(fiber.Map{"error": nil, "data": res})
+}
+
+func (pr *prHandler) UploadImage(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+
+	// cek apakah ID && branch ada
+	_, apiErr := pr.service.GetPRByID(c.Context(), id, claims.Branch)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	randomName := fmt.Sprintf("%s%v", id, time.Now().Unix())
+	// simpan image
+	pathInDB, apiErr := saveImage(c, *claims, "document", randomName, false)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	// update path image di database
+	docResult, apiErr := pr.service.PutImage(c.Context(), *claims, id, pathInDB)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": docResult})
+}
+
+func (pr *prHandler) DeleteImage(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+	pathImage := fmt.Sprintf("image/document/%s", c.Params("image"))
+
+	// cek apakah ID violation && branch ada
+	violation, apiErr := pr.service.GetPRByID(c.Context(), id, claims.Branch)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	// untuk sementara gambar tidak dihapus dari system
+	imageExist := sfunc.InSlice(pathImage, violation.Images)
+	if !imageExist {
+		apiErr := rest_err.NewBadRequestError("gambar tidak ditemukan")
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	// update path image di database
+	docResult, apiErr := pr.service.DeleteImage(c.Context(), *claims, id, pathImage)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": docResult})
+}
+
+func (pr *prHandler) Get(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+	branch := c.Query("branch")
+
+	if branch == "" {
+		branch = claims.Branch
+	}
+
+	res, apiErr := pr.service.GetPRByID(c.Context(), id, branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
