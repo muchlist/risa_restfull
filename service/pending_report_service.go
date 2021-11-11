@@ -288,7 +288,7 @@ func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id
 	}
 
 	// update pending report dengan data approvers dan participant terbaru
-	return ps.daoP.EditParticipantApprover(ctx, pendingreportdao.EditParticipantParams{
+	doc, restErr = ps.daoP.EditParticipantApprover(ctx, pendingreportdao.EditParticipantParams{
 		ID:           oid,
 		FilterBranch: user.Branch,
 		Participant:  doc.Participants,
@@ -297,4 +297,22 @@ func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id
 		UpdatedBy:    user.Name,
 		UpdatedByID:  user.Identity,
 	})
+	if restErr != nil {
+		return nil, restErr
+	}
+
+	// cek apakah participant sudah ttd semua
+	// jika iya kirim notif ke approver
+	completeParticipantSign := true
+	for _, val := range doc.Approvers {
+		if val.Sign == "" {
+			completeParticipantSign = false
+		}
+	}
+
+	if completeParticipantSign {
+		// todo kirim notif
+	}
+
+	return doc, restErr
 }

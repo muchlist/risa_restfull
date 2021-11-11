@@ -359,11 +359,92 @@ func (pd *prDao) EditParticipantApprover(ctx context.Context, input EditParticip
 }
 
 func (pd *prDao) UploadImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReportModel, rest_err.APIError) {
-	panic("implement me")
+	coll := db.DB.Collection(keyCollection)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyID:     id,
+		keyBranch: strings.ToUpper(filterBranch),
+	}
+
+	update := bson.M{
+		"$push": bson.M{
+			keyImages: imagePath,
+		},
+	}
+
+	var res dto.PendingReportModel
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&res); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, rest_err.NewBadRequestError("Doc tidak diupdate : validasi id branch")
+		}
+
+		logger.Error("Gagal mendapatkan doc dari database (UploadImage)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan doc dari database", err)
+		return nil, apiErr
+	}
+
+	return &res, nil
 }
 
 func (pd *prDao) DeleteImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReportModel, rest_err.APIError) {
-	panic("implement me")
+	coll := db.DB.Collection(keyCollection)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
+	defer cancel()
+
+	opts := options.FindOneAndUpdate()
+	opts.SetReturnDocument(1)
+
+	filter := bson.M{
+		keyID:     id,
+		keyBranch: strings.ToUpper(filterBranch),
+	}
+
+	var pr dto.PendingReportModel
+	if err := coll.FindOne(ctxt, filter).Decode(&pr); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, rest_err.NewBadRequestError(fmt.Sprintf("delete image gagal, doc dengan id %s tidak ditemukan", id.Hex()))
+		}
+
+		logger.Error("Delete image doc dari db gagal, (DeleteImage)", err)
+		apiErr := rest_err.NewInternalServerError("Delete image doc dari db gagal", err)
+		return nil, apiErr
+	}
+
+	// mendelete dari data yang sudah ditemukan
+	var finalImages []string
+	for _, image := range pr.Images {
+		if image != imagePath {
+			finalImages = append(finalImages, image)
+		}
+	}
+
+	// jika final images 0 maka isikan slice kosong, untuk menghindari nill di db
+	if len(finalImages) == 0 {
+		finalImages = []string{}
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			keyImages: finalImages,
+		},
+	}
+
+	if err := coll.FindOneAndUpdate(ctxt, filter, update, opts).Decode(&pr); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, rest_err.NewBadRequestError(fmt.Sprintf("Memasukkan path image gagal, doc dengan id %s tidak ditemukan", id.Hex()))
+		}
+
+		logger.Error("Memasukkan path image doc ke db gagal, (UploadImage)", err)
+		apiErr := rest_err.NewInternalServerError("Memasukkan path image doc ke db gagal", err)
+		return nil, apiErr
+	}
+
+	return &pr, nil
 }
 
 func (pd *prDao) GetPRByID(ctx context.Context, id primitive.ObjectID, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError) {
