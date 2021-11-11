@@ -39,7 +39,7 @@ type computerService struct {
 type ComputerServiceAssumer interface {
 	InsertComputer(ctx context.Context, user mjwt.CustomClaim, input dto.ComputerRequest) (*string, rest_err.APIError)
 	EditComputer(ctx context.Context, user mjwt.CustomClaim, computerID string, input dto.ComputerEditRequest) (*dto.Computer, rest_err.APIError)
-	DeleteComputer(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError
+	DeleteComputer(ctx context.Context, user mjwt.CustomClaim, id string, force bool) rest_err.APIError
 	DisableComputer(ctx context.Context, computerID string, user mjwt.CustomClaim, value bool) (*dto.Computer, rest_err.APIError)
 	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.Computer, rest_err.APIError)
 
@@ -280,19 +280,22 @@ func (c *computerService) EditComputer(ctx context.Context, user mjwt.CustomClai
 	return computerEdited, nil
 }
 
-func (c *computerService) DeleteComputer(ctx context.Context, user mjwt.CustomClaim, id string) rest_err.APIError {
+func (c *computerService) DeleteComputer(ctx context.Context, user mjwt.CustomClaim, id string, force bool) rest_err.APIError {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
 	// Dokumen yang dibuat sehari sebelumnya masih bisa dihapus
-	timeMinusOneDay := time.Now().AddDate(0, 0, -1)
+	timeMinusOneDay := time.Now().AddDate(0, 0, -1).Unix()
+	if force {
+		timeMinusOneDay = 0
+	}
 	// DB
 	_, err := c.daoC.DeletePc(ctx, dto.FilterIDBranchCreateGte{
 		FilterID:        oid,
 		FilterBranch:    user.Branch,
-		FilterCreateGTE: timeMinusOneDay.Unix(),
+		FilterCreateGTE: timeMinusOneDay,
 	})
 	if err != nil {
 		return err

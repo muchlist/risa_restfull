@@ -200,8 +200,13 @@ func (s *stockHandler) DisableStock(c *fiber.Ctx) error {
 func (s *stockHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
+	forceStr := c.Query("force")
+	var force bool
+	if forceStr == "1" {
+		force = true
+	}
 
-	apiErr := s.service.DeleteStock(c.Context(), *claims, id)
+	apiErr := s.service.DeleteStock(c.Context(), *claims, id, force)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}

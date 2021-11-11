@@ -205,8 +205,13 @@ func (h *historyHandler) GetHistory(c *fiber.Ctx) error {
 func (h *historyHandler) Delete(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
+	forceStr := c.Query("force")
+	var force bool
+	if forceStr == "1" {
+		force = true
+	}
 
-	apiErr := h.service.DeleteHistory(c.Context(), *claims, id)
+	apiErr := h.service.DeleteHistory(c.Context(), *claims, id, force)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
