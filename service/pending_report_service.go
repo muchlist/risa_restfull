@@ -43,13 +43,13 @@ type prService struct {
 
 type PRServiceAssumer interface {
 	InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError)
-	AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
-	AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
+	AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string, alias string) (*dto.PendingReportModel, rest_err.APIError)
+	AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string, alias string) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	SendToSigningMode(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
 	SendToDraftMode(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
-	SignDocument(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
+	SignDocument(ctx context.Context, user mjwt.CustomClaim, id string, sign string) (*dto.PendingReportModel, rest_err.APIError)
 	EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReportModel, rest_err.APIError)
 	DeleteImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
 	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
@@ -115,7 +115,7 @@ func (ps *prService) EditPR(ctx context.Context, user mjwt.CustomClaim, id strin
 	})
 }
 
-func (ps *prService) AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError) {
+func (ps *prService) AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string, alias string) (*dto.PendingReportModel, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -157,6 +157,7 @@ func (ps *prService) AddParticipant(ctx context.Context, user mjwt.CustomClaim, 
 			UserID:   userResult.ID,
 			Sign:     "",
 			SignAt:   0,
+			Alias:    alias,
 		},
 		FilterBranch: user.Branch,
 		UpdatedAt:    time.Now().Unix(),
@@ -165,7 +166,7 @@ func (ps *prService) AddParticipant(ctx context.Context, user mjwt.CustomClaim, 
 	})
 }
 
-func (ps *prService) AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError) {
+func (ps *prService) AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string, alias string) (*dto.PendingReportModel, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -207,6 +208,7 @@ func (ps *prService) AddApprover(ctx context.Context, user mjwt.CustomClaim, id 
 			UserID:   userResult.ID,
 			Sign:     "",
 			SignAt:   0,
+			Alias:    alias,
 		},
 		FilterBranch: user.Branch,
 		UpdatedAt:    time.Now().Unix(),
@@ -251,7 +253,7 @@ func (ps *prService) RemoveApprover(ctx context.Context, user mjwt.CustomClaim, 
 	})
 }
 
-func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError) {
+func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id string, sign string) (*dto.PendingReportModel, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -276,7 +278,7 @@ func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id
 	for index, val := range doc.Participants {
 		if val.UserID == user.Identity {
 			userExist = true
-			doc.Participants[index].Sign = "SIGNED"
+			doc.Participants[index].Sign = sign
 			doc.Participants[index].SignAt = time.Now().Unix()
 		}
 	}
@@ -284,7 +286,7 @@ func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id
 	for index, val := range doc.Approvers {
 		if val.UserID == user.Identity {
 			userExist = true
-			doc.Approvers[index].Sign = "SIGNED"
+			doc.Approvers[index].Sign = sign
 			doc.Approvers[index].SignAt = time.Now().Unix()
 		}
 	}
@@ -368,7 +370,16 @@ func (ps *prService) SendToSigningMode(ctx context.Context, user mjwt.CustomClai
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	doc, restErr := ps.daoP.ChangeCompleteStatus(ctx, oid, enum.NeedSign, enum.Draft, user.Branch)
+	// cek apakah approver tersedia
+	doc, restErr := ps.daoP.GetPRByID(ctx, oid, "")
+	if restErr != nil {
+		return nil, restErr
+	}
+	if len(doc.Approvers) == 0 || doc.Approvers == nil {
+		return nil, rest_err.NewBadRequestError("Approver setidaknya harus berjumlah satu orang")
+	}
+
+	doc, restErr = ps.daoP.ChangeCompleteStatus(ctx, oid, enum.NeedSign, enum.Draft, user.Branch)
 	if restErr != nil {
 		return nil, restErr
 	}
@@ -415,6 +426,29 @@ func (ps *prService) SendToDraftMode(ctx context.Context, user mjwt.CustomClaim,
 	}
 
 	doc, restErr := ps.daoP.ChangeCompleteStatus(ctx, oid, enum.Draft, enum.NeedSign, user.Branch)
+	if restErr != nil {
+		return nil, restErr
+	}
+
+	// Hilangkan tanda tangan
+	for i := range doc.Participants {
+		doc.Participants[i].SignAt = 0
+		doc.Participants[i].Sign = ""
+	}
+	for i := range doc.Approvers {
+		doc.Approvers[i].SignAt = 0
+		doc.Approvers[i].Sign = ""
+	}
+
+	doc, restErr = ps.daoP.EditParticipantApprover(ctx, pendingreportdao.EditParticipantParams{
+		ID:           oid,
+		FilterBranch: user.Branch,
+		Participant:  doc.Participants,
+		Approver:     doc.Approvers,
+		UpdatedAt:    doc.UpdatedAt,
+		UpdatedBy:    doc.UpdatedBy,
+		UpdatedByID:  doc.UpdatedByID,
+	})
 	if restErr != nil {
 		return nil, restErr
 	}

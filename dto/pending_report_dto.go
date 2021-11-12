@@ -124,6 +124,7 @@ type Participant struct {
 	UserID   string `json:"user_id" bson:"user_id"`
 	Sign     string `json:"sign" bson:"sign"`
 	SignAt   int64  `json:"sign_at" bson:"sign_at"`
+	Alias    string `json:"alias" bson:"alias"`
 }
 
 // PendingReportResponse struct
