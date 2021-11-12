@@ -8,6 +8,8 @@ import (
 	"github.com/muchlist/risa_restfull/utils/sfunc"
 )
 
+// TODO create validation for PendingReportTempOneRequest
+
 func (pr PendingReportRequest) Validate() error {
 	err := validation.ValidateStruct(&pr,
 		validation.Field(&pr.Number, validation.Required),

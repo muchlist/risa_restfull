@@ -26,3 +26,10 @@ func IntToTime(second int64, returnIfZero string) string {
 	timeNeed = time.Duration(second)
 	return fmt.Sprint(timeNeed * time.Second)
 }
+
+func IntToDateIndoFormat(second int64, returnIfZero string) string {
+	if second <= 0 {
+		return returnIfZero
+	}
+	return fmt.Sprint(time.Unix(second, 0).Format("02-01-2006"))
+}

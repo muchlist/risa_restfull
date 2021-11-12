@@ -25,6 +25,7 @@ type PendingReportModel struct {
 	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
 	Location       string             `json:"location" bson:"location"`
 	Images         []string           `json:"images" bson:"images"`
+	DocType        string             `json:"doc_type" bson:"doc_type"`
 }
 
 // NormalizeValue digunakan untuk mencegah ada nilai nil pada struct, terutama saat dimasukkan ke database mongodb yang bisa
@@ -100,6 +101,17 @@ type PendingReportRequest struct {
 	Date         int64           `json:"date" bson:"date"`
 	Equipments   []PREquipment   `json:"equipments" bson:"equipments"`
 	Location     string          `json:"location" bson:"location"`
+	DocType      string          `json:"doc_type" bson:"doc_type"`
+}
+
+type PendingReportTempOneRequest struct {
+	Branch     string        `json:"branch"`
+	Number     string        `json:"number"`
+	Title      string        `json:"title"`
+	Action     []string      `json:"action"`
+	Date       int64         `json:"date"`
+	Equipments []PREquipment `json:"equipments"`
+	Location   string        `json:"location"`
 }
 
 type PRDescription struct {
@@ -147,6 +159,7 @@ type PendingReportResponse struct {
 	CompleteStatus int             `json:"complete_status"`
 	Location       string          `json:"location"`
 	Images         []string        `json:"images"`
+	DocType        string          `json:"doc_type"`
 }
 
 type PendingReportMin struct {
@@ -166,4 +179,5 @@ type PendingReportMin struct {
 	CompleteStatus int                `json:"complete_status" bson:"complete_status"`
 	Location       string             `json:"location" bson:"location"`
 	Images         []string           `json:"images" bson:"images"`
+	DocType        string             `json:"doc_type" bson:"doc_type"`
 }
