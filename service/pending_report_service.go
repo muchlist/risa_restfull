@@ -53,6 +53,7 @@ type PRServiceAssumer interface {
 	EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReportModel, rest_err.APIError)
 	DeleteImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
 	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
+
 	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
 	FindDocs(ctx context.Context, user mjwt.CustomClaim, filter dto.FilterFindPendingReport) ([]dto.PendingReportMin, rest_err.APIError)
 }

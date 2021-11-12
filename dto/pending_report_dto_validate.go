@@ -1,6 +1,12 @@
 package dto
 
-import validation "github.com/go-ozzo/ozzo-validation/v4"
+import (
+	"errors"
+	"fmt"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/muchlist/risa_restfull/constants/ba"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
+)
 
 func (pr PendingReportRequest) Validate() error {
 	err := validation.ValidateStruct(&pr,
@@ -21,6 +27,9 @@ func (pr PendingReportRequest) Validate() error {
 			)
 			if err != nil {
 				return err
+			}
+			if !sfunc.InSlice(desc.DescriptionType, ba.GetDescTypeAvailable()) {
+				return errors.New(fmt.Sprintf("Desc type yang dimasukkan tidak tersedia, gunakan %v", ba.GetDescTypeAvailable()))
 			}
 		}
 	}
@@ -62,6 +71,9 @@ func (pr PendingReportEditRequest) Validate() error {
 			)
 			if err != nil {
 				return err
+			}
+			if !sfunc.InSlice(desc.DescriptionType, ba.GetDescTypeAvailable()) {
+				return errors.New(fmt.Sprintf("Desc type yang dimasukkan tidak tersedia, gunakan %v", ba.GetDescTypeAvailable()))
 			}
 		}
 	}
