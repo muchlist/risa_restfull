@@ -536,7 +536,7 @@ func (ps *prService) InsertPRTemplateOne(ctx context.Context, user mjwt.CustomCl
 
 	// generate description 4 [table number]
 	description4 := dto.PRDescription{
-		DescriptionType: ba.Paragraph,
+		DescriptionType: ba.Bullet,
 		Position:        4,
 	}
 	sb := strings.Builder{}
