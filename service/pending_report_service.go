@@ -40,10 +40,6 @@ type prService struct {
 	fcm  fcm.ClientAssumer
 }
 
-// hapus participant dan approver
-// geser2 level complete status
-// bikin pdf
-
 type PRServiceAssumer interface {
 	InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError)
 	AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string, alias string) (*dto.PendingReportModel, rest_err.APIError)
@@ -59,6 +55,8 @@ type PRServiceAssumer interface {
 
 	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
 	FindDocs(ctx context.Context, user mjwt.CustomClaim, filter dto.FilterFindPendingReport) ([]dto.PendingReportMin, rest_err.APIError)
+
+	InsertPRTemplateOne(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportTempOneRequest) (*string, rest_err.APIError)
 }
 
 func (ps *prService) InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError) {
@@ -84,92 +82,6 @@ func (ps *prService) InsertPR(ctx context.Context, user mjwt.CustomClaim, input 
 		Number:         input.Number,
 		Title:          input.Title,
 		Descriptions:   input.Descriptions,
-		Date:           input.Date,
-		Participants:   nil,
-		Approvers:      nil,
-		Equipments:     input.Equipments,
-		CompleteStatus: 0,
-		Location:       input.Location,
-		Images:         nil,
-	})
-
-	return res, err
-}
-
-func (ps *prService) InsertPRTemplateOne(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportTempOneRequest) (*string, rest_err.APIError) {
-	timeNow := time.Now().Unix()
-
-	if input.Branch == "" {
-		input.Branch = user.Branch
-	}
-
-	if input.Date == 0 {
-		input.Date = timeNow
-	}
-
-	// generate slice of description
-	descSlice := make([]dto.PRDescription, 0)
-
-	// generate description 1 [paragraph]
-	description1 := dto.PRDescription{
-		DescriptionType: ba.Paragraph,
-		Position:        1,
-	}
-	descText := fmt.Sprintf(
-		`Pada hari ini, %s tanggal %s telah dilakukan pengecekan pada perangkat sebagai berikut :`,
-		sfunc.GetDayName(input.Date), sfunc.IntToDateIndoFormat(input.Date, "[Kesalahan pada input tanggal]"),
-	)
-	description1.Description = descText
-	descSlice = append(descSlice, description1)
-
-	// generate description 2 [table equip]
-	description2 := dto.PRDescription{
-		DescriptionType: ba.Equip,
-		Position:        2,
-	}
-	descSlice = append(descSlice, description2)
-
-	// generate description 3 [paragraph]
-	description3 := dto.PRDescription{
-		DescriptionType: ba.Paragraph,
-		Position:        3,
-		Description:     "Tindakan dan saran :",
-	}
-	descSlice = append(descSlice, description3)
-
-	// generate description 4 [table number]
-	description4 := dto.PRDescription{
-		DescriptionType: ba.Paragraph,
-		Position:        4,
-	}
-	sb := strings.Builder{}
-	for _, text := range input.Action {
-		sb.WriteString(text + "|")
-	}
-	description4.Description = strings.TrimSuffix(sb.String(), "|")
-
-	descSlice = append(descSlice, description4)
-
-	// generate description 5 [paragraph]
-	description5 := dto.PRDescription{
-		DescriptionType: ba.Paragraph,
-		Position:        3,
-		Description:     "Demikian berita acara ini dibuat untuk dapat dipergunakan sebagaimana mestinya.",
-	}
-	descSlice = append(descSlice, description5)
-
-	res, err := ps.daoP.InsertPR(ctx, dto.PendingReportModel{
-		ID:             primitive.NewObjectID(),
-		CreatedAt:      timeNow,
-		CreatedBy:      user.Name,
-		CreatedByID:    user.Identity,
-		UpdatedAt:      timeNow,
-		UpdatedBy:      user.Name,
-		UpdatedByID:    user.Identity,
-		Branch:         input.Branch,
-		Number:         input.Number,
-		Title:          input.Title,
-		Descriptions:   descSlice,
 		Date:           input.Date,
 		Participants:   nil,
 		Approvers:      nil,
@@ -579,4 +491,90 @@ func (ps *prService) FindDocs(ctx context.Context, user mjwt.CustomClaim, filter
 		filter.FilterBranch = user.Branch
 	}
 	return ps.daoP.FindDoc(ctx, filter)
+}
+
+func (ps *prService) InsertPRTemplateOne(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportTempOneRequest) (*string, rest_err.APIError) {
+	timeNow := time.Now().Unix()
+
+	if input.Branch == "" {
+		input.Branch = user.Branch
+	}
+
+	if input.Date == 0 {
+		input.Date = timeNow
+	}
+
+	// generate slice of description
+	descSlice := make([]dto.PRDescription, 0)
+
+	// generate description 1 [paragraph]
+	description1 := dto.PRDescription{
+		DescriptionType: ba.Paragraph,
+		Position:        1,
+	}
+	descText := fmt.Sprintf(
+		`Pada hari ini, %s tanggal %s telah dilakukan pengecekan pada perangkat inventaris IT sebagai berikut :`,
+		sfunc.GetDayName(input.Date), sfunc.IntToDateIndoFormat(input.Date, "[Kesalahan pada input tanggal]"),
+	)
+	description1.Description = descText
+	descSlice = append(descSlice, description1)
+
+	// generate description 2 [table equip]
+	description2 := dto.PRDescription{
+		DescriptionType: ba.Equip,
+		Position:        2,
+	}
+	descSlice = append(descSlice, description2)
+
+	// generate description 3 [paragraph]
+	description3 := dto.PRDescription{
+		DescriptionType: ba.Paragraph,
+		Position:        3,
+		Description:     "Tindakan dan saran :",
+	}
+	descSlice = append(descSlice, description3)
+
+	// generate description 4 [table number]
+	description4 := dto.PRDescription{
+		DescriptionType: ba.Paragraph,
+		Position:        4,
+	}
+	sb := strings.Builder{}
+	for _, text := range input.Actions {
+		sb.WriteString(text + "||")
+	}
+	description4.Description = strings.TrimSuffix(sb.String(), "|")
+
+	descSlice = append(descSlice, description4)
+
+	// generate description 5 [paragraph]
+	description5 := dto.PRDescription{
+		DescriptionType: ba.Paragraph,
+		Position:        5,
+		Description:     "Demikian berita acara ini dibuat untuk dapat dipergunakan sebagaimana mestinya.",
+	}
+	descSlice = append(descSlice, description5)
+
+	res, err := ps.daoP.InsertPR(ctx, dto.PendingReportModel{
+		ID:             primitive.NewObjectID(),
+		CreatedAt:      timeNow,
+		CreatedBy:      user.Name,
+		CreatedByID:    user.Identity,
+		UpdatedAt:      timeNow,
+		UpdatedBy:      user.Name,
+		UpdatedByID:    user.Identity,
+		Branch:         input.Branch,
+		Number:         input.Number,
+		Title:          input.Title,
+		Descriptions:   descSlice,
+		Date:           input.Date,
+		Participants:   nil,
+		Approvers:      nil,
+		Equipments:     input.Equipments,
+		CompleteStatus: 0,
+		Location:       input.Location,
+		Images:         nil,
+	})
+
+	return res, err
 }

@@ -284,3 +284,29 @@ func (pr *prHandler) Find(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"error": nil, "data": res})
 }
+
+// InsertTempOne ================================================================================================
+func (pr *prHandler) InsertTempOne(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+
+	var req dto.PendingReportTempOneRequest
+	if err := c.BodyParser(&req); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
+
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	if err := req.Validate(); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	insertID, apiErr := pr.service.InsertPRTemplateOne(c.Context(), *claims, req)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	res := fmt.Sprintf("Menambahkan doc berhasil, ID: %s", *insertID)
+	return c.JSON(fiber.Map{"error": nil, "data": res})
+}

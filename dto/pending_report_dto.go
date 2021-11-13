@@ -108,16 +108,16 @@ type PendingReportTempOneRequest struct {
 	Branch     string        `json:"branch"`
 	Number     string        `json:"number"`
 	Title      string        `json:"title"`
-	Action     []string      `json:"action"`
+	Actions    []string      `json:"actions"`
 	Date       int64         `json:"date"`
 	Equipments []PREquipment `json:"equipments"`
 	Location   string        `json:"location"`
 }
 
 type PRDescription struct {
+	Position        int    `json:"position" bson:"position"`                 // posisi urutan
 	Description     string `json:"description" bson:"description"`           // isi dari suratnya
 	DescriptionType string `json:"description_type" bson:"description_type"` // tipe tampilan, [???]
-	Position        int    `json:"position" bson:"position"`                 // posisi urutan
 }
 
 type PREquipment struct {

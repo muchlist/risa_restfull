@@ -239,6 +239,9 @@ func mapUrls(app *fiber.App) {
 	api.Post("/pending-report-image/:id", middleware.NormalAuth(), prHandler.UploadImage)
 	api.Post("/delete-pending-report-image/:id/:image", middleware.NormalAuth(), prHandler.DeleteImage)
 
+	// PENDING-REPORT-TEMPLATE
+	api.Post("/pr-template-one", middleware.NormalAuth(), prHandler.InsertTempOne)
+
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)
 	api.Get("/opt-stock", optionHandler.OptCreateStock)
