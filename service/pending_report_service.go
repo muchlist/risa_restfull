@@ -70,6 +70,13 @@ func (ps *prService) InsertPR(ctx context.Context, user mjwt.CustomClaim, input 
 		input.Date = timeNow
 	}
 
+	// cek ketersediaan nomor berita acara
+	doc, _ := ps.daoP.GetPRByNumber(ctx, input.Number, "")
+	if doc != nil {
+		// nomor berita acara tidak tersedia
+		return nil, rest_err.NewBadRequestError("Nomor berita acara tidak tersedia")
+	}
+
 	res, err := ps.daoP.InsertPR(ctx, dto.PendingReportModel{
 		ID:             primitive.NewObjectID(),
 		CreatedAt:      timeNow,
@@ -502,6 +509,13 @@ func (ps *prService) InsertPRTemplateOne(ctx context.Context, user mjwt.CustomCl
 
 	if input.Date == 0 {
 		input.Date = timeNow
+	}
+
+	// cek ketersediaan nomor berita acara
+	doc, _ := ps.daoP.GetPRByNumber(ctx, input.Number, "")
+	if doc != nil {
+		// nomor berita acara tidak tersedia
+		return nil, rest_err.NewBadRequestError("Nomor berita acara tidak tersedia")
 	}
 
 	// generate slice of description
