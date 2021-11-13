@@ -60,6 +60,7 @@ type PRAssumer interface {
 	UploadImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
 	DeleteImage(ctx context.Context, id primitive.ObjectID, imagePath string, filterBranch string) (*dto.PendingReportModel, rest_err.APIError)
 	GetPRByID(ctx context.Context, id primitive.ObjectID, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
+	GetPRByNumber(ctx context.Context, number string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
 	FindDoc(ctx context.Context, inFilter dto.FilterFindPendingReport) ([]dto.PendingReportMin, rest_err.APIError)
 }
 
@@ -466,6 +467,31 @@ func (pd *prDao) GetPRByID(ctx context.Context, id primitive.ObjectID, branchIfS
 		}
 
 		logger.Error("gagal mendapatkan data dari database (GetPRByID)", err)
+		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan data dari database", err)
+		return nil, apiErr
+	}
+
+	return &res, nil
+}
+
+func (pd *prDao) GetPRByNumber(ctx context.Context, number string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError) {
+	coll := db.DB.Collection(keyCollection)
+	ctxt, cancel := context.WithTimeout(ctx, connectTimeout*time.Second)
+	defer cancel()
+
+	filter := bson.M{keyNumber: strings.ToUpper(number)}
+	if branchIfSpecific != "" {
+		filter[keyBranch] = strings.ToUpper(branchIfSpecific)
+	}
+
+	var res dto.PendingReportModel
+	if err := coll.FindOne(ctxt, filter).Decode(&res); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			apiErr := rest_err.NewNotFoundError(fmt.Sprintf("Data dengan nomer %s tidak ditemukan", number))
+			return nil, apiErr
+		}
+
+		logger.Error("gagal mendapatkan data dari database (GetPRByNumber)", err)
 		apiErr := rest_err.NewInternalServerError("Gagal mendapatkan data dari database", err)
 		return nil, apiErr
 	}

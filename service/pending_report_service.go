@@ -6,13 +6,16 @@ import (
 	"github.com/muchlist/erru_utils_go/logger"
 	"github.com/muchlist/erru_utils_go/rest_err"
 	"github.com/muchlist/risa_restfull/clients/fcm"
+	"github.com/muchlist/risa_restfull/constants/ba"
 	"github.com/muchlist/risa_restfull/constants/enum"
 	"github.com/muchlist/risa_restfull/dao/genunitdao"
 	"github.com/muchlist/risa_restfull/dao/pendingreportdao"
 	"github.com/muchlist/risa_restfull/dao/userdao"
 	"github.com/muchlist/risa_restfull/dto"
 	"github.com/muchlist/risa_restfull/utils/mjwt"
+	"github.com/muchlist/risa_restfull/utils/sfunc"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"strings"
 	"time"
 )
 
@@ -37,24 +40,23 @@ type prService struct {
 	fcm  fcm.ClientAssumer
 }
 
-// hapus participant dan approver
-// geser2 level complete status
-// bikin pdf
-
 type PRServiceAssumer interface {
 	InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError)
-	AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
-	AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
+	AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string, alias string) (*dto.PendingReportModel, rest_err.APIError)
+	AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string, alias string) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	RemoveApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError)
 	SendToSigningMode(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
 	SendToDraftMode(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
-	SignDocument(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError)
+	SignDocument(ctx context.Context, user mjwt.CustomClaim, id string, sign string) (*dto.PendingReportModel, rest_err.APIError)
 	EditPR(ctx context.Context, user mjwt.CustomClaim, id string, input dto.PendingReportEditRequest) (*dto.PendingReportModel, rest_err.APIError)
 	DeleteImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
 	PutImage(ctx context.Context, user mjwt.CustomClaim, id string, imagePath string) (*dto.PendingReportModel, rest_err.APIError)
+
 	GetPRByID(ctx context.Context, id string, branchIfSpecific string) (*dto.PendingReportModel, rest_err.APIError)
 	FindDocs(ctx context.Context, user mjwt.CustomClaim, filter dto.FilterFindPendingReport) ([]dto.PendingReportMin, rest_err.APIError)
+
+	InsertPRTemplateOne(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportTempOneRequest) (*string, rest_err.APIError)
 }
 
 func (ps *prService) InsertPR(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportRequest) (*string, rest_err.APIError) {
@@ -66,6 +68,13 @@ func (ps *prService) InsertPR(ctx context.Context, user mjwt.CustomClaim, input 
 
 	if input.Date == 0 {
 		input.Date = timeNow
+	}
+
+	// cek ketersediaan nomor berita acara
+	doc, _ := ps.daoP.GetPRByNumber(ctx, input.Number, "")
+	if doc != nil {
+		// nomor berita acara tidak tersedia
+		return nil, rest_err.NewBadRequestError("Nomor berita acara tidak tersedia")
 	}
 
 	res, err := ps.daoP.InsertPR(ctx, dto.PendingReportModel{
@@ -114,7 +123,7 @@ func (ps *prService) EditPR(ctx context.Context, user mjwt.CustomClaim, id strin
 	})
 }
 
-func (ps *prService) AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError) {
+func (ps *prService) AddParticipant(ctx context.Context, user mjwt.CustomClaim, id string, userID string, alias string) (*dto.PendingReportModel, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -156,6 +165,7 @@ func (ps *prService) AddParticipant(ctx context.Context, user mjwt.CustomClaim, 
 			UserID:   userResult.ID,
 			Sign:     "",
 			SignAt:   0,
+			Alias:    alias,
 		},
 		FilterBranch: user.Branch,
 		UpdatedAt:    time.Now().Unix(),
@@ -164,7 +174,7 @@ func (ps *prService) AddParticipant(ctx context.Context, user mjwt.CustomClaim, 
 	})
 }
 
-func (ps *prService) AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string) (*dto.PendingReportModel, rest_err.APIError) {
+func (ps *prService) AddApprover(ctx context.Context, user mjwt.CustomClaim, id string, userID string, alias string) (*dto.PendingReportModel, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -206,6 +216,7 @@ func (ps *prService) AddApprover(ctx context.Context, user mjwt.CustomClaim, id 
 			UserID:   userResult.ID,
 			Sign:     "",
 			SignAt:   0,
+			Alias:    alias,
 		},
 		FilterBranch: user.Branch,
 		UpdatedAt:    time.Now().Unix(),
@@ -250,7 +261,7 @@ func (ps *prService) RemoveApprover(ctx context.Context, user mjwt.CustomClaim, 
 	})
 }
 
-func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id string) (*dto.PendingReportModel, rest_err.APIError) {
+func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id string, sign string) (*dto.PendingReportModel, rest_err.APIError) {
 	oid, errT := primitive.ObjectIDFromHex(id)
 	if errT != nil {
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
@@ -275,7 +286,7 @@ func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id
 	for index, val := range doc.Participants {
 		if val.UserID == user.Identity {
 			userExist = true
-			doc.Participants[index].Sign = "SIGNED"
+			doc.Participants[index].Sign = sign
 			doc.Participants[index].SignAt = time.Now().Unix()
 		}
 	}
@@ -283,7 +294,7 @@ func (ps *prService) SignDocument(ctx context.Context, user mjwt.CustomClaim, id
 	for index, val := range doc.Approvers {
 		if val.UserID == user.Identity {
 			userExist = true
-			doc.Approvers[index].Sign = "SIGNED"
+			doc.Approvers[index].Sign = sign
 			doc.Approvers[index].SignAt = time.Now().Unix()
 		}
 	}
@@ -367,7 +378,16 @@ func (ps *prService) SendToSigningMode(ctx context.Context, user mjwt.CustomClai
 		return nil, rest_err.NewBadRequestError("ObjectID yang dimasukkan salah")
 	}
 
-	doc, restErr := ps.daoP.ChangeCompleteStatus(ctx, oid, enum.NeedSign, enum.Draft, user.Branch)
+	// cek apakah approver tersedia
+	doc, restErr := ps.daoP.GetPRByID(ctx, oid, "")
+	if restErr != nil {
+		return nil, restErr
+	}
+	if len(doc.Approvers) == 0 || doc.Approvers == nil {
+		return nil, rest_err.NewBadRequestError("Approver setidaknya harus berjumlah satu orang")
+	}
+
+	doc, restErr = ps.daoP.ChangeCompleteStatus(ctx, oid, enum.NeedSign, enum.Draft, user.Branch)
 	if restErr != nil {
 		return nil, restErr
 	}
@@ -418,6 +438,29 @@ func (ps *prService) SendToDraftMode(ctx context.Context, user mjwt.CustomClaim,
 		return nil, restErr
 	}
 
+	// Hilangkan tanda tangan
+	for i := range doc.Participants {
+		doc.Participants[i].SignAt = 0
+		doc.Participants[i].Sign = ""
+	}
+	for i := range doc.Approvers {
+		doc.Approvers[i].SignAt = 0
+		doc.Approvers[i].Sign = ""
+	}
+
+	doc, restErr = ps.daoP.EditParticipantApprover(ctx, pendingreportdao.EditParticipantParams{
+		ID:           oid,
+		FilterBranch: user.Branch,
+		Participant:  doc.Participants,
+		Approver:     doc.Approvers,
+		UpdatedAt:    doc.UpdatedAt,
+		UpdatedBy:    doc.UpdatedBy,
+		UpdatedByID:  doc.UpdatedByID,
+	})
+	if restErr != nil {
+		return nil, restErr
+	}
+
 	return doc, restErr
 }
 
@@ -455,4 +498,97 @@ func (ps *prService) FindDocs(ctx context.Context, user mjwt.CustomClaim, filter
 		filter.FilterBranch = user.Branch
 	}
 	return ps.daoP.FindDoc(ctx, filter)
+}
+
+func (ps *prService) InsertPRTemplateOne(ctx context.Context, user mjwt.CustomClaim, input dto.PendingReportTempOneRequest) (*string, rest_err.APIError) {
+	timeNow := time.Now().Unix()
+
+	if input.Branch == "" {
+		input.Branch = user.Branch
+	}
+
+	if input.Date == 0 {
+		input.Date = timeNow
+	}
+
+	// cek ketersediaan nomor berita acara
+	doc, _ := ps.daoP.GetPRByNumber(ctx, input.Number, "")
+	if doc != nil {
+		// nomor berita acara tidak tersedia
+		return nil, rest_err.NewBadRequestError("Nomor berita acara tidak tersedia")
+	}
+
+	// generate slice of description
+	descSlice := make([]dto.PRDescription, 0)
+
+	// generate description 1 [paragraph]
+	description1 := dto.PRDescription{
+		DescriptionType: ba.Paragraph,
+		Position:        1,
+	}
+	descText := fmt.Sprintf(
+		`Pada hari ini, %s tanggal %s telah dilakukan pengecekan pada perangkat inventaris IT sebagai berikut :`,
+		sfunc.GetDayName(input.Date), sfunc.IntToDateIndoFormat(input.Date, "[Kesalahan pada input tanggal]"),
+	)
+	description1.Description = descText
+	descSlice = append(descSlice, description1)
+
+	// generate description 2 [table equip]
+	description2 := dto.PRDescription{
+		DescriptionType: ba.Equip,
+		Position:        2,
+	}
+	descSlice = append(descSlice, description2)
+
+	// generate description 3 [paragraph]
+	description3 := dto.PRDescription{
+		DescriptionType: ba.Paragraph,
+		Position:        3,
+		Description:     "Tindakan dan saran :",
+	}
+	descSlice = append(descSlice, description3)
+
+	// generate description 4 [table number]
+	description4 := dto.PRDescription{
+		DescriptionType: ba.Bullet,
+		Position:        4,
+	}
+	sb := strings.Builder{}
+	for _, text := range input.Actions {
+		sb.WriteString(text + "||")
+	}
+	description4.Description = strings.TrimSuffix(sb.String(), "|")
+
+	descSlice = append(descSlice, description4)
+
+	// generate description 5 [paragraph]
+	description5 := dto.PRDescription{
+		DescriptionType: ba.Paragraph,
+		Position:        5,
+		Description:     "Demikian berita acara ini dibuat untuk dapat dipergunakan sebagaimana mestinya.",
+	}
+	descSlice = append(descSlice, description5)
+
+	res, err := ps.daoP.InsertPR(ctx, dto.PendingReportModel{
+		ID:             primitive.NewObjectID(),
+		CreatedAt:      timeNow,
+		CreatedBy:      user.Name,
+		CreatedByID:    user.Identity,
+		UpdatedAt:      timeNow,
+		UpdatedBy:      user.Name,
+		UpdatedByID:    user.Identity,
+		Branch:         input.Branch,
+		Number:         input.Number,
+		Title:          input.Title,
+		Descriptions:   descSlice,
+		Date:           input.Date,
+		Participants:   nil,
+		Approvers:      nil,
+		Equipments:     input.Equipments,
+		CompleteStatus: 0,
+		Location:       input.Location,
+		Images:         nil,
+	})
+
+	return res, err
 }

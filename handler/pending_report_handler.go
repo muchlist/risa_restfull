@@ -74,9 +74,22 @@ func (pr *prHandler) Edit(c *fiber.Ctx) error {
 func (pr *prHandler) AddParticipant(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
-	userID := c.Params("userid")
+	body := struct {
+		UserID string `json:"user_id"`
+		Alias  string `json:"alias"`
+	}{}
+	if err := c.BodyParser(&body); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
 
-	res, apiErr := pr.service.AddParticipant(c.Context(), *claims, id, userID)
+	if body.UserID == "" {
+		apiErr := rest_err.NewBadRequestError("user_id tidak boleh kosong")
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	res, apiErr := pr.service.AddParticipant(c.Context(), *claims, id, body.UserID, body.Alias)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -86,9 +99,17 @@ func (pr *prHandler) AddParticipant(c *fiber.Ctx) error {
 func (pr *prHandler) AddApprover(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
-	userID := c.Params("userid")
+	body := struct {
+		UserID string `json:"user_id"`
+		Alias  string `json:"alias"`
+	}{}
+	if err := c.BodyParser(&body); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
 
-	res, apiErr := pr.service.AddApprover(c.Context(), *claims, id, userID)
+	res, apiErr := pr.service.AddApprover(c.Context(), *claims, id, body.UserID, body.Alias)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -145,7 +166,7 @@ func (pr *prHandler) SigningDoc(c *fiber.Ctx) error {
 	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
 	id := c.Params("id")
 
-	res, apiErr := pr.service.SignDocument(c.Context(), *claims, id)
+	res, apiErr := pr.service.SignDocument(c.Context(), *claims, id, "SIGNED")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -171,6 +192,34 @@ func (pr *prHandler) UploadImage(c *fiber.Ctx) error {
 
 	// update path image di database
 	docResult, apiErr := pr.service.PutImage(c.Context(), *claims, id, pathInDB)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	return c.JSON(fiber.Map{"error": nil, "data": docResult})
+}
+
+// SignImage melakukan pengambilan file menggunakan form "image" mengecek ekstensi dan memasukkannya ke database
+// sign
+func (pr *prHandler) SignImage(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+	id := c.Params("id")
+
+	// cek apakah ID && branch ada
+	_, apiErr := pr.service.GetPRByID(c.Context(), id, claims.Branch)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	randomName := fmt.Sprintf("%s-%s-%d", id, claims.Identity, time.Now().Unix())
+	// simpan image
+	pathSignImage, apiErr := saveImage(c, *claims, "sign", randomName, false)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	// update path image di database
+	docResult, apiErr := pr.service.SignDocument(c.Context(), *claims, id, pathSignImage)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -233,5 +282,31 @@ func (pr *prHandler) Find(c *fiber.Ctx) error {
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
+	return c.JSON(fiber.Map{"error": nil, "data": res})
+}
+
+// InsertTempOne ================================================================================================
+func (pr *prHandler) InsertTempOne(c *fiber.Ctx) error {
+	claims := c.Locals(mjwt.CLAIMS).(*mjwt.CustomClaim)
+
+	var req dto.PendingReportTempOneRequest
+	if err := c.BodyParser(&req); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | parse | %s", claims.Name, err.Error()))
+
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	if err := req.Validate(); err != nil {
+		apiErr := rest_err.NewBadRequestError(err.Error())
+		logger.Info(fmt.Sprintf("u: %s | validate | %s", claims.Name, err.Error()))
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+
+	insertID, apiErr := pr.service.InsertPRTemplateOne(c.Context(), *claims, req)
+	if apiErr != nil {
+		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
+	}
+	res := fmt.Sprintf("Menambahkan doc berhasil, ID: %s", *insertID)
 	return c.JSON(fiber.Map{"error": nil, "data": res})
 }

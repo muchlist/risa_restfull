@@ -228,15 +228,19 @@ func mapUrls(app *fiber.App) {
 	api.Get("/pending-report/:id", middleware.NormalAuth(), prHandler.Get)
 	api.Get("/pending-report", middleware.NormalAuth(), prHandler.Find)
 	api.Put("/pending-report/:id", middleware.NormalAuth(), prHandler.Edit)
-	api.Get("/add-party-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.AddParticipant)
-	api.Get("/add-approver-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.AddApprover)
-	api.Get("/remove-party-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.RemoveParticipant)
-	api.Get("/remove-approver-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.RemoveApprover)
+	api.Post("/add-party-pending-report/:id", middleware.NormalAuth(), prHandler.AddParticipant)
+	api.Post("/add-approver-pending-report/:id", middleware.NormalAuth(), prHandler.AddApprover)
+	api.Post("/remove-party-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.RemoveParticipant)
+	api.Post("/remove-approver-pending-report/:id/:userid", middleware.NormalAuth(), prHandler.RemoveApprover)
 	api.Post("/send-sign/:id", middleware.NormalAuth(), prHandler.SendToSignMode)
 	api.Post("/send-draft/:id", middleware.NormalAuth(), prHandler.SendToDraftMode)
 	api.Post("/sign-pending-report/:id", middleware.NormalAuth(), prHandler.SigningDoc)
+	api.Post("/sign-pending-report-image/:id", middleware.NormalAuth(), prHandler.SignImage)
 	api.Post("/pending-report-image/:id", middleware.NormalAuth(), prHandler.UploadImage)
 	api.Post("/delete-pending-report-image/:id/:image", middleware.NormalAuth(), prHandler.DeleteImage)
+
+	// PENDING-REPORT-TEMPLATE
+	api.Post("/pr-template-one", middleware.NormalAuth(), prHandler.InsertTempOne)
 
 	// Option
 	api.Get("/opt-check-item", optionHandler.OptCreateCheckItem)
