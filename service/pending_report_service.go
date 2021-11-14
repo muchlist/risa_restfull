@@ -557,7 +557,7 @@ func (ps *prService) InsertPRTemplateOne(ctx context.Context, user mjwt.CustomCl
 	for _, text := range input.Actions {
 		sb.WriteString(text + "||")
 	}
-	description4.Description = strings.TrimSuffix(sb.String(), "|")
+	description4.Description = strings.TrimSuffix(sb.String(), "||")
 
 	descSlice = append(descSlice, description4)
 
