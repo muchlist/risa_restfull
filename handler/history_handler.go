@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/muchlist/erru_utils_go/logger"
@@ -37,7 +38,7 @@ func (h *historyHandler) Insert(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	insertID, apiErr := h.service.InsertHistory(c.Context(), *claims, req)
+	insertID, apiErr := h.service.InsertHistory(context.Background(), *claims, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -63,7 +64,7 @@ func (h *historyHandler) Edit(c *fiber.Ctx) error {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
 
-	historyEdited, apiErr := h.service.EditHistory(c.Context(), *claims, historyID, req)
+	historyEdited, apiErr := h.service.EditHistory(context.Background(), *claims, historyID, req)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -98,7 +99,7 @@ func (h *historyHandler) Find(c *fiber.Ctx) error {
 		Limit:       int64(limit),
 	}
 
-	histories, apiErr := h.service.FindHistory(c.Context(), search, filterA, filterB)
+	histories, apiErr := h.service.FindHistory(context.Background(), search, filterA, filterB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -117,7 +118,7 @@ func (h *historyHandler) FindForHome(c *fiber.Ctx) error {
 		FilterCategory: category,
 	}
 
-	histories, apiErr := h.service.FindHistoryForHome(c.Context(), filterA)
+	histories, apiErr := h.service.FindHistoryForHome(context.Background(), filterA)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -147,7 +148,7 @@ func (h *historyHandler) FindUnwind(c *fiber.Ctx) error {
 		Limit:       int64(limit),
 	}
 
-	histories, apiErr := h.service.UnwindHistory(c.Context(), filterA, filterB)
+	histories, apiErr := h.service.UnwindHistory(context.Background(), filterA, filterB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -159,7 +160,7 @@ func (h *historyHandler) FindUnwind(c *fiber.Ctx) error {
 func (h *historyHandler) FindFromParent(c *fiber.Ctx) error {
 	parentID := c.Params("id")
 
-	histories, apiErr := h.service.FindHistoryForParent(c.Context(), parentID)
+	histories, apiErr := h.service.FindHistoryForParent(context.Background(), parentID)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -182,7 +183,7 @@ func (h *historyHandler) FindFromUser(c *fiber.Ctx) error {
 		Limit:       int64(limit),
 	}
 
-	histories, apiErr := h.service.FindHistoryForUser(c.Context(), userID, filter)
+	histories, apiErr := h.service.FindHistoryForUser(context.Background(), userID, filter)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -194,7 +195,7 @@ func (h *historyHandler) FindFromUser(c *fiber.Ctx) error {
 func (h *historyHandler) GetHistory(c *fiber.Ctx) error {
 	userID := c.Params("id")
 
-	history, apiErr := h.service.GetHistory(c.Context(), userID, "")
+	history, apiErr := h.service.GetHistory(context.Background(), userID, "")
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -211,7 +212,7 @@ func (h *historyHandler) Delete(c *fiber.Ctx) error {
 		force = true
 	}
 
-	apiErr := h.service.DeleteHistory(c.Context(), *claims, id, force)
+	apiErr := h.service.DeleteHistory(context.Background(), *claims, id, force)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -225,7 +226,7 @@ func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	// cek apakah ID history && branch ada
-	_, apiErr := h.service.GetHistory(c.Context(), id, claims.Branch)
+	_, apiErr := h.service.GetHistory(context.Background(), id, claims.Branch)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
@@ -238,7 +239,7 @@ func (h *historyHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// update path image di database
-	historyResult, apiErr := h.service.PutImage(c.Context(), *claims, id, pathInDB)
+	historyResult, apiErr := h.service.PutImage(context.Background(), *claims, id, pathInDB)
 	if apiErr != nil {
 		return c.Status(apiErr.Status()).JSON(fiber.Map{"error": apiErr, "data": nil})
 	}
