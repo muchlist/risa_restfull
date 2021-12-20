@@ -40,7 +40,7 @@ func RunApp() {
 	mapUrls(app)
 
 	// menjalankan job scheduller cctv
-	scheduller.RunScheduler(genUnitService)
+	scheduller.RunScheduler(genUnitService, reportService)
 
 	if err := app.Listen(":3500"); err != nil {
 		logger.Error("error fiber listen", err)
